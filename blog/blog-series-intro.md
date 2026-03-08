@@ -89,7 +89,7 @@ The series doesn't replace harness engineering or MCE — it provides the **desi
 
 **Part 3: [The Space Between](the-space-between.md).** *Ma* as co-domain characterizability — the formal definition, tested against edge cases, and connected to the monadic continuum. The distinction between interface *ma* and internal *ma*. Why restriction is the load-bearing operation: co-domain funnels, the quartermaster pattern, and the monad-comonad duality (expansion is monadic, compression is comonadic, the Harness lives at the boundary). Multi-enclave systems and temporal co-domain accumulation.
 
-**Part 4: Toward a Formal Framework.** Parameterized monads for scope transitions. The π-calculus for concurrent agents and scope extrusion. Session types for permission protocols. What survives formalization, what doesn't, and where the open problems are. An honest accounting of what's novel and what's Moggi (1991) with better marketing.
+**Part 4: [Toward a Formal Framework](formal-framework.md).** The interface monad ordering as the formal object for *ma*. The monad-comonad duality: expansion (monadic) vs. compression (comonadic), with the Harness at the boundary. Interface *ma* vs. internal *ma* as monad morphisms from implementation to interface. The fractal architecture: every actor has internal conversation structure, self-similar at every scale. Parameterized IO for Executor worlds. What survives formalization, what doesn't, and where the open problems are. An honest accounting of what's novel and what's Moggi (1991) with better marketing.
 
 ---
 
