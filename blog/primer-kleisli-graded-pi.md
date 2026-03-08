@@ -1,6 +1,6 @@
 # Primer: Kleisli Composition, Graded Monads, and the π-Calculus
 
-*Background material for the Conversations Are Closures formal framework.*
+*Background material for the judgemental monad blog series. This is the mathematical machinery behind the framework — presented as a lesson, not a reference.*
 
 ---
 
@@ -24,6 +24,8 @@ g ∘ f : A → C
 
 Feed `x` to `f`, feed the result to `g`. This works because `f`'s output type matches `g`'s input type. Composition is associative, and the identity function `id(x) = x` is a neutral element. Functions with composition form a **category** — the category **Set** (or **Hask** if you prefer).
 
+Note what composition gives us here: a pure function has a trivially characterizable co-domain. `f : A → B` can only produce values of type `B`. This is the zero-*ma* case.
+
 ### The problem: functions with effects
 
 Now suppose your functions do something *extra*. They don't just return a value — they also produce a side channel of information.
@@ -36,6 +38,8 @@ lookupPerson : Int → Maybe Person
 ```
 
 `parseAge` might fail (bad input). `lookupPerson` might fail (not found). You want to compose them: string → maybe person. But you can't just do `lookupPerson(parseAge(s))` because `parseAge` returns a `Maybe Int`, not an `Int`.
+
+The co-domain expanded: `Maybe Int` is `Int + Nothing` — two possible kinds of output instead of one. The function's output space got harder to characterize. A little *ma* crept in.
 
 **Example 2: Functions that log.**
 
@@ -55,13 +59,15 @@ moves : Position → [Position]
 
 From a chess position, there are multiple possible next positions. Composing two steps should give all positions reachable in two moves. But `moves` returns a list, not a single position.
 
+The co-domain here is `[Position]` — potentially many values. The output space is wider than before, and characterizing it requires knowing the game state. More *ma*.
+
 In every case, the pattern is the same. You have functions of the shape:
 
 ```
 A → M(B)
 ```
 
-where `M` is some wrapper — `Maybe`, `(_, Log)`, `[]` — and ordinary composition doesn't work because the types don't line up.
+where `M` is some wrapper — `Maybe`, `(_, Log)`, `[]` — and ordinary composition doesn't work because the types don't line up. Each `M` is a different way of expanding the co-domain: `Maybe` adds failure, `Writer` adds accumulation, `List` adds multiplicity.
 
 ### Kleisli composition: the fix
 
@@ -127,6 +133,23 @@ The category laws hold because the monad laws hold:
 - Associativity: `h ∘_K (g ∘_K f) = (h ∘_K g) ∘_K f`
 
 **Why this matters for the framework:** When we say "agent handoffs are Kleisli composition," we mean: each agent is a function `Input → Conv(Output)` — it takes an input and produces an output *plus log entries*. Composing two agents means: run the first, concatenate its log, feed the result to the second, concatenate that log too. The Kleisli category of the conversation (Writer) monad is the category where agents live and compose.
+
+The monad `M` determines the co-domain structure. `Maybe` gives `A + 1`. `Writer Log` gives `A × Log`. `List` gives `[A]`. The *ma* of a computation is determined by which monad it lives in — specifically, how hard it is to characterize the co-domain that `M` creates.
+
+### The monadic co-domain gradient
+
+This connects directly to the *ma* framework. Each monad widens the co-domain differently:
+
+| Monad | Co-domain of `A → M(B)` | Characterizability | *Ma* |
+|---|---|---|---|
+| `Identity` | Just `B` | Complete — one value | None |
+| `Maybe` | `B + 1` | Complete — value or nothing | Minimal |
+| `Writer Log` | `B × Log` | Characterizable if log is bounded | Low |
+| `List` | `[B]` | Enumerable but unbounded | Low-Medium |
+| `Probability` | `Distribution(B)` | Describable (support + density) | Medium |
+| `IO` | `World → (B, World)` | Depends on entire world | High |
+
+This is the monadic continuum: each step up makes the co-domain harder to characterize. A pure function (Identity) has trivially characterizable output. An IO computation's output depends on the entire world state — you need the world to describe what it could produce.
 
 ---
 
@@ -211,6 +234,8 @@ readFile p >>= writeFile q : Agent_{Read ∨ Write} ()
 
 The composite requires `Write` permission (the join/max). A computation graded `Read` can run in any context that grants at least `Read`. The grades propagate through composition and the type system enforces that you never exceed the granted permissions.
 
+In the *ma* framework, this is the Harness doing **co-domain management**. Each permission grant widens the set of possible computations — and therefore the co-domain of the conversation. The grade tracks how wide the co-domain has gotten.
+
 ### Why grading matters for the framework
 
 In the formal framework, the grading monoid is the **scope lattice**:
@@ -229,9 +254,31 @@ worker        : Kit  → Conv_t(Report)
 pipeline      : Task → Conv_{s∨t}(Report)
 ```
 
-The grade tracks *who can see what*. The type system ensures that scoping decisions are explicit and composable.
+The grade tracks *who can see what*. The type system ensures that scoping decisions are explicit and composable. Each scope expansion is a co-domain expansion — widening what's visible to an agent widens what it can produce.
 
 Pure values (`return`) have grade `⊥` — they require no visibility. This is Kleisli composition from Part 1, enriched with scope tracking.
+
+### The gap: scope changes mid-computation
+
+The graded monad assigns a fixed grade to a computation. But what happens when scope *changes during* execution? When the Inferencer proposes a tool call, the Harness gates it, and the Executor runs — the conversation's scope expands mid-turn. The grade `s` at the start isn't the grade `s'` at the end.
+
+This is where parameterized monads come in. Atkey (2009) extended monads with pre-state and post-state indices: `M(s, t, A)` is a computation that starts in state `s` and ends in state `t`. Orchard, Wadler & Eades (2019) unified graded and parameterized monads, showing they're the same structure viewed differently.
+
+For scope transitions:
+```
+Agent(s, t, A)  -- starts with scope s, ends with scope t, produces A
+                -- where s ≤ t (scopes only grow)
+
+return : A → Agent(s, s, A)              -- no scope change
+bind   : Agent(s, t, A) → (A → Agent(t, u, B)) → Agent(s, u, B)  -- compose transitions
+```
+
+A tool request is a typed scope transition:
+```
+request_tool : ToolName → Agent(s, s ∨ t_tool, Tool)
+```
+
+The Harness gates this transition. If granted, the scope expands from `s` to `s ∨ t_tool`. If denied, the scope stays at `s`. The permission gate is where the Harness manages the conversation's co-domain.
 
 ---
 
@@ -243,11 +290,13 @@ Parts 1 and 2 built up from functions: individual computations that compose sequ
 
 Lambda calculus asks: "What can a single computation do?" The π-calculus asks: "What happens when multiple processes run simultaneously and talk to each other?"
 
+This matters because multi-agent conversations are fundamentally concurrent. The Inferencer proposes multiple tool calls. The Harness dispatches them in parallel. The Principal might background tasks. Multiple Executors run simultaneously. The sequential Kleisli model captures the data flow; the π-calculus captures the concurrency.
+
 ### Processes and channels
 
 The basic entities:
 
-- **Processes** — things that run (agents, workers, services)
+- **Processes** — things that run (Principals, Inferencers, Executors, the Harness)
 - **Names** — identifiers that serve as communication channels
 
 A process can:
@@ -331,33 +380,51 @@ Key properties:
 - The name `x` didn't become globally public — only the specific recipient got it
 - The expansion is **monotone** — once you can see `x`, you can't un-see it
 
-### Why scope extrusion matters for agents
+### Why scope extrusion matters for the Harness
 
-This is exactly what happens when a worker requests a tool from the quartermaster:
+This is exactly what happens in the permission gate. When the Inferencer proposes a tool call and the Principal grants permission:
 
 ```
-Worker (scope s):     "I need the dependency graph tool"
-                      → sends a request on the quartermaster channel
+Inferencer:    "I need to read file X"
+               → proposes tool call through the Harness
 
-Quartermaster:        receives request, decides to grant access
-                      → sends the tool reference back
+Harness:       checks permissions, asks Principal if needed
+               → Principal grants
 
-Worker (scope s'):    now has the tool in scope, s' ⊃ s
+Executor:      Harness dispatches Read(X), gets result
+               → result enters the conversation
+
+Inferencer:    now has file content in scope — scope extruded
 ```
 
 In π-calculus terms:
-- The tool is a private name `(νtool)` — initially only the quartermaster can see it
-- The quartermaster sends `tool` to the worker on their shared channel
-- The worker now has `tool` in scope — scope extrusion occurred
-- The scope boundary moved to include the worker
+- The file content is behind a private name `(νresult)` — initially only the filesystem can see it
+- The Harness mediates: receives the Executor's result, injects it into the Inferencer's next scope
+- The Inferencer now has `result` — scope extrusion occurred, mediated by the Harness
+- The Harness controlled the extrusion — this is co-domain management in action
 
-The formal framework's Definition 9.2 (tool request as continuation) is exactly this:
+The Harness is the **scope extrusion gatekeeper**. Every time the conversation's scope grows — a tool result enters, a promise resolves, a new tool is loaded — the Harness controls that extrusion. In π-calculus terms, the Harness controls which `(νx)` boundaries move and when.
+
+### Parallel tool execution as π-calculus
+
+When the Inferencer proposes N tool calls simultaneously:
 
 ```
-NeedTool name reason (Tool → Conv_s(a))
+(ν r₁)(ν r₂)...(ν rₙ)(
+    Executor₁(args₁, r₁) | Executor₂(args₂, r₂) | ... | Executorₙ(argsₙ, rₙ)
+  | r₁(res₁).r₂(res₂)...rₙ(resₙ).continue(res₁, res₂, ..., resₙ)
+)
 ```
 
-The continuation `Tool → Conv_s(a)` is the process waiting to receive on a channel. The quartermaster providing the tool is the scope extrusion step. The worker resuming with expanded scope `s'` is the post-extrusion state.
+Each Executor gets a private result channel `rᵢ`. The continuation (the Harness) waits for all results before proceeding. The channels are restricted — only the Executor and the Harness can use them.
+
+For the promise variant (backgrounded tasks), replace the barrier with:
+
+```
+  | r₁(res₁).inject(res₁) | r₂(res₂).inject(res₂) | ... | continue()
+```
+
+Each result is injected independently when it arrives. The conversation doesn't wait. The Harness decides when each resolved promise enters the Inferencer's scope — controlling the timing of scope extrusion.
 
 ### Bisimulation (briefly)
 
@@ -365,23 +432,23 @@ How do you prove two processes behave "the same"? You can't just compare syntax 
 
 A **bisimulation** is a relation `R` between processes such that: if `P R Q`, then every observable action `P` can take, `Q` can match, and vice versa, and the resulting processes are still related by `R`. Two processes are **bisimilar** (`P ~ Q`) if such a relation exists.
 
-This is what the formal review meant by "a structural identity requires a bisimulation." To prove that agent conversations are *structurally identical* to closures, you'd need to define both as processes (or terms in some common framework) and exhibit a bisimulation between them. The blog post didn't do this — it showed a correspondence table, which is suggestive but not a proof.
-
-The formal framework document takes the honest middle path: it characterizes the *structural correspondence with a described divergence* (monotonically growing capture vs. static capture), which is more precise than a table and less than a bisimulation.
+To prove that agent conversations are *structurally identical* to closures would require a bisimulation. Our framework takes the honest middle path: it characterizes a *structural correspondence with described divergences* (monotonically growing capture vs. static capture, dynamic scope extrusion vs. fixed lexical scope), which is more precise than a table and less than a proof.
 
 ---
 
 ## How the Three Connect
 
-The framework uses all three:
+The framework uses all three, each at a different level:
 
-1. **Kleisli composition** (Part 1) gives us agent pipelines — sequential composition of effectful computations over a shared log
+1. **Kleisli composition** (Part 1) gives us agent pipelines — sequential composition of effectful computations over a shared log. The monad determines the co-domain structure — which is *ma* at the computation level.
 
-2. **Graded monads** (Part 2) enrich Kleisli composition with scope tracking — the grade records what each agent can see, and composition joins the grades
+2. **Graded / parameterized monads** (Part 2) enrich Kleisli composition with scope tracking — the grade records what each agent can see, and composition joins the grades. Scope expansion is co-domain expansion. The Harness controls which scope transitions are allowed — this is co-domain management formalized.
 
-3. **The π-calculus** (Part 3) handles what the graded monad currently can't — dynamic scope changes mid-computation. When a worker requests a tool, the scope *extrudes*. This is exactly the mechanism Milner formalized, and it's the missing piece in Problems 1+2 of the framework.
+3. **The π-calculus** (Part 3) handles what the monadic framework can't express alone — dynamic scope changes, concurrent execution, and the Harness's role as scope extrusion gatekeeper. When the Inferencer proposes a tool call and the Harness grants it, that's a scope extrusion mediated by the lowest-*ma* actor in the system.
 
-The theoretical gap is: the graded monad assigns a fixed scope `s` to a computation `Conv_s(A)`, but scope extrusion means `s` can grow to `s'` during execution. The framework needs a way to model scope transitions *within* a graded computation, not just between them. The π-calculus has the mechanism (scope extrusion). The question is how to integrate it into the graded monad structure.
+The theoretical synthesis: the conversation is a **parameterized monadic computation** (scope transitions over the scope lattice) **whose concurrency structure is captured by π-calculus** (parallel Executors, promise resolution, scope extrusion mediated by the Harness). The *ma* of each actor determines its role in this structure — the Harness mediates because its co-domain is characterizable, the Inferencer proposes because its co-domain is rich but bounded, the Principal authorizes because its co-domain is unbounded.
+
+The open frontier is composing these cleanly. Orchard, Wadler & Eades (2019) unified graded and parameterized monads. Session types (Honda, 1993; Honda, Vasconcelos & Kubo, 1998) formalize the permission protocol between Harness and Principal. The pieces exist. Connecting them into a single coherent framework for multi-agent conversation architecture — with *ma* as the organizing axis — is the work this series is pointing toward.
 
 ---
 
@@ -389,7 +456,10 @@ The theoretical gap is: the graded monad assigns a fixed scope `s` to a computat
 
 - Atkey, R. (2009). Parameterised notions of computation. *Journal of Functional Programming*, 19(3-4).
 - Hewitt, C., Bishop, P., & Steiger, R. (1973). A universal modular ACTOR formalism for artificial intelligence. *IJCAI*.
+- Honda, K. (1993). Types for dyadic interaction. *CONCUR*.
+- Honda, K., Vasconcelos, V., & Kubo, M. (1998). Language primitives and type discipline for structured communication-based programming. *ESOP*.
 - Katsumata, S. (2014). Parametric effect monads and semantics of effect systems. *POPL*.
 - Milner, R. (1999). *Communicating and Mobile Systems: The Pi-Calculus*. Cambridge University Press.
 - Moggi, E. (1991). Notions of computation and monads. *Information and Computation*, 93(1).
 - Orchard, D., Wadler, P., & Eades, H. (2019). Unifying graded and parameterised monads. *arXiv:1907.10276*.
+- Zhang, Y. & Wang, M. (2025). Monadic Context Engineering. *arXiv:2512.22431*.
