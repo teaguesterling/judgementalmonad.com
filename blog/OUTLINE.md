@@ -1,4 +1,4 @@
-# The Ma of Multi-Agent Systems — Series Outline v2
+# The Ma of Multi-Agent Systems — Series Outline v3
 
 ## The arc
 
@@ -7,180 +7,215 @@ Observe → Name → Formalize → Dynamize → Regulate
 Each post carries enough formalism to be self-contained. The formal companion
 provides rigor for readers who want proofs.
 
+## Voice and approach (established across posts 1-5)
+
+- **Measured, building-from-observation** — not breathless "you already know this!"
+- **Honest about limitations** — the formalism marks its own boundaries (IO confession, where correspondences break)
+- **Concrete examples ground abstractions** — every formal concept gets a Claude Code / real-system example
+- **Cross-references earn their place** — tie back to earlier posts when the callback deepens understanding, not for decoration
+- **Interface ≠ implementation** is the recurring thesis — the whole framework is built on this separation
+- **Terms of art from the series** — use "permission configuration" not "session type", "permission gates" not "handler pattern matching". PL terms are introduced when the correspondence is being drawn, then translated back to series vocabulary.
+- **Bare vs agentic Inferencer** — post 5 established this distinction. A bare Inferencer is (sealed, trained), 3-actor system. An agentic Inferencer has tools, full 4-actor system, grade shifts to (sealed–broad, trained). Use this distinction going forward.
+- **IO is under-refined** — acknowledged in post 5. Three things collapsed: what enters (world coupling axis, done), what it can do to the world (observe→modify→generate, post 7), what exits as output (funnels, partially done).
+
 ---
 
 ## 0. The Ma of Multi-Agent Systems (intro)
 
 **File:** `00-intro.md`
 **Rewrite of:** `blog/blog-series-intro.md`
+**Status:** Not yet written
 
 The harness moment. Industry context (Fowler, OpenAI, LangChain benchmark).
 The gap: practice exists, composition algebra exists (Zhang & Wang MCE),
-design theory doesn't. This series proposes one. The observation (four actors,
-one axis). Series map.
+design theory doesn't. This series proposes one. Series map.
 
-**Key claims:**
-- The harness is the architecture; the model is not the bottleneck
-- The field lacks a theory for WHY certain designs work
-- Ma (co-domain characterizability) is the single axis that explains actor roles
+**Note:** Post 1 already carries a strong opening (the multi-agent scenario,
+industry framing, "what's missing is the unified theory"). The intro should
+complement, not duplicate. Consider whether this post is still needed or
+whether post 1 IS the intro.
 
 ---
 
-## 1. The Four Actors
+## 1. The Four Actors ✅
 
 **File:** `01-the-four-actors.md`
-**Draws from:** `blog/actor-taxonomy.md`, `blog/turn-anatomy.md`,
-`blog/the-harness.md`, `blog/formal-framework.md` §16 (worked example)
+**Status:** Written, reviewed, revised
 
-The concrete, ground-level post. What a conversation actually looks like.
-Who participates. What each sees. The star topology. No heavy formalism —
-just observation grounded in how systems like Claude Code work.
+Observation-driven. Multi-agent scenario → four actors → what nobody sees →
+star topology → turn cycle → concrete trace → the measurement question.
 
-**Content:**
-- The four actors: Principal, Inferencer, Executor, Harness
-- What each sees (different projections of the same state)
-- The star topology (Harness mediates every message)
-- The turn cycle: extract → infer → propose → gate → execute → inject
-- Worked example: a file read in Claude Code (trace through all four actors)
-- The naming: why "Harness" (connects capability to direction)
-- The punchline: the Harness is the most powerful and least understood participant
-
-**Does NOT include:** Ma (that's post 2), formalism (that's the companion),
-algebraic effects (that's post 4)
+**Key decisions made:**
+- Opening broadened from "harness engineering" to "what makes a good interaction"
+- `Conv_State` introduced by name in Harness definition
+- Harness naming absorbed into Harness section (no standalone section)
+- Bridge added before trace connecting multi-agent opening to single-agent example
+- Closing points at the path-space measurement question, not applied design
 
 ---
 
-## 2. The Space Between
+## 2. The Space Between ✅
 
 **File:** `02-the-space-between.md`
-**Rewrite merging:** `blog/the-space-between.md` + `blog/the-grade-lattice.md`
-**Absorbs:** `blog/ma-critique.md` (the evolution from opacity to co-domain)
+**Status:** Written, reviewed, revised
 
-Ma as a concept → the grade lattice as its formalization. The post that
-names and measures the core idea.
+Names and measures ma. Two axes, composition, supermodularity, predictions.
 
-**Content:**
-- Ma (間): the space between inputs and outputs
-- Not unpredictability (SHA), not hidden state (lookup table), not variability (die)
-- Three determinants: world coupling, decision surface, interface restriction
-- The grade lattice: (w, d) ∈ W × D, two orthogonal axes
-- Decision surface formalized: log of distinguishable execution paths
-  (Ashby's variety, VC dimension, Montufar linear regions)
-- Composition is join: ma(A using B) = (w_A ∨ w_B, d_A ∨ d_B)
-- Supermodularity of characterization difficulty → restriction is load-bearing
-- The four actors on the grade lattice
-- Three formal objects for ma (unified): grade (measure), K-complexity
-  (interface projection), monad morphism preorder (comparison)
-- The cybernetics connection: Ashby's variety, Good Regulator Theorem
+**Key decisions made:**
+- Merged `the-space-between.md` + `the-grade-lattice.md`
+- Executor grade: `(sealed–broad, literal–specified)` with "world coupling is whatever the Harness grants" — no "borrowed w" notation
+- Temp-0 LLM counterexample: connects to distinguishable paths / exponential depth, not counterfactuals
+- "Three formal objects" section → "What the grade captures" — deferred K-complexity and monad morphism preorder to posts where they're earned
+- Cybernetics section cleaned: only references grade + interface/internal (no unearned forward refs)
+- "At first glance" not "the original formulation" for the one-axis-to-two-axes transition
 
 ---
 
-## 3. Conversations Are Closures
+## 3. Conversations Are Closures ✅
 
 **File:** `03-conversations-are-closures.md`
-**Mostly as-is from:** `blog/conversations-as-closures.md`
+**Status:** Written, reviewed, revised
 
-The structural correspondence to PL closures. Light editing to align
-terminology with the new series order (reader has seen actors + ma).
+The PL closure correspondence. Where it's exact, where it breaks, the monadic spectrum.
 
-**Content:**
-- Closures: code + environment
-- Agent closures: behavior + scope + log
-- Static capture (PL) vs monotonically growing capture (agents)
-- Scope extrusion (pi-calculus correspondence)
-- The conversation as shared heap
-- Handoffs as Kleisli composition
-- Where the correspondence breaks → motivation for the handler framing
+**Key decisions made:**
+- Quartermaster section removed (already in post 2 as funnel example)
+- Ma introduction removed (reader has it from post 2)
+- Grade vocabulary callback added: "capture list = world coupling, internal logic = decision surface"
+- "The handler" → "The Harness" in stuck-agent section, with harness engineering callback
+- Monadic spectrum: "context" language throughout, Moggi named only where it matters
+- Store comonad introduced as closer model than simple closure (living structure with focus)
 
 ---
 
-## 4. Raising and Handling
+## 4. Raising and Handling ✅
 
 **File:** `04-raising-and-handling.md`
-**Mostly as-is from:** `blog/raising-and-handling.md`
+**Status:** Written, reviewed, revised
 
-The algebraic effects reframing. Focused on the handler structure.
+Algebraic effects reframing. Handler structure. Regulation ≠ prediction.
 
-**Content:**
-- The "two-level structure" problem (object vs meta level fiction)
-- The reframing: raising effects vs handling effects
-- The mapping to algebraic effects (Plotkin & Pretnar 2009)
-- Every "porous boundary" case dissolves
-- Refined effect signatures (implementation vs interface types)
-- Store comonad extend: what it actually captures (handler's design space)
-- The punchline: regulation ≠ prediction (setup for post 5)
-- The Conant-Ashby connection: the handler doesn't predict, it handles
+**Key decisions made:**
+- Entry from post 3's closing ("these are effects — who handles them?")
+- Stripped all formal-framework section references
+- Continuation claim fixed: Inferencer isn't suspended, Harness simulates continuation through context reconstruction — turns a technical inaccuracy into an interesting observation about how the handler maintains the illusion of continuity
+- "Interface IS implementation" claim removed — contradicts the post's own thesis
+- "Session type" → "permission configuration" — series vocabulary
+- "Connection to existing framework" section cut (formal companion material)
+- Effect signatures table references four actors and grade vocabulary, not propositions
 
 ---
 
-## 5. Predictability as Embeddability
+## 5. Predictability as Embeddability ✅
 
 **File:** `05-predictability-as-embeddability.md`
-**Condensed from:** `blog/predictability-as-embeddability.md` (594→~250 lines)
+**Status:** Written, reviewed, revised
 
-The monad morphism preorder as the formal tool for comparing actors.
-What it means for one actor to be "more predictable" than another.
+The monad morphism preorder. Three conditions. Ocap parallel. Why formalize.
 
-**Content:**
-- The monad morphism preorder: M ≤ N iff N can embed M's effects
-- Trust flows down the preorder; opacity flows up
-- Three conditions for prediction: embeddability + accessibility + tractability
-- The open-weights Inferencer: has 1+2, fails 3 (simulation = replication)
-- Interface ma vs internal ma: independent levers
-- Co-domain funnels: high internal ma → low interface ma (quartermaster,
-  auditor, sub-agent boundary)
-- The configuration lattice → grade → interface ma causal chain
-- Design principles: restrict tools not models; funnels need high-internal
-  low-interface
+**Key decisions made:**
+- Opens with "Why formalize" — addresses the question head-on at the point of maximum formality
+- IO confession: honest that IO at top "characterizes by declining to characterize"
+- IO refinement: three things collapsed (what enters, what it can do to world, what exits) — teases post 7
+- Bare vs agentic Inferencer distinction in both tables
+- Ocap parallel (Miller) kept — too good for companion; validates from security theory
+- Co-domain funnels deepened from post 2's mention into design principle
+- Configuration → Grade → Interface ma causal chain made explicit
+- Closing teases the dynamic problem: coupled recurrence, grade can grow over time
 
 ---
 
 ## 6. Conversations Are Folds
 
 **File:** `06-conversations-are-folds.md`
-**Mostly as-is from:** `blog/conversations-are-folds.md`
+**Source:** `blog/conversations-are-folds.md`
+**Status:** Not yet written
 
 The dynamical turn. Static structure (posts 2-5) meets temporal evolution.
 
+**Entry point:** Post 5's closing — "everything so far is static, but real
+conversations have a coupled recurrence."
+
 **Content:**
-- Every inference call is stateless
-- The conversation is foldl step initial_state turns
-- Context is input, not decision surface (d_reachable vs d_total)
-- The composite entity (StateT Conv_State IO)
-- Grade as a coupled recurrence: g(n+1) = F(g(n), config(n))
+- Every inference call is stateless (callback to post 1)
+- The conversation is `foldl step initial_state turns`
+- Context is input, not decision surface: d_reachable vs d_total
+- The composite entity (`StateT Conv_State IO` for the Harness)
+- Grade as a coupled recurrence: `g(n+1) = F(g(n), config(n))`
 - The Harness as dynamical system controller
-- The one-shot join was always the right composition
+- The one-shot join (post 2) was always the right composition — it measures
+  one step; the fold composes the steps
+
+**Watch for:**
+- The fold model should connect to post 4's context-reconstruction insight
+  (each fold step is a fresh call with reconstructed context)
+- d_reachable vs d_total is new and important — the Inferencer's reachable
+  decision surface grows with context length even though total (weights) is fixed
+- Don't re-derive the grade lattice; use it as established vocabulary
+- The "composite entity" framing should build on post 4's handler framing
+  (the fold step IS the handler processing one turn)
 
 ---
 
 ## 7. Computation Channels
 
 **File:** `07-computation-channels.md`
-**Mostly as-is from:** `blog/computation-channels.md`
+**Source:** `blog/computation-channels.md`
+**Status:** Not yet written
+
+The IO refinement that post 5 teased. What the computation can do TO the world.
+
+**Entry point:** Post 6's coupled recurrence raises the question: what
+determines whether the grade trajectory is bounded or self-amplifying?
 
 **Content:**
 - Data channels vs computation channels
-- The 9-level taxonomy (0-8)
+- The 9-level taxonomy (0-8): structured query → arbitrary code execution → controller modification
 - Three phase transitions: mutation, amplification, escape from fold
-- The computation level is the derivative of the grade trajectory
-- The star topology is an aspiration (breaks at level 6+)
-- The sandbox becomes the load-bearing boundary
+- The computation level as derivative of the grade trajectory
+- The star topology as aspiration (breaks at level 6+)
+- The sandbox as the load-bearing boundary
+
+**Watch for:**
+- This is the post that delivers on the IO refinement promise from post 5
+- observe → modify → generate spectrum maps to the taxonomy levels
+- The bare vs agentic Inferencer distinction (post 5) becomes concrete here:
+  different tool sets place you at different computation channel levels
+- Connect to post 4: tools that accept agent-generated text as executable
+  specification (Bash, eval) are where the handler's finite strategies face
+  their hardest test
 
 ---
 
 ## 8. The Specified Band
 
 **File:** `08-the-specified-band.md`
-**Mostly as-is from:** `blog/the-specified-band.md`
+**Source:** `blog/the-specified-band.md`
+**Status:** Not yet written
+
+The resolution. How can the Harness stay characterizable while mediating
+actors that can change the world?
+
+**Entry point:** Post 7 showed that computation channels can break the star
+topology. How does regulation survive?
 
 **Content:**
 - The wrong worry (monitoring erodes characterizability)
-- The OS existence proof: (open, specified) is viable
+- The OS existence proof: (open, specified) is viable for regulators
 - The specified band across the full world coupling axis
 - Layered regulation: constraint, observation, policy
 - Capability publishing keeps the Harness specified
 - The SELinux coda: constraints must be projected into actor scope
 - The Ashby resolution: variety reduction, not variety matching
+
+**Watch for:**
+- This is the payoff post — it should feel like a resolution, not more theory
+- The OS parallel is the strongest example in the series; give it room
+- Connect back to post 1's claim: "the Harness belongs at the hub because
+  its behavior is characterizable" — this post explains how it STAYS
+  characterizable under pressure
+- The Ashby resolution should feel like it closes the loop opened in post 2
+  (where Ashby was introduced)
 
 ---
 
@@ -188,6 +223,7 @@ The dynamical turn. Static structure (posts 2-5) meets temporal evolution.
 
 **File:** `formal-companion.md`
 **Rewrite of:** `blog/formal-framework.md` (1354→~600 lines)
+**Status:** Not yet written
 
 Not a blog post. Pure formal development: definitions, propositions, proofs,
 open problems. No narrative. No worked examples (those live in post 1).
