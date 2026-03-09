@@ -230,19 +230,71 @@ The compound's world coupling is at least as broad as either component's. Its de
 
 ### 4.3 Supermodularity
 
-**Conjecture 4.5 (Supermodularity of characterization difficulty).** The characterization difficulty `chi : W x D → R` — how hard it is for an external observer to predict the actor's behavior — is supermodular:
+**Definition 4.5 (Effective input dimensionality and path count).** For an actor with grade `(w, d)`:
+
+- `I(w)` is the number of distinguishable world states that can influence the computation at world coupling level `w`. Monotone non-negative: `w_1 <= w_2 ==> I(w_1) <= I(w_2)`.
+- `P(d)` is the number of distinguishable execution paths at decision surface level `d`. Monotone non-negative: `d_1 <= d_2 ==> P(d_1) <= P(d_2)`.
+
+These are the scalar projections of the lattice levels onto measurable quantities. `I(sealed) = 1` (only explicit input). `P(literal) = 1` (one path). `I(open)` and `P(trained)` are large.
+
+**Definition 4.6 (Characterization difficulty).** Under the **independence model** — each of `I(w)` distinguishable inputs can independently steer the computation through any of `P(d)` paths — the number of distinguishable input-output behaviors is `P(d)^I(w)`. The characterization difficulty is:
 
 ```
-chi(w_1 V w_2, d_1 V d_2) + chi(w_1 ^ w_2, d_1 ^ d_2) >= chi(w_1, d_1) + chi(w_2, d_2)
+chi(w, d) = I(w) . log P(d)
 ```
 
-Equivalently: the marginal effect of increasing one axis is greater when the other is already high. Sandboxing (reducing `w`) has greater returns when `d` is large. Tool restriction has greater returns when both axes are high.
+This is the log of the number of distinguishable behaviors: how many bits an observer needs to identify which function the system implements, out of all functions its architecture could implement.
 
-**Gap.** This is the formal content of "restriction is load-bearing" (blog post 2). It is stated precisely enough to test — one could measure observer prediction error as axes vary — but `chi` itself has no closed-form definition. A proof would require defining `chi` in terms of the decision surface and world coupling measures. An empirical test could provide evidence.
+**Proposition 4.7 (Supermodularity).** `chi(w, d) = I(w) . log P(d)` is supermodular on `W x D`.
+
+*Proof.* For `w_1 <= w_2` and `d_1 > d_2` (the incomparable case — comparable cases give equality):
+
+```
+chi(w_2, d_1) + chi(w_1, d_2) - chi(w_1, d_1) - chi(w_2, d_2)
+  = (I(w_2) - I(w_1)) . (log P(d_1) - log P(d_2))
+  >= 0
+```
+
+Both factors are non-negative by monotonicity of `I` and `P`. QED
+
+**Corollary 4.8 (Marginal returns of restriction).**
+
+Reducing world coupling from `w_2` to `w_1` saves:
+
+```
+delta_chi = (I(w_2) - I(w_1)) . log P(d)
+```
+
+Proportional to `log P(d)` — sandboxing saves more when the decision surface is large.
+
+Reducing decision surface from `d_2` to `d_1` saves:
+
+```
+delta_chi = I(w) . (log P(d_2) - log P(d_1))
+```
+
+Proportional to `I(w)` — tool restriction saves more when world coupling is broad.
+
+**Corollary 4.9 (The specified band).** When `d = specified`, `log P(specified)` is small (bounded by the log of the rule count). So `chi(w, specified) = I(w) . (small constant)`. Characterization difficulty grows linearly with world coupling, not superlinearly. This is the formal content of Proposition 10.3: the cross-term does not activate in the specified band because one factor is small.
+
+**Remark (The independence assumption).** The proof assumes independent path selection — each input can steer the computation through any path regardless of other inputs. This is the maximum-capacity model, giving an upper bound on actual characterization difficulty.
+
+In practice, paths are correlated: many inputs activate the same path (especially for small decision surfaces). Correlation reduces `chi` below the product bound. But correlation is itself monotone in `d` — smaller decision surface means more correlation (fewer paths, more inputs sharing each). Relaxing independence to correlated path selection reduces `chi` overall while preserving supermodularity, because the correlation discount is larger at low `d` (where supermodularity already gives low values) than at high `d`.
+
+The independence model is generous but not unrealistic for trained systems: a deep network's piecewise-linear regions partition the input space into cells that independently determine the computation path. The number of cells (Montufar et al. 2014) grows exponentially with depth, and each cell's path is determined by which ReLUs are active — genuinely independent steering per input region.
+
+**Remark (Design functions over chi).** The framework tells you that restriction reduces `chi`, and that the reduction is superlinear. It does not tell you *how much* restriction is optimal — because that depends on what you're trading `chi` against. Practical system design requires functions over the components:
+
+- *Regulatory cost* `R(chi)`: how much effort the Harness must expend to maintain characterizability. Monotone in `chi`.
+- *Capability value* `V(I(w), P(d))`: the usefulness of the computation to the Principal. Also monotone — more world access and more paths generally mean more capable systems.
+- *Risk exposure* `rho(chi, level)`: potential harm if regulation fails, depending on `chi` and the computation channel level (section 9). A level-4 system with high `chi` has qualitatively different risk than a level-0 system with the same `chi`.
+- *Operational cost* `C(I(w))`: budget consumed, proportional to context length, which is a proxy for `I(w)`.
+
+The optimal operating point minimizes something like `R(chi) + rho(chi, level) - V(I(w), P(d))` subject to `C(I(w)) <= budget`. The supermodularity of `chi` means restriction has convex returns in this optimization — small restrictions at high grade save disproportionately more than the same restrictions at low grade. Formalizing this optimization is future work (section 12).
 
 ### 4.4 Interface ma vs internal ma
 
-**Definition 4.6 (Interface ma and internal ma).**
+**Definition 4.10 (Interface ma and internal ma).**
 
 ```
 ma_internal(A) = grade(A)                         -- the actor's path space
@@ -262,11 +314,11 @@ Internal ma determines decision quality. Interface ma determines auditability.
 
 ### 4.5 Co-domain funnels
 
-**Definition 4.7 (Co-domain funnel).** A co-domain funnel is an actor where `ma_internal >> ma_interface` — the implementation is strictly richer than the interface. The funnel compresses high internal ma through a constrained output type.
+**Definition 4.11 (Co-domain funnel).** A co-domain funnel is an actor where `ma_internal >> ma_interface` — the implementation is strictly richer than the interface. The funnel compresses high internal ma through a constrained output type.
 
 Examples: an Opus auditor with `{Approve, Reject}`, a sub-agent whose full conversation compresses to `Either(Result, Error)`, a tool-selection agent that outputs a finite kit.
 
-**Proposition 4.8 (Funnels as monad morphisms).** For actors with well-defined implementation monads, the funnel is a monad morphism `eta : M_impl ~> M_iface` that is surjective on the co-domain (every output is reachable) and lossy (many internal states map to the same output). See section 6.3.
+**Proposition 4.12 (Funnels as monad morphisms).** For actors with well-defined implementation monads, the funnel is a monad morphism `eta : M_impl ~> M_iface` that is surjective on the co-domain (every output is reachable) and lossy (many internal states map to the same output). See section 6.3.
 
 ---
 
@@ -322,7 +374,7 @@ Harness's control          Actor's path        Interface effect type
 What Harness gives         What actor IS       What others see
 ```
 
-Configuration bounds grade (Prop. 5.3). Grade bounds interface ma (Prop. 4.8, direction). The scope lattice is the first component of the configuration lattice — a projection, not a separate ordering.
+Configuration bounds grade (Prop. 5.3). Grade bounds interface ma (Prop. 4.12, direction). The scope lattice is the first component of the configuration lattice — a projection, not a separate ordering.
 
 **Proposition 5.5 (Harness as grade reduction).** A Harness operation `H` applied to actor `B`:
 
@@ -561,7 +613,7 @@ Not all tools are data channels. Some are computation amplifiers. Blog post 7 de
 
 **Proposition 9.5 (Sandbox controls dynamics).** The sandbox determines which phase transitions are reachable. A tool set including `Bash` with full sandbox access operates at levels 0-8. The same `Bash` with read-only, network-isolated sandbox caps at level 2. Same tool, radically different dynamics.
 
-This is supermodularity (Conj. 4.5) applied to sandbox configuration: restricting the sandbox of a computation-channel tool does not just reduce world coupling — it eliminates phase transitions. A qualitative shift in what kind of regulatory problem the Harness faces.
+This is supermodularity (Prop. 4.7) applied to sandbox configuration: restricting the sandbox of a computation-channel tool does not just reduce world coupling — it eliminates phase transitions. A qualitative shift in what kind of regulatory problem the Harness faces.
 
 ### 9.5 Regulation at level 4+
 
@@ -587,7 +639,7 @@ Every actor in this band — regardless of world coupling — has a transparent 
 
 **Proposition 10.2 (Characterizability vs auditability).** Characterizability is qualitative: is the decision surface specified at all, or opaque? Auditability is quantitative: how much specified logic must you read? An OS kernel at `(open, specified)` is as characterizable *in kind* as a simple Harness at `(scoped, specified)`. The kernel is harder to audit (more rules) but not harder to characterize (still transparent).
 
-**Proposition 10.3 (World coupling growth in the specified band).** For actors in the specified band, characterization difficulty scales with the *size* of the specification — more rules, more state to track — not exponentially with world coupling. The supermodular cross-term (Conj. 4.5) does not activate because the decision surface is transparent.
+**Proposition 10.3 (World coupling growth in the specified band).** For actors in the specified band, characterization difficulty scales with the *size* of the specification — more rules, more state to track — not exponentially with world coupling. The supermodular cross-term (Prop. 4.7) does not activate because the decision surface is transparent.
 
 ### 10.2 Layered regulation
 
@@ -723,9 +775,9 @@ The grade trajectory `g(n+1) = F(g(n), config(n))` is stated (Prop. 8.6) but `F`
 
 The nine-level taxonomy (Def. 9.3) is descriptive. A formal characterization — perhaps via the Chomsky hierarchy of the specification language each tool accepts, or via the expressiveness of the tool's input language — would give precise phase transition boundaries and connect to computability theory.
 
-### 12.3 Supermodularity proof or counterexample (high priority)
+### 12.3 Supermodularity: relaxing the independence assumption (medium priority)
 
-Conjecture 4.5 is testable. Define `chi` precisely (perhaps as observer prediction error given partial information about grade components) and prove or disprove supermodularity. An empirical study measuring prediction difficulty as axes vary could provide evidence.
+Proposition 4.7 proves supermodularity under the independence model (`chi = I(w) . log P(d)`). The independence assumption — each input independently steers the computation — is generous. Two directions: (a) prove supermodularity under a weaker correlation model where inputs share paths, and (b) empirically measure `chi` (observer prediction error) as grade components vary to test whether the product form is a good approximation or a loose bound.
 
 ### 12.4 Parallel execution in pi-calculus (medium priority)
 
@@ -751,7 +803,11 @@ The log may need partial ordering rather than total ordering when promises injec
 
 The `Mem(A) = MemStore -> A x MemStore` monad outlives the conversation monad — an inverted transformer stack where the persistent outer monad has longer lifetime than the ephemeral inner monad. The interaction pattern may be a monad morphism between conversation and persistence monads.
 
-### 12.10 Mechanical verification (aspirational)
+### 12.10 Design functions over characterization difficulty (lower priority)
+
+The scalar `chi(w, d)` invites optimization. Natural design functions: regulatory cost `R(chi)` (monotone — harder to characterize means costlier to regulate), capability value `V(I(w), P(d))` (what the system can accomplish), risk exposure `rho(chi, level)` (combining characterization difficulty with computation channel level), operational cost `C(I(w))` (world coupling has infrastructure cost). The optimal operating point is a constrained optimization: maximize `V` subject to `R(chi) <= budget` and `rho <= threshold`. Supermodularity of `chi` means the feasible region has interesting geometry — restriction on one axis relaxes the constraint on the other superlinearly.
+
+### 12.11 Mechanical verification (aspirational)
 
 None of this has been verified in Agda, Lean, or Coq. The monad/comonad definitions, Kleisli structure, and session types are the most amenable to mechanization. The grade lattice and coupled recurrence would require more novel encoding.
 
