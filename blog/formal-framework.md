@@ -429,13 +429,21 @@ where `K` is Kolmogorov complexity and `desc(M(O))` is a description of the set 
     η . return_M = return_N
     η . join_M = join_N . η . fmap(η)
 
-**Proposition 11.4 (Monad morphisms order *ma*).** If there exists a monad morphism `η : M ~> N`, then `ma(M) ≤ ma(N)`. The morphism embeds the smaller co-domain into the larger one.
+**Definition 11.4 (Ma ordering, formal).** Define the *ma* preorder on monads:
+
+    M ≤_ma N  iff  there exists a monad morphism η : M ~> N
+
+The existence of such a morphism means that every effectful computation in `M` can be embedded in `N` — that `N` can simulate everything `M` can do. The morphism witnesses the embedding.
 
 The embeddings along the gradient:
 - `Identity ~> Maybe` : `a ↦ Just(a)` — every pure value is a non-absent value
 - `Maybe ~> Either` : `Just(a) ↦ Right(a), Nothing ↦ Left(default)` — absence as a specific error
 - `Either ~> State` : a pure error/value computation is a degenerate stateful computation
 - `State ~> IO` : stateful computation over a known state type embeds into world-dependent computation
+
+**Remark (why not Kolmogorov complexity directly).** Definition 11.2 uses K-complexity as the *intuition* for *ma* — how much information is needed to describe the output space. But K-complexity doesn't respect embedding in general. Consider `State S ~> IO`: if `S` is a complex type, `K(desc(State(S,O)))` could be *higher* than `K(desc(IO(O)))`, because "all possible computations" is a short description while "functions from a complex state space to pairs" is long. The simpler-to-describe monad is the *richer* one.
+
+This is not a paradox — it reflects that K-complexity measures description length, not expressiveness. The monad morphism preorder captures expressiveness directly: `M ≤_ma N` means `N` is at least as expressive as `M`. We use this as the formal ordering, and K-complexity as the informal motivation that works well for the standard examples (Identity through IO).
 
 **Caveat.** This ordering is partial, not total. `Writer` and `State` model orthogonal axes (accumulation vs. threading). `Cont` is incomparable to most. The ordering is meaningful specifically for monads that characterize *output spaces* — the axis relevant to *ma*.
 
@@ -657,20 +665,33 @@ Restricting an actor's configuration (narrower scope *and* fewer tools) cannot i
 
 The key insight from Part 3: *ma* is measured at the **interface**, not inside the actor. This section formalizes the distinction.
 
-### 13.1 The interface boundary as a monad morphism
+### 13.1 The interface boundary
 
-**Definition 13.1 (Implementation monad).** Every actor `A` has an *implementation monad* `M_impl` that describes its internal computational structure — its full monad transformer stack. For a language model, this includes attention, sampling, chain-of-thought. For the Harness, it includes state management, rule evaluation, configuration lookup.
+**Definition 13.1 (Implementation monad).** For an actor `A` whose internal computation can be described as a monad, define `M_impl` as its *implementation monad* — the monad (or monad transformer stack) that characterizes its internal effects.
 
-**Definition 13.2 (Interface monad).** Every actor `A` has an *interface monad* `M_iface` that describes its output space as seen by other actors. This is determined by the actor's interface type — its tool signature, its output format, its co-domain.
+For some actors this is well-defined:
+- **Harness**: `State Conv_State` (or a transformer stack including error handling, configuration lookup)
+- **Executor**: `IO_W` for the appropriate world `W`
+- **Sub-agent**: `Conv_s` (a scoped conversation monad with its own turn loop)
 
-**Proposition 13.3 (Interface as monad morphism).** The interface boundary is a monad morphism:
+For others it is not:
+- **Inferencer**: "Attention + sampling + chain-of-thought" is not a standard monad. We can *choose* to model it as `Distribution` (the probabilistic monad) or `State Weights`, but these are approximations, not descriptions of the actual computation.
+- **Principal**: Human cognition has no monad. `IO` is a catch-all, not a characterization.
+
+**Definition 13.2 (Interface monad).** Every actor `A` has an *interface monad* `M_iface` that describes its output space as seen by other actors. This is determined by the actor's interface type — its tool signature, its output format, its co-domain. This is always well-defined: the interface is what other actors actually observe.
+
+**Proposition 13.3 (Interface boundary for monadically-characterized actors).** For actors whose implementation monad `M_impl` is well-defined, the interface boundary is a monad morphism:
 
     η_A : M_impl ~> M_iface
 
-This morphism is the formal structure of the interface. It maps the actor's rich internal computation to the constrained output space visible externally. The morphism is:
+This morphism maps internal computation to constrained external output. It is:
 - **Surjective** on the co-domain (every interface output can be produced)
 - **Lossy** (many internal states map to the same interface output)
 - **Structure-preserving** (sequential composition inside maps to sequential composition outside)
+
+For the Harness (`State Conv_State ~> HarnessAction`) and Executors (`IO_W ~> Either E Result`), this is genuine: the implementation monad is standard, the interface monad is standard, and the morphism preserves monadic structure.
+
+**Convention 13.3a (Interface boundary for opaque actors).** For the Inferencer and Principal, we *model* the interface boundary as if it were a monad morphism `η : M_impl ~> M_iface`, with `M_impl` chosen to approximate the actor's internal complexity. This is a modeling convention, not a mathematical claim — it lets us reason uniformly about all actors, at the cost of treating the Inferencer's internals as a black box with an assumed monadic structure. The useful properties (surjective, lossy) hold regardless of whether `M_impl` is genuinely a monad. What we lose is the guarantee that composition is preserved: we don't know that sequential inference steps compose the way monadic `bind` does.
 
 ### 13.2 Internal ma and interface ma
 
@@ -723,7 +744,7 @@ The internal architecture of the Inferencer mirrors the conversation architectur
 
     extract → process → inject
 
-The interface between levels is a monad morphism from the implementation level to the interface level. Each actor's implementation is itself a conversation-like system. The interface peels off the outer layers of the implementation's monad transformer stack, exposing only the interface monad.
+The interface between levels is the boundary morphism from Section 13.1 — a monad morphism for actors with well-defined implementation monads (Prop. 13.3), a modeling convention for opaque actors (Conv. 13.3a). Each actor's implementation is itself a conversation-like system. The interface peels off the outer layers, exposing only the interface monad.
 
 ```
 Level 0 (conversation): Principal ←→ Harness ←→ Inferencer ←→ Executors
@@ -875,26 +896,98 @@ This connects to the configuration lattice (Section 12.8): a `Grant` moves the c
 | Parallel tools | Not modeled | π-calculus: concurrent processes with private channels |
 | Scope extrusion | Mentioned (Section 9) | Permission grants are channel extrusion events |
 
-### 15.6 Promises and backgrounded tasks (deferred)
+### 15.6 Promises and backgrounded tasks
 
-The session type above assumes synchronous execution: the Harness waits for tool results before continuing. But Claude Code supports **backgrounded tasks** — the Harness dispatches an agent, continues the conversation, and injects the result later.
+The session type above assumes synchronous execution: the Harness waits for tool results before continuing. But Claude Code supports **backgrounded tasks** — the Harness dispatches an agent, continues the conversation, and injects the result later. This section sketches the formal structure, stopping short of a full treatment.
 
-In π-calculus terms, the promise variant replaces the barrier with independent injection:
+#### The future type
+
+**Definition 15.3 (Conversation future).** A future in the conversation monad is a handle to an in-progress computation:
+
+```
+data Future A = Pending TaskHandle | Resolved A | Failed Error
+```
+
+The Harness maintains a set of outstanding futures: `promises : Set(Future(Result))`. When a task is backgrounded rather than awaited, the Harness creates a `Pending` handle and continues the conversation without the result. The conversation state becomes:
+
+```
+Conv_State = (Log, Budget, Scope_config, Promises)
+```
+
+where `Promises : Set(Future(Result))` tracks the outstanding work.
+
+#### The π-calculus encoding
+
+In the synchronous case (Section 15.3), the barrier collects all results before continuing:
+
+```
+r₁(res₁).r₂(res₂).continue⟨res₁, res₂⟩
+```
+
+The promise variant replaces the barrier with independent injection:
 
 ```
   | r₁(res₁).inject⟨res₁⟩ | r₂(res₂).inject⟨res₂⟩ | ... | continue⟨⟩
 ```
 
-Each result is injected when it arrives. The continuation doesn't wait. The Harness controls *when* and *how* each injection enters the conversation — it might batch them, summarize them, or defer them.
+Each result is injected when it arrives. The continuation doesn't wait. But unlike the synchronous case, the `inject` process now has **Harness agency** — it's not just appending to the log. The Harness decides:
 
-A full formalization would need:
-- A **future type** in the conversation monad: `Future(A)` representing a value that will arrive later
-- A **resolution protocol**: the session type for how the Harness injects resolved futures
-- **Temporal ordering**: the log becomes a merge of concurrent streams, and the Harness controls the interleaving
+- **When** to inject (immediately? at next turn boundary? when the Inferencer is idle?)
+- **How** to inject (raw result? summarized? batched with other resolved futures?)
+- **Whether** to inject at all (the conversation may have moved on, making the result irrelevant)
 
-This interacts with the Store comonad in interesting ways: after a promise resolves, the stored function `view` changes (the conversation now contains new information), which changes what `extract` returns for every scope. A resolved promise is a **comonad modification** triggered by an **asynchronous monadic event**. The interaction between these structures is an open problem — likely requiring the distributive law from Conjecture 12.4 or something stronger.
+This agency is what makes promises fundamentally different from barriers. The barrier is a synchronization primitive; the promise is a **scheduling decision** by an actor with its own (minimal) *ma*.
 
-We defer this to future work. The synchronous protocol captures the common case; the asynchronous extension is where the real complexity lives.
+#### The resolution session type
+
+**Definition 15.4 (Promise resolution protocol).** When a future resolves, the Harness runs an internal protocol:
+
+```
+type PromiseResolution =
+    Background → Harness  : TaskComplete(handle, result)
+  ; Harness   → Harness   : EvaluateRelevance(result, current_state)
+  ; case relevance of
+      Immediate → Harness → Inferencer : InjectedResult(result)
+                ; -- co-domain: expands by the backgrounded task's output space
+      Deferred  → Harness → Harness   : Enqueue(result)
+                ; -- co-domain: unchanged until injection
+      Discarded → Harness → Harness   : Drop(result)
+                ; -- co-domain: unchanged; the promise's co-domain contribution is lost
+```
+
+The `Discarded` branch is notable: it's the only place in the framework where a co-domain *contraction* happens at the object level (as opposed to meta-level compaction). The Harness decides that a resolved future's co-domain expansion isn't worth the budget cost, and suppresses it.
+
+#### Interaction with the Store comonad
+
+This is where the real complexity lives. In the synchronous turn cycle (Section 12.3):
+
+```
+(view, s) ──extract──→ FocusedView ──actor──→ Output ──bind──→ Conv(Output)
+```
+
+the `view` function is stable within a turn — it changes only at meta-level boundaries (compaction, scope reconfiguration). With promises, `view` can change *asynchronously*: a resolved promise adds information to the log, which changes what `extract` returns for every scope position.
+
+A resolved promise is a **comonad modification** triggered by an **asynchronous monadic event**:
+
+1. The monadic event: `bind(resolved_result, inject)` appends the result to the log
+2. The comonadic effect: the stored function `view` now includes the new log entry, so `extract(view, s)` returns different `FocusedView`s for all scopes
+3. The timing: this modification happens *between* or *during* other actors' turns, not at a clean phase boundary
+
+In synchronous execution, the Store comonad and conversation monad alternate cleanly: extract, then process, then inject, then extract again. With promises, they overlap: a monadic injection (resolved promise) changes the comonadic structure (the view function) while the Inferencer might be mid-turn. The Harness must ensure coherence — that the Inferencer's current extraction isn't invalidated by an injection it hasn't seen.
+
+**Conjecture 15.5 (Promise coherence).** The Harness maintains coherence by restricting promise injection to turn boundaries — the same phase boundaries where meta-level operations (compaction, scope reconfiguration) are allowed. This means promises don't introduce new concurrency into the Store-Writer interaction; they introduce new *scheduling* decisions about when to trigger the existing turn-boundary mechanisms.
+
+If this conjecture holds, promises are "just" a scheduling layer over the synchronous formalism — the formal structure of each turn is unchanged, and the Harness's agency is in choosing *which* turns include injected results. If it doesn't hold (if promises must be injected mid-turn), then the interaction requires the distributive law from Conjecture 12.4 or something stronger — a formal account of how monadic events and comonadic extractions compose when they overlap in time.
+
+#### What remains open
+
+The sketch above captures the structure but defers three hard problems:
+
+1. **The interleaving semantics.** The log becomes a merge of concurrent streams (Section 16, Phase 5 in Part 2). The Harness controls the interleaving. Formalizing this requires a notion of *partial orders on log entries* rather than the total order assumed by the free monoid (Def. 1.2). The log monoid may need to be replaced by a *partially ordered multiset* or a *concurrent log* structure.
+
+2. **Budget accounting for futures.** A backgrounded task consumes budget (tokens, time, tool calls) outside the current turn's accounting. The linear resource model (Section 10.3) needs extension to track budget committed to outstanding promises vs. budget available for the current conversation.
+
+3. **The free monad connection.** A `Pending` future is "a computation that hasn't been evaluated yet" — structurally similar to the free monad's suspension of effects. Whether the promise set forms a free monad over the conversation monad (with `inject` as the interpreter) is an intriguing structural question.
 
 ---
 
@@ -1074,7 +1167,7 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 
 **"The architecture is self-similar."** *Formalized.* The fractal architecture (Section 14) identifies the `extract → process → inject` cycle at every level of nesting. The interface between levels is a monad morphism (Prop. 14.2). The Executor's world lattice (Prop. 14.3) shows that the Harness constructs not just the Inferencer's scope but the Executor's world.
 
-**"Determinism is a context window of size one."** *Formalized.* The co-domain gradient (Def. 11.1) gives a partial order on monads. The blog post's claim is that this ordering is a continuum. The formalization shows it's a partial order (not total — some effects are incomparable) with monad morphisms between adjacent levels (Prop. 11.4). The "dial" metaphor is valid along the co-domain complexity axis.
+**"Determinism is a context window of size one."** *Formalized.* The co-domain gradient (Def. 11.1) gives a partial order on monads. The blog post's claim is that this ordering is a continuum. The formalization shows it's a partial order (not total — some effects are incomparable) with monad morphisms between adjacent levels (Def. 11.4). The "dial" metaphor is valid along the co-domain complexity axis. Note: the formal ordering is via monad morphism existence, not K-complexity — the two agree on standard examples but diverge in general (see Remark after Def. 11.4).
 
 **"The quartermaster constructs capture lists."** *Formalized.* The quartermaster is a Kleisli morphism that produces a scope (Def. 8.1). The factorization through Kit (Prop. 8.3) is standard. The new contribution: the quartermaster is a co-domain funnel (Section 13.3) — it uses internal *ma* to restrict interface *ma* for the worker.
 
@@ -1082,11 +1175,11 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 
 ### What might be novel:
 
-1. ***Ma* as co-domain characterizability on the monad ordering** (Section 11). The single axis that explains all four actor roles, grounded in a partial order on monads via monad morphisms. This connects informal design intuitions ("put the deterministic thing at the hub") to sixty years of PL theory.
+1. ***Ma* as co-domain characterizability on the monad ordering** (Section 11). The single axis that explains all four actor roles, grounded in a preorder on monads via monad morphisms (Def. 11.4). K-complexity motivates the intuition; the monad morphism preorder does the formal work. This connects informal design intuitions ("put the deterministic thing at the hub") to sixty years of PL theory.
 
 2. **The monad-comonad duality for agent architecture** (Section 12). Expansion is monadic, compression is comonadic, the Harness lives at the boundary. This is a new application of a known duality to a new domain.
 
-3. **Interface *ma* vs. internal *ma*** (Section 13). The distinction between co-domain characterizability at the interface and at the implementation level, formalized as a monad morphism between implementation and interface monads. The independence of quality (internal) and auditability (interface) is architecturally significant.
+3. **Interface *ma* vs. internal *ma*** (Section 13). The distinction between co-domain characterizability at the interface and at the implementation level. For actors with well-defined implementation monads (Harness, Executors, sub-agents), the boundary is a genuine monad morphism (Prop. 13.3). For opaque actors (Inferencer, Principal), it's an explicitly acknowledged modeling convention (Conv. 13.3a). The independence of quality (internal) and auditability (interface) is architecturally significant.
 
 4. **Co-domain funnels as monad morphisms** (Section 13.3). The quartermaster, auditor, and sub-agent boundary as instances of a single pattern: rich implementation monad mapped to constrained interface monad.
 
@@ -1122,9 +1215,11 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 
 7. **The relationship between `/memory` and the conversation monad.** The inverted transformer stack (persistent State outlives ephemeral Writer) needs formal treatment. The interaction pattern looks like a monad morphism between conversation and persistence monads.
 
-8. **Promises and backgrounded tasks** (Section 15.6). The synchronous protocol is formalized; the asynchronous extension (futures, deferred injection, the Harness controlling interleaving of concurrent streams) is deferred. This likely requires the distributive law from Conjecture 12.4 or something stronger.
+8. **Promises and backgrounded tasks** (Section 15.6). The future type, resolution session type, and π-calculus encoding are sketched. Three hard problems remain: interleaving semantics (the log may need partial ordering rather than total), budget accounting for outstanding futures, and the free monad connection. The promise coherence conjecture (Conj. 15.5) — that injection is restricted to turn boundaries — would reduce promises to a scheduling layer over the synchronous formalism.
 
-9. **Mechanical verification.** None of this has been verified in Coq or Agda.
+9. **K-complexity vs. monad morphism ordering** (Def. 11.2 vs. Def. 11.4). The informal definition of *ma* uses Kolmogorov complexity; the formal ordering uses monad morphisms. These agree on standard examples (Identity through IO) but diverge in general — `IO` is "richer" than `State S` but may have a *shorter* description. Whether there's a natural condition under which they agree (e.g., for monads whose description includes the state type) is open.
+
+10. **Mechanical verification.** None of this has been verified in Coq or Agda.
 
 ---
 
