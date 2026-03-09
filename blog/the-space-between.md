@@ -308,7 +308,7 @@ The formal machinery (parameterized monads, π-calculus, session types) from the
 
 **How do the monad and comonad interact formally?** Distributive laws between monads and comonads (Brookes & Geva, Uustalu & Vene) give composition rules. Is there a distributive law for the conversation monad and the scope comonad? This would tell us how expansion and compression compose — the formal structure of a turn.
 
-**What's the right comonad?** The `Store` comonad (focused position in a structure), the `Env` comonad (read-only environment), and the `Cofree` comonad (annotated trees) are all candidates. The conversation might be a `Cofree` comonad over the message type — a tree of messages with annotations (token counts, compaction markers, scope metadata) at every node.
+**What's the right comonad?** The `Store` comonad fits: `Store Scope FocusedView` where the position selects which scope to apply and the stored function maps every scope to its projected view. `extract` gives the actor its focused view; `duplicate` gives the Harness access to every possible extraction; `extend inference` computes the counterfactual "what would inference produce under each possible scoping?" See Part 4, Section 12 for the formal development.
 
 ---
 

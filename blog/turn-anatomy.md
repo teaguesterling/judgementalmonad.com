@@ -227,36 +227,32 @@ This protocol composes: N parallel tool calls are N parallel instances of this p
 
 | Turn Phase | Framework Section | Status |
 |---|---|---|
-| Inference (Inferencer internal) | *ma* as co-domain complexity | Clean — intrinsic *ma* |
-| Proposal (tool calls) | Kleisli morphisms (Section 6) | Clean — effectful functions |
-| Permission gate | **Not modeled** | Needs session types or protocol model |
-| Tool execution | Parameterized monad (scope-transitions.md) | Partially — Executors are degenerate agents |
+| Inference (Inferencer internal) | *ma* as co-domain complexity (Part 4, §11) | Clean — intrinsic *ma* |
+| Proposal (tool calls) | Kleisli morphisms (Part 4, §6) | Clean — effectful functions |
+| Permission gate | Session types (Part 4, §15.1) | Clean — branching protocol with co-domain effects |
+| Tool execution | Parameterized IO (Part 4, §11.4) | Clean — Executor's world determined by Harness |
+| Parallel execution | π-calculus (Part 4, §15.3) | Clean — private channels, name restriction |
 | Barrier collection | Kleisli composition | Clean — sequential |
-| Promise collection | **Not modeled** | Needs futures/promises in the monad |
-| Harness meta-operations | Section 10 (two-level structure) | Partially — endomorphisms on Conv_State |
-| Scope reconstruction | Scope lattice + graded monad (Section 7) | Clean |
+| Promise collection | **Not modeled** | Deferred — needs futures in the monad (Part 4, §15.6) |
+| Harness meta-operations | Two-level structure (Part 4, §10) | Clean — endomorphisms on Conv_State |
+| Scope reconstruction | Store comonad (Part 4, §12.2) | Clean — Harness constructs extraction |
 
-### Gaps
+### Gaps (remaining)
 
-1. **The permission protocol** — cross-level negotiation between Harness and Principal. Session types. This is also co-domain management: each grant widens the conversation's output space.
-2. **Promise/future injection** — backgrounded tasks that resolve later. The log becomes a merge of concurrent streams. The Harness controls the interleaving.
-3. **The Harness as formal actor** — it has scope, makes decisions, and its decisions affect the other actors' scopes. The framework now treats it as a participant with minimal *ma* (see [Actor Taxonomy](actor-taxonomy.md)), but the formal monad structure needs to account for the Harness's agency over scope construction and co-domain management.
-4. **Authorization as a dynamic, contextual property** — not a static lattice. The same tool can be authorized or denied depending on arguments, conversation state, and Principal judgment.
-5. **The tool-agent spectrum** — Executors, subagents, and the Inferencer are all actors with different co-domain complexity. The *ma* framework provides the unifying axis (see [Actor Taxonomy](actor-taxonomy.md)), but the formal monad treatment needs to be updated.
+1. **Promise/future injection** — backgrounded tasks that resolve later. The log becomes a merge of concurrent streams. The Harness controls the interleaving. Deferred in Part 4, §15.6.
+2. **Authorization as a dynamic, contextual property** — the session type (Part 4, §15.1) captures the protocol structure, but the Principal's `Grant | Deny` decisions are contextual — same tool, different args → different decision. The static permission configuration is formalized; the dynamic judgment is not.
 
 ---
 
-## What We're Converging On
+## What We Converged On
 
-The conversation monad (Writer over append-only log) is the easy part. It handles the data flow.
+The conversation monad (Writer over append-only log) handles the data flow. The Store comonad handles scope construction. Part 4 developed the three structures identified here:
 
-The interesting structure is in three other places:
+1. **The protocol layer** — session types for the permission protocol (Part 4, §15.1). Each branch has a formal co-domain effect. Permission grants are scope extrusion events.
+2. **The concurrency model** — π-calculus for parallel tool execution (Part 4, §15.3). Private result channels, concurrent processes with name restriction, barrier synchronization.
+3. **The Harness's agency** — formalized as a comonad-monad mediator (Part 4, §12.7) with a type signature spanning the Store comonad and the conversation monad. The configuration lattice (Part 4, §12.8) connects scope restriction to co-domain restriction.
 
-1. **The protocol layer** — how participants negotiate authorization and coordinate. Session types.
-2. **The concurrency model** — parallel tool execution, backgrounded tasks, promise resolution. π-calculus.
-3. **The Harness's agency** — scope construction, compaction timing, promise injection, permission mediation, co-domain management. The Harness is the most powerful participant and the least modeled.
-
-The monadic framework (graded/parameterized) handles the sequential, data-flow aspects well. But the conversation is fundamentally a **multi-party concurrent protocol with negotiated authorization**, and that's a different beast. The next step is to model the protocol layer — starting with the permission negotiation — and see how it composes with the existing monadic structure.
+The remaining frontier is promises/futures — asynchronous tool execution where the Harness controls the interleaving of concurrent streams into the conversation.
 
 ---
 

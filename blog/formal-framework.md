@@ -2,7 +2,7 @@
 
 *Part 4: What survives formalization, what doesn't, and where the open problems are.*
 
-This document formalizes the structural claims from the series. Sections 1–10 formalize the conversation log, scopes, the conversation monad, and meta-operations. Sections 11–14 formalize the deeper structures developed in Part 3: the interface monad ordering, the monad-comonad duality, interface *ma* vs. internal *ma*, and the fractal architecture of actors. Section 15 assesses what's novel and what needs further work.
+This document formalizes the structural claims from the series. Sections 1–10 formalize the conversation log, scopes, the conversation monad, and meta-operations. Sections 11–14 formalize the deeper structures: the interface monad ordering, the monad-comonad duality, interface *ma* vs. internal *ma*, and the fractal architecture. Section 15 formalizes the protocol layer — session types for permission negotiation and π-calculus for parallel tool execution. Section 16 traces a concrete Claude Code interaction through the formalism. Section 17 extracts design principles. Section 18 assesses what's novel and what needs further work.
 
 ---
 
@@ -43,9 +43,9 @@ This gives us set-theoretic operations on scopes for free.
 
 ---
 
-## 3. Ma: Scope Boundaries and Co-domain Characterizability
+## 3. Scope Boundaries
 
-*Ma* has two faces. From the **visibility** side, it's the negative space between scopes — what each actor can't see. From the **output** side, it's the descriptive complexity of the actor's co-domain — how hard the output space is to characterize. Both are aspects of the same architectural property. The visibility side is formalized here; the output side in Section 11.
+The original *ma* observation — "the space between agents is functional" — has two distinct formalizations in this framework. **Scope boundaries** (this section) formalize what each actor can't *see*: input restriction. **Co-domain characterizability** (Section 11) formalizes how hard each actor's output space is to *describe*: output complexity. These are different things — one is about input, the other about output. They connect through the Harness's configuration lattice (Section 12.8): the Harness couples scope restriction with tool restriction, and it's the tool restriction that narrows the co-domain.
 
 ### 3.1 Complementary scopes
 
@@ -67,15 +67,16 @@ Messages in the boundary are invisible to both agents. This is the information t
 
 **Proposition 3.4 (Boundary is non-trivial iff scopes don't jointly cover the log).** `boundary(s1, s2) = s_bot` iff `s1 | s2 = id` (the scopes jointly cover the full log). A non-trivial boundary means there exist messages that no agent sees. In the quartermaster pattern, this is by design: the primary agent's internal reasoning may be visible to neither the quartermaster nor the worker.
 
-### 3.2 Co-domain characterizability (preview)
+### 3.2 Scope boundaries vs. co-domain characterizability
 
-The complementary scope captures the *visibility* side of *ma*: what's hidden. But there is a second, deeper side: how hard it is to *describe the output space* of an actor.
+Scope boundaries formalize what's *hidden* — input restriction. But the series' central concept, *ma*, is about what's hard to *describe* — output complexity. These aren't the same thing:
 
-**Definition 3.5 (Co-domain characterizability, informal).** For an actor `A` with interface type `I → O`, the *ma* of `A` is the descriptive complexity of `O` — the Kolmogorov complexity of a description of the set of possible outputs, given the interface typing.
+- An actor with **zero visibility** (bottom scope) can still have high *ma* if it has internal state — a random number generator sees nothing but produces unpredictable output.
+- An actor with **full visibility** (top scope) can still have low *ma* if its interface is constrained — an auditor that sees everything but can only output `Approve/Reject`.
 
-A file-read tool's co-domain: "a string, or an error." Low *ma*. A deterministic Harness's co-domain: "enumerable given its rules and state." Low *ma*. A language model's co-domain: "requires the weights to describe." High *ma*. A human's co-domain: "requires the person to describe." Maximal *ma*.
+The connection is indirect: the Harness typically couples scope restriction with tool restriction (Section 12.8), and it's the tool restriction that bounds the co-domain. Scope restriction focuses the actor's *attention*; tool restriction bounds its *output space*. Both matter for architecture, but they're independent levers.
 
-**Remark.** This is *not* unpredictability (Shannon entropy of specific outputs). SHA-256 is unpredictable but its co-domain is trivially characterized ("uniform over 256-bit strings"). A temperature-0 LLM is deterministic for each input but its co-domain requires the weights. The distinction is between the complexity of *individual outputs* and the complexity of *the output space description*. The formal definition is developed in Section 11.
+The formal definition of *ma* as co-domain characterizability is in Section 11.
 
 ---
 
@@ -473,57 +474,182 @@ Each tool call is a Kleisli morphism `Args → Conv(Result)`. The result enters 
 
 ### 12.2 Compression: comonadic extraction
 
-**Definition 12.1 (Scope comonad).** Define a comonad `W_s` over `Conv_State`, parameterized by a scope `s`:
+The right comonad is `Store` — a value in context with a *position* that determines the focus.
 
-    W_s(A) = Conv_State × A
+**Definition 12.1 (Store comonad, standard).** The Store comonad over a position type `S` and value type `A` is:
 
-where the `Conv_State` component is the full conversation and `A` is the focused extraction.
+    Store S A = (S → A, S)
 
-    extract_s : W_s(Conv_State) → FocusedView_s
-    extract_s(state, _) = flatten(s(state))
+A pair of: a function from every position to a value, and the current position. With operations:
 
-    duplicate_s : W_s(A) → W_s(W_s(A))
-    duplicate_s(state, a) = (state, (state, a))
+    extract (f, s)   = f s                          -- value at the current position
+    duplicate (f, s) = (λs'. (f, s'), s)            -- at each position, the whole store
+    extend g (f, s)  = (λs'. g (f, s'), s)          -- apply g from every position's perspective
 
-    extend_s : (W_s(A) → B) → W_s(A) → W_s(B)
-    extend_s(f)(state, a) = (state, f(state, a))
+**Definition 12.2 (Conversation as Store comonad).** Define the conversation comonad as:
 
-**Remark.** The `extract` function is the Harness's scope construction: it takes the full conversation state and projects it to a focused view (the token window for the Inferencer, the rendered output for the Principal, the arguments for the Executor). The Harness constructs a *different* extraction for each actor — multiple comonadic projections over the same underlying state.
+    ConvStore = Store Scope FocusedView
+
+where:
+- `Scope` is the position type — which scope/extraction strategy to apply (from the scope lattice of Definition 2.2)
+- `FocusedView` is the value type — the projected conversation an actor actually sees
+- The stored function is `view : Scope → FocusedView`, defined by `view(s) = flatten(s(conv_state))`
+- The current position is the scope of the actor being served
+
+The comonad operations now have precise meanings:
+
+    extract (view, s_inferencer) = view(s_inferencer)
+        -- the Inferencer's token window: the conversation projected through its scope
+
+    duplicate (view, s_inferencer) = (λs'. (view, s'), s_inferencer)
+        -- at every scope position, the ability to see every other scope position
+        -- this is the Harness's perspective: it can compute any actor's view
+
+    extend infer (view, s_inferencer) = (λs'. infer(view, s'), s_inferencer)
+        -- "what would inference produce under each possible scoping?"
+        -- a counterfactual: the Inferencer's output as a function of scope choice
+
+**Remark.** The `Store` comonad captures the Harness's structural role precisely:
+
+- **`extract`** is what the Inferencer (or any actor) experiences — it receives the focused view at its scope position. The actor never sees the full store; it sees `extract`.
+- **`duplicate`** is the Harness's god-view — access to every possible extraction, not just the current one. The Harness can compute what *any* actor would see under *any* scope. This is the formal content of "the Harness constructs each actor's view."
+- **`extend f`** applies a function `f : ConvStore → B` across all scope positions. If `f` is inference, this gives the counterfactual: "what would the Inferencer produce if we gave it a different scope?" This is what the Harness is implicitly optimizing when it chooses which tools to load or how aggressively to compact.
+
+The Harness has access to `duplicate` and `extend`. Other actors only ever see `extract`. This asymmetry — the Harness operates on the comonad, other actors operate on extracted values — is the formal content of the Harness's privileged position.
 
 ### 12.3 The turn as comonadic extraction followed by monadic injection
 
 **Proposition 12.2 (Turn structure).** A single turn has the structure:
 
-    ConvState ──extract_s──→ FocusedView ──actor──→ Output ──bind──→ ConvState'
+    (view, s) ──extract──→ FocusedView ──actor──→ Output ──bind──→ Conv(Output)
 
 where:
-- `extract_s` is comonadic (compression — narrowing the co-domain)
-- `actor` is opaque internal processing (the actor's internal *ma*)
-- `bind` is monadic (expansion — widening the co-domain)
+- `extract` is comonadic (the Store comonad projects the conversation to a focused view)
+- `actor : FocusedView → Output` is opaque internal processing (the actor's internal *ma*)
+- `bind` is monadic (the output enters the conversation log, widening the co-domain)
 
-This is the `read → infer → respond` cycle from Part 3, now formalized. Every turn is a comonad-to-monad bridge: compress, process, expand.
+The Harness orchestrates this by:
+1. Choosing the scope position `s` (which extraction to apply)
+2. Letting `extract` produce the focused view
+3. Passing the view to the actor
+4. Receiving the output and injecting it via monadic `bind`
+5. Updating `conv_state` (which changes the stored function `view` for the next turn)
+
+This is the `read → infer → respond` cycle from Part 3, now formalized. Every turn is a comonad-to-monad bridge: compress, process, expand. The Harness controls step 1 (scope selection) and step 4 (injection gating).
 
 ### 12.4 The Harness at the boundary
 
-**Proposition 12.3 (The Harness mediates both structures).** The Harness performs:
+**Proposition 12.3 (The Harness mediates both structures).** The Harness operates on both the comonadic and monadic sides:
 
-| Operation | Structure | Effect on co-domain |
+| Operation | Structure | Store operation | Effect on co-domain |
+|---|---|---|---|
+| Scope selection | Comonadic | Choosing position `s` | Determines what actor sees |
+| Scope construction | Comonadic | Computing `extract(view, s)` | Narrows (projects conversation) |
+| Compaction | Meta + comonadic | Modifying the stored function `view` | Narrows (lossy — changes what `extract` returns at every position) |
+| Tool dispatch | Monadic | `bind` (result enters log) | Widens (new information in conversation) |
+| Permission gate | Controls which `bind`s are allowed | — | Co-domain management |
+| Promise injection | Deferred monadic | Deferred `bind` | Widens later |
+
+**Remark.** Compaction is the most interesting case. It doesn't change the scope position — it changes the *stored function*. After compaction, `view(s)` returns a lossy summary instead of full history, for *every* scope `s`. This is a modification of the comonadic structure itself, not an operation within it. In the two-level structure (Section 10.5), compaction is a meta-level operation that transforms the comonad's stored function.
+
+The Harness mediates between the comonad (how the conversation is projected to each actor) and the monad (how information enters the conversation). Its minimal *ma* — characterizable output space — is what makes it trustworthy in this role. Other actors can reason about what the Harness will do precisely because the Harness operates on the `Store` structure (choosing positions, gating injections) rather than performing inference.
+
+### 12.5 Each actor sees a different extraction
+
+The conversation has multiple actors, each at a different scope position. The Store comonad handles this naturally: the stored function `view : Scope → FocusedView` can be evaluated at any position.
+
+| Actor | Scope position `s` | What `extract(view, s)` gives them |
 |---|---|---|
-| Scope construction | Comonadic `extract` | Narrows (selects what actor sees) |
-| Compaction | Comonadic `extract` (lossy) | Narrows (lossy summarization) |
-| Tool dispatch | Monadic `bind` | Widens (result enters conversation) |
-| Permission gate | Controls which `bind`s are allowed | Co-domain management |
-| Promise injection | Deferred `bind` | Widens later |
+| **Principal** | `s_render` | Rendered output — formatted text, tool summaries, status |
+| **Inferencer** | `s_token` | Token window — flattened, filtered, compacted conversation |
+| **Executor** | `s_args` | Arguments + sandbox — just its inputs |
 
-The Harness is the actor that mediates between the comonad (how the conversation is projected to each actor) and the monad (how information enters the conversation). Its minimal *ma* — characterizable output space — is what makes it trustworthy in this role.
+The Harness doesn't have a scope position in the Store — it has access to the `duplicate`d store. It sees `(λs'. (view, s'), s)` — the full function at every position. This is the formal content of "the Harness is the only participant that communicates with all others."
 
-### 12.5 Distributive laws (open problem)
+### 12.6 Distributive laws (open problem)
 
-**Conjecture 12.4.** There exists a distributive law between the conversation monad and the scope comonad:
+**Conjecture 12.4.** There exists a distributive law between the conversation monad `Conv` (Writer over log monoid) and the conversation comonad `ConvStore` (Store over scope lattice):
 
-    λ : W(Conv(A)) → Conv(W(A))
+    λ : Store Scope (Conv(A)) → Conv(Store Scope A)
 
-This would tell us how extraction and injection compose — the formal structure of a full turn. Distributive laws between monads and comonads are studied by Brookes & Geva and Uustalu & Vene, but the specific instance for conversation state and scope extraction is an open problem.
+This would tell us how extraction and injection compose — the formal structure of a full turn. Concretely: given a scoped view of a log-producing computation, can we factor it into a log-producing computation that yields a scoped view? Distributive laws between monads and comonads are studied by Brookes & Geva and Uustalu & Vene, but the specific instance for `Writer` and `Store` is worth investigating — both are well-understood individually.
+
+### 12.7 The Harness, formally
+
+The Harness has been described narratively (Section 10.6) and structurally (Sections 12.2–12.5). Here we give it a type.
+
+**Definition 12.5 (Harness step).** A single Harness step is a function:
+
+    harness_step : Conv_State → HarnessAction
+
+where `HarnessAction` is the sum type of everything the Harness can do:
+
+    data HarnessAction
+      = Extract Scope (FocusedView → ProposedActions)
+          -- construct a view for an actor, receive their proposals
+      | Gate ToolCall Decision
+          -- approve or deny a proposed tool call
+      | Inject Result Conv_State
+          -- inject a tool result into the conversation (monadic bind)
+      | Meta (Conv_State → Conv_State)
+          -- perform a meta-operation (compaction, tool mutation, budget)
+      | Yield Conv_State
+          -- turn complete, return updated state
+
+**Remark.** The Harness is a `State Conv_State` computation — it reads and writes `Conv_State`. But its *interface* type is `HarnessAction`, which is fully enumerable given the current `Conv_State` and configuration. This is the formal content of "minimal *ma*": the Harness's co-domain is a tagged union of characterizable operations. You can describe what the Harness might do without having the Harness — you just need its rules and the current state.
+
+**Definition 12.6 (Harness as comonad-monad mediator).** The Harness's role in the turn cycle (Prop. 12.2) is precisely:
+
+    harness : Conv_State → (Store Scope FocusedView, Conv_State → Conv(Conv_State))
+
+It produces:
+1. A `Store Scope FocusedView` — the comonadic side (the conversation projected for each actor)
+2. A gating function `Conv_State → Conv(Conv_State)` — the monadic side (how approved results enter the conversation)
+
+The first component constructs the comonad from raw state. The second component gates monadic injection back into state. The Harness is the function that **bridges** `Conv_State` to `Store` (comonadic) and `Conv` (monadic).
+
+**Proposition 12.7 (The Harness's *ma*).** The Harness inhabits `State Conv_State` with interface type `HarnessAction`. Its interface *ma* is:
+
+    ma_interface(Harness) = K(desc(HarnessAction))
+
+Since `HarnessAction` is a finite tagged union over characterizable operations (each determined by rules and state), `K(desc(HarnessAction))` is bounded by the size of the Harness's configuration — its rules, permission tables, and compaction thresholds. This is small relative to the model weights (Inferencer) or the physical world (Principal).
+
+**Remark.** The Harness is the only actor whose type signature spans both the comonadic and monadic structures. Other actors operate on one side: the Inferencer receives `extract` output and proposes `bind` inputs; Executors receive arguments and produce results. The Harness *constructs* the comonad and *gates* the monad. Its type signature is the formal reason it must sit at the hub.
+
+### 12.8 The Harness coupling: scope restriction and co-domain restriction
+
+The document has two orderings that should be related:
+
+1. The **scope lattice** (Section 2) — orders *what an actor can see* (input restriction, comonadic side)
+2. The **monad ordering** (Section 11) — orders *how hard the output space is to describe* (co-domain characterizability, monadic side)
+
+Do they correspond? Not directly. An actor with zero visibility could still have high *ma* (a random number generator sees nothing but produces unpredictable output). Restricting input doesn't automatically restrict output.
+
+But the Harness **couples** them. When the Harness constructs a restricted view for an actor, it typically also restricts the actor's available tools — and it's the *tool restriction* that narrows the co-domain. The correspondence isn't between scope and co-domain directly. It's between the Harness's paired comonadic and monadic decisions.
+
+**Definition 12.8 (Harness configuration).** A Harness configuration for an actor is a pair:
+
+    config = (s, T) ∈ Scope × P(Tools)
+
+where `s` is the scope (which messages the actor sees) and `T` is the tool set (which actions the actor can propose). The Harness assigns a configuration to each actor.
+
+**Definition 12.9 (Configuration lattice).** Define a partial order on configurations:
+
+    (s₁, T₁) ≤ (s₂, T₂)  iff  s₁ ≤ s₂  and  T₁ ⊆ T₂
+
+This is the product lattice of the scope lattice and the powerset lattice of tools. Moving down restricts both visibility and capability.
+
+**Proposition 12.10 (Configuration determines interface *ma*).** For an actor `A` with Harness configuration `(s, T)`:
+
+    ma_interface(A, (s, T)) ≤ ma_interface(A, (s', T'))  when  (s, T) ≤ (s', T')
+
+Restricting an actor's configuration (narrower scope *and* fewer tools) cannot increase its interface *ma*. The actor's output space is bounded by what its tools can produce, regardless of its internal capability.
+
+*Argument.* The actor's interface co-domain is determined by the outputs of its available tools: `co-domain(A, T) = ⋃{co-domain(t) | t ∈ T} ∪ {text}`. Removing a tool removes its co-domain from the union. Narrowing the scope doesn't directly affect the co-domain, but it reduces the information available for the actor to *differentiate* its outputs — a narrower view means fewer distinct inputs, which means fewer distinct output trajectories. The tool restriction is the primary driver; the scope restriction is secondary.
+
+**Remark.** This is why the Harness's paired decisions matter. Scope restriction alone (comonadic side) doesn't guarantee co-domain restriction. Tool restriction alone (monadic side) does guarantee it — fewer tools means a strictly smaller co-domain union. The Harness's power is in coupling both: it gives the worker a focused view (so inference is focused) *and* a restricted tool set (so the co-domain is bounded). This is the formal content of "restriction is the load-bearing operation."
+
+**Corollary 12.11 (The configuration lattice connects both halves of the framework).** The scope lattice (Sections 2–3, comonadic) and the monad ordering (Section 11, monadic) meet in the configuration lattice. The Harness navigates this lattice when it sets up each actor: choosing a position in the scope lattice (what the actor sees) and a position in the tool powerset (what the actor can do). The *ma* ordering of actors (Executor < Harness < Inferencer < Principal) is not a consequence of either lattice alone — it's a consequence of the Harness's typical configuration choices: Executors get narrow scope + single tool (minimal), the Inferencer gets broad scope + gated tools (moderate), the Principal gets full physical world + unbounded agency (maximal).
 
 ---
 
@@ -623,7 +749,316 @@ The Harness mediates between these worlds. It takes results from the Executor's 
 
 ---
 
-## 15. What This Formalization Shows
+## 15. The Protocol Layer: Session Types and π-Calculus
+
+The monadic framework (Sections 4–7) handles sequential data flow. The comonadic framework (Section 12) handles scope construction. But a conversation is also a **concurrent protocol with negotiated authorization** — multiple actors communicating, tools executing in parallel, permissions granted or denied mid-conversation. This section formalizes the protocol layer.
+
+### 15.1 The permission protocol as a session type
+
+A session type specifies the *structure* of a communication protocol — who sends what to whom, in what order, with what branching. The tool-use protocol (from Part 2) has a clean session type:
+
+**Definition 15.1 (Tool-use session type).**
+
+```
+type ToolUse =
+    Inferencer → Harness   : Propose(tool, args)
+  ; Harness    → Harness   : CheckPermission(tool, args, mode)
+  ; case mode of
+      AutoAllow →
+          Harness  → Executor  : Execute(args)
+        ; Executor → Harness   : Result(output)
+        ; Harness  → Inferencer: ToolResult(output)
+      Ask →
+          Harness  → Principal : PermissionRequest(tool, args)
+        ; Principal → Harness  : Grant | Deny
+        ; case of
+            Grant →
+                Harness  → Executor  : Execute(args)
+              ; Executor → Harness   : Result(output)
+              ; Harness  → Inferencer: ToolResult(output)
+            Deny →
+                Harness  → Inferencer: PermissionDenied(tool, reason)
+      AutoDeny →
+          Harness  → Inferencer: PermissionDenied(tool, reason)
+```
+
+**Remark.** Several things are visible in the session type that aren't visible in the monadic formalism:
+
+- **The Harness mediates every message.** No actor communicates directly with any other. The Inferencer never talks to the Executor; the Principal never talks to the Inferencer. The star topology is encoded in the session type as "every arrow has the Harness on one end."
+- **Authorization is a branch, not a value.** The `Grant | Deny` branch determines which *continuation* the protocol follows — a completely different sequence of messages. This is richer than a boolean: the denied path doesn't invoke the Executor at all.
+- **The Principal only participates in the `Ask` branch.** In `AutoAllow` and `AutoDeny`, the Principal is never consulted. The session type makes this structural: the Principal's channel isn't even opened in those branches.
+
+**Example: the worked example (Section 16), step 4.** The `Read` tool is auto-allowed. The session type takes the `AutoAllow` branch: `Propose → CheckPermission → Execute → Result → ToolResult`. No Principal synchronization. If the tool were `Bash`, the session type would take the `Ask` branch, adding a `PermissionRequest → Grant|Deny` exchange with the Principal before proceeding.
+
+### 15.2 Co-domain management in the session type
+
+Each branch of the session type has a different co-domain effect:
+
+| Branch | What enters the conversation | Co-domain effect |
+|---|---|---|
+| `AutoAllow → Result` | Tool output | Widens — Executor's `IO_W` co-domain injected |
+| `Ask → Grant → Result` | Tool output (after Principal approval) | Widens — same injection, but gated |
+| `Ask → Deny` | `PermissionDenied` message | Narrows — Executor's co-domain is *not* injected |
+| `AutoDeny` | `PermissionDenied` message | Narrows — same |
+
+The `Deny` branches are **co-domain restriction operations**. They prevent an Executor's `IO_W` from composing into the conversation. The permission protocol is the Harness's mechanism for controlling *which* monadic injections actually happen — it's the gate between the Inferencer's proposals and the conversation's co-domain.
+
+**Proposition 15.2.** The permission configuration is a function from tool calls to session type branches:
+
+```
+perm : ToolCall → {AutoAllow, Ask, AutoDeny}
+```
+
+This function determines, for each proposed co-domain injection, whether it proceeds immediately, requires Principal authorization, or is blocked. It is the Harness's **static** co-domain management policy. The Principal's `Grant | Deny` decisions are the **dynamic** co-domain management — contextual, per-invocation judgments that the static policy can't capture.
+
+### 15.3 Parallel tool execution in π-calculus
+
+When the Inferencer proposes multiple tool calls in one response, they execute concurrently. The π-calculus gives the right formalism: concurrent processes communicating over channels with name restriction.
+
+**Definition 15.3 (Parallel tool execution).** For N proposed tool calls, each independently permitted:
+
+```
+(ν r₁)(ν r₂)...(ν rₙ)(
+    tool₁⟨args₁, r₁⟩ | tool₂⟨args₂, r₂⟩ | ... | toolₙ⟨argsₙ, rₙ⟩
+  | r₁(res₁).r₂(res₂)...rₙ(resₙ).harness⟨res₁, ..., resₙ⟩
+)
+```
+
+Where:
+- `(ν rᵢ)` creates a **private channel** `rᵢ` — only tool `i` and the collector can use it (name restriction)
+- `toolᵢ⟨argsᵢ, rᵢ⟩` sends args and a return channel to the tool (concurrent execution)
+- `rᵢ(resᵢ)` receives the result on the private channel (barrier synchronization)
+- `harness⟨res₁, ..., resₙ⟩` collects all results and proceeds
+
+**Remark.** The key structural properties:
+
+- **Independence.** The tools execute in parallel (`|`). They share no channels with each other — `r₁` is invisible to `tool₂`. No tool can see another tool's arguments or results. This is the formal content of "Executors have disjoint scopes."
+- **Name restriction as scope.** Each `(ν rᵢ)` creates a scope boundary. The private channel `rᵢ` is the tool's "result slot" — nobody else can read it or write to it. This is the π-calculus version of the scope lattice: each tool's communication is restricted to its own private channel.
+- **The barrier is sequential composition of receives.** The collector `r₁(res₁).r₂(res₂)...` waits for results in order. The tools may finish in any order, but the collector processes them sequentially. The Harness controls the ordering of injection into the conversation.
+
+**Example: two parallel tool calls.** The Inferencer proposes `Read("src/main.py")` and `Glob("*.test.py")` in one response. Both are auto-allowed.
+
+```
+(ν r₁)(ν r₂)(
+    Read⟨"src/main.py", r₁⟩ | Glob⟨"*.test.py", r₂⟩
+  | r₁(file_contents).r₂(test_files).harness⟨file_contents, test_files⟩
+)
+```
+
+Both tools run concurrently in their respective `IO_sandbox` worlds. Neither sees the other's results. The Harness collects both results and injects them into the conversation in a single monadic `bind` — the log grows by two tool result messages, the budget decreases by both costs, and the co-domain expands by both tools' output spaces.
+
+### 15.4 Scope extrusion: tool requests as channel mobility
+
+Section 9 noted the correspondence between tool requests and π-calculus scope extrusion. With the session type in hand, we can be more precise.
+
+When the Inferencer proposes a tool call, it is requesting that a *new channel* be opened — a channel to an Executor that didn't previously exist in the Inferencer's scope. The permission gate decides whether this channel is extruded:
+
+```
+-- Before permission: the Executor channel is restricted (not in Inferencer's scope)
+(ν exec_channel)(Harness⟨exec_channel⟩)
+
+-- After Grant: the channel is extruded into the conversation scope
+Harness⟨exec_channel⟩ | Inferencer(result_on(exec_channel))
+```
+
+Each `Grant` decision is a scope extrusion event — a new name (the Executor's result channel) becomes available to the Inferencer (indirectly, through the Harness). Each `Deny` prevents the extrusion. The permission protocol is the **gatekeeper for scope extrusion** — the Harness decides which new channels enter the conversation.
+
+This connects to the configuration lattice (Section 12.8): a `Grant` moves the configuration from `(s, T)` to `(s, T ∪ {tool})` — the tool set expands. A `Deny` keeps the configuration unchanged. The scope lattice grows monotonically within a phase (Section 10.5), and each permission grant is a monotone step upward.
+
+### 15.5 What session types add to the framework
+
+| Aspect | Monadic framework alone | With session types |
+|---|---|---|
+| Permission gate | "The Harness checks permissions" (narrative) | A branching protocol with distinct continuations per decision |
+| Co-domain management | "Permission gates control co-domain" (informal) | Each branch has a formal co-domain effect (widen or narrow) |
+| Principal participation | "The Principal decides" (narrative) | The Principal's channel is only opened in `Ask` branches |
+| Parallel tools | Not modeled | π-calculus: concurrent processes with private channels |
+| Scope extrusion | Mentioned (Section 9) | Permission grants are channel extrusion events |
+
+### 15.6 Promises and backgrounded tasks (deferred)
+
+The session type above assumes synchronous execution: the Harness waits for tool results before continuing. But Claude Code supports **backgrounded tasks** — the Harness dispatches an agent, continues the conversation, and injects the result later.
+
+In π-calculus terms, the promise variant replaces the barrier with independent injection:
+
+```
+  | r₁(res₁).inject⟨res₁⟩ | r₂(res₂).inject⟨res₂⟩ | ... | continue⟨⟩
+```
+
+Each result is injected when it arrives. The continuation doesn't wait. The Harness controls *when* and *how* each injection enters the conversation — it might batch them, summarize them, or defer them.
+
+A full formalization would need:
+- A **future type** in the conversation monad: `Future(A)` representing a value that will arrive later
+- A **resolution protocol**: the session type for how the Harness injects resolved futures
+- **Temporal ordering**: the log becomes a merge of concurrent streams, and the Harness controls the interleaving
+
+This interacts with the Store comonad in interesting ways: after a promise resolves, the stored function `view` changes (the conversation now contains new information), which changes what `extract` returns for every scope. A resolved promise is a **comonad modification** triggered by an **asynchronous monadic event**. The interaction between these structures is an open problem — likely requiring the distributive law from Conjecture 12.4 or something stronger.
+
+We defer this to future work. The synchronous protocol captures the common case; the asynchronous extension is where the real complexity lives.
+
+---
+
+## 16. Worked Example: A Tool Call in Claude Code
+
+The formalism above is abstract. Here we trace a single, concrete interaction through it: a user asks Claude Code to read a file.
+
+### The interaction
+
+```
+User:    "What's in src/main.py?"
+Claude:  [proposes Read("src/main.py")]
+Harness: [checks permissions → auto-allow]
+         [dispatches Read tool]
+Read:    [returns file contents]
+Harness: [injects result into conversation]
+Claude:  "Here's what's in src/main.py: ..."
+```
+
+### Phase by phase
+
+**1. The Harness constructs the Store comonad (Section 12.2).**
+
+Before the Inferencer sees anything, the Harness builds:
+
+```
+conv_state = {
+  system:       [system prompt, CLAUDE.md instructions],
+  instructions: [tool descriptions, permission config],
+  history:      [...previous turns..., user: "What's in src/main.py?"],
+  tools:        {Read, Edit, Write, Bash, Grep, Glob, ...},
+  budget:       87000
+}
+
+view : Scope → FocusedView
+view(s) = flatten(s(conv_state))
+```
+
+The Harness evaluates `extract(view, s_inferencer)` — the token window the model will see. This is the comonadic extraction. The model doesn't see `budget`, doesn't see `permission config` internals, doesn't see the raw `Conv_State` structure. It sees a flat token sequence. The *ma* between the Harness's view and the Inferencer's view (the information gap) is by design.
+
+**2. The Inferencer performs inference (opaque).**
+
+The model receives `extract(view, s_inferencer)` — a `FocusedView`. Internally, it performs attention, sampling, chain-of-thought. This is the actor's internal *ma* (Section 13) — high, intrinsic, requires the weights to describe. From outside, we see only the output.
+
+**3. The Inferencer proposes a Kleisli morphism (Section 6).**
+
+The model's output is a tool call proposal:
+
+```
+propose : FocusedView → ToolCall
+propose(view) = Read("src/main.py")
+```
+
+In the Kleisli category: this is a morphism `FocusedView → ToolCall × M*` — the model produces a tool call and appends its reasoning to the log. The tool call is a *request* — it hasn't been executed or authorized yet.
+
+**4. The Harness gates the injection (Sections 12.7 and 15.1).**
+
+The Harness receives the proposal and performs:
+
+```
+harness_step(conv_state) = Gate(Read("src/main.py"), decision)
+```
+
+It checks the permission configuration: `Read` is auto-allowed for all paths within `allowed_directories`. The decision is `Grant`. No Principal synchronization needed. In the session type (Section 15.1), this is the `AutoAllow` branch: `Propose → CheckPermission → Execute → Result → ToolResult`. The Principal's channel is never opened.
+
+This is **co-domain management** (Section 12.8). The `Read` tool's co-domain (`Either(String, Error)`) is about to be injected into the conversation. The permission gate controls *which* co-domain injections are allowed. If the model had proposed `Bash("rm -rf /")`, the session type would take the `Ask` branch — the Harness would render the proposal for the Principal, who might deny, preventing that Executor's wider co-domain from entering the conversation.
+
+**5. The Executor runs in its world (Section 11.4).**
+
+The `Read` tool executes:
+
+```
+Read : FilePath → IO_sandbox(Either(String, Error))
+Read("src/main.py") = Right("import sys\ndef main(): ...")
+```
+
+The Executor inhabits `IO_sandbox` — not `IO_filesystem`, because `allowed_directories` restricts it. It can read files in the project root but not `/etc/passwd`. The Harness chose this world (Prop. 14.3). The Executor's interface *ma* is low: `Either(String, Error)` is trivially characterizable.
+
+**6. The Harness performs monadic injection (Section 12.1).**
+
+The result enters the conversation through `bind`:
+
+```
+bind(conv_state, λ_. (file_contents, [tool_result_message]))
+```
+
+The log grows: `conv_state.history` now includes the tool result. The budget decreases by the token cost of the result. The co-domain has expanded — the conversation now contains information about `src/main.py` that it didn't have before.
+
+**7. The Harness reconstructs the Store and extracts again.**
+
+The stored function `view` has changed — `conv_state` now includes the tool result, so `view(s_inferencer)` returns a longer token window. The Harness evaluates `extract(view', s_inferencer)` for the Inferencer's next turn. The cycle restarts.
+
+**8. The Inferencer responds.**
+
+The model sees the updated `FocusedView` (now including file contents) and produces a natural language summary. This is another Kleisli morphism: `FocusedView → Response × M*`. The response enters the conversation via `bind`. The Harness then extracts for the Principal: `extract(view'', s_render)` — the rendered markdown the user sees in their terminal.
+
+### What the formalism reveals
+
+This is a routine interaction. But the formalism exposes structure that the interaction hides:
+
+- The **Store comonad** makes precise that the model never sees `Conv_State` — it sees `extract`. The Harness could have compacted history, loaded different tools, or changed the system prompt, and the model would have no way to tell. The comonadic extraction is the Harness's primary lever.
+
+- The **configuration lattice** (Section 12.8) shows why this works: the Inferencer's configuration is `(s_inferencer, {Read, Edit, Write, ...})`. The `Read` tool's co-domain (`Either(String, Error)`) is part of the conversation's co-domain because `Read ∈ T`. If the Harness had configured `T = {Grep, Glob}` (no `Read`), the model couldn't have proposed this tool call — the co-domain would be narrower.
+
+- The **permission gate** is co-domain management in action. Auto-allow for `Read` means the Harness pre-authorizes this co-domain injection. Ask-mode for `Bash` means the Principal must authorize that wider co-domain. The gate is where *ma* meets authorization.
+
+- The **Executor's world** (`IO_sandbox` vs `IO_filesystem`) is invisible to the Inferencer. The model proposes `Read("src/main.py")` without knowing whether the sandbox allows it. The Harness constructed the Executor's world; the Inferencer works within what the Harness provides.
+
+- The **turn cycle** is `extract → infer → propose → gate → execute → inject → extract → ...`. Comonadic compression, opaque processing, monadic expansion, repeated. The Harness controls every boundary.
+
+---
+
+## 17. Design Principles Derived
+
+The formalism isn't just descriptive — it generates actionable design rules.
+
+### Principle 1: Ma determines role
+
+The interface monad ordering (Section 11) gives a partial order on actors by co-domain characterizability. The architecture follows:
+
+- **Most characterizable actor mediates.** The Harness's `HarnessAction` (Section 12.7) is a finite tagged union — enumerable given configuration. Put it at the hub.
+- **Least characterizable actor authorizes.** The Principal's co-domain is `IO` — unbounded. Only it can make judgments from outside the system.
+- **Medium-characterizability actor proposes.** The Inferencer's co-domain is `Distribution` — rich but bounded by the weights. It proposes; it doesn't decide.
+
+*Design test*: if you're putting a language model at the hub of your orchestration (deciding which agents run, managing state), you're putting a high-*ma* actor where a low-*ma* actor should be. The system becomes harder to reason about — because the hub's behavior is harder to characterize.
+
+### Principle 2: Interface *ma* and internal *ma* are independent levers
+
+From Section 13: internal *ma* determines quality, interface *ma* determines auditability. These are independent design choices.
+
+- **Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal *ma* (good reasoning) and low interface *ma* (characterizable output). A Haiku model with 50 tools has low internal *ma* and high interface *ma*. The first is a better auditor. The second is a riskier worker.
+- **Funnels need high-internal, low-interface.** Quartermasters, auditors, and sub-agent boundaries should use capable models with constrained tool sets (Section 13.3). The quality of the restriction comes from internal *ma*; the auditability comes from interface *ma*.
+
+*Design test*: can you describe the set of possible outputs from each actor in a sentence? If not, its interface *ma* is too high for its role.
+
+### Principle 3: Restriction ceiling > model ceiling
+
+From Section 12.8 and the worked example: the Harness's configuration choices (scope + tools) bound the conversation's co-domain. The model works *within* those bounds.
+
+- **Improving the comonadic extraction has more leverage than improving the model.** The LangChain result (same model, better harness, 52.8% → 66.5%) is a restriction story. Better scope construction, better tool selection, better co-domain management.
+- **Tool restriction is the primary driver; scope restriction is secondary.** Removing a tool removes its entire co-domain from the conversation. Narrowing scope focuses attention but doesn't bound output type.
+
+*Design test*: before upgrading the model, ask whether the current model is bottlenecked by its capability (internal *ma*) or by what it's being given to work with (the Harness's extraction). Usually it's the extraction.
+
+### Principle 4: The Harness constructs worlds, not just scopes
+
+From Sections 11.4 and 14.3: the Harness determines not only what the Inferencer sees but what world the Executor inhabits.
+
+- **`allowed_directories` is co-domain management.** Setting `IO_sandbox` vs `IO_filesystem` determines the Executor's output space. This isn't just security — it's architecture.
+- **Permission modes are co-domain gates.** Auto-allow widens the co-domain preemptively. Ask-mode makes the Principal a co-domain gate. Deny removes a co-domain entirely.
+
+*Design test*: for each Executor, can you name the world (`IO_W`) it inhabits? If it's `IO_full` and it doesn't need to be, you're paying a *ma* tax — the system's co-domain is wider than necessary.
+
+### Principle 5: Every turn is extract → process → inject
+
+From Section 12.3 and the worked example: the turn cycle is comonadic compression, opaque processing, monadic expansion.
+
+- **Optimize extract first.** What the actor sees determines the quality ceiling. A perfect model with a bad extraction (too much irrelevant context, missing key information) will produce poor results.
+- **Gate inject carefully.** Every tool result widens the conversation's co-domain permanently (the log is append-only). Permission gates aren't just security — they're co-domain management. Each grant is irreversible within the object level.
+- **The Harness controls both boundaries.** If your architecture gives an actor control over its own extraction or injection, you've moved a Harness responsibility to a higher-*ma* actor. The system becomes harder to reason about.
+
+---
+
+## 18. What This Formalization Shows
 
 ### Claims from the series, assessed:
 
@@ -643,6 +1078,8 @@ The Harness mediates between these worlds. It takes results from the Executor's 
 
 **"The quartermaster constructs capture lists."** *Formalized.* The quartermaster is a Kleisli morphism that produces a scope (Def. 8.1). The factorization through Kit (Prop. 8.3) is standard. The new contribution: the quartermaster is a co-domain funnel (Section 13.3) — it uses internal *ma* to restrict interface *ma* for the worker.
 
+**"Permissions are co-domain management."** *Formalized.* The tool-use session type (Def. 15.1) makes this structural: each branch (`AutoAllow`, `Ask → Grant`, `Ask → Deny`, `AutoDeny`) has a different co-domain effect (Prop. 15.2). Permission grants are scope extrusion events in the π-calculus (Section 15.4). The permission configuration is a function from tool calls to session type branches — the Harness's static co-domain management policy.
+
 ### What might be novel:
 
 1. ***Ma* as co-domain characterizability on the monad ordering** (Section 11). The single axis that explains all four actor roles, grounded in a partial order on monads via monad morphisms. This connects informal design intuitions ("put the deterministic thing at the hub") to sixty years of PL theory.
@@ -657,13 +1094,17 @@ The Harness mediates between these worlds. It takes results from the Executor's 
 
 6. **Parameterized IO for Executor worlds** (Section 11.4). The Harness doesn't just construct the Inferencer's scope — it constructs the Executor's *world*. The permission lattice is a lattice of worlds.
 
-7. **The graded monad construction for scoped agents** (Section 7). Graded monads are known (Katsumata, 2014; Orchard et al., 2019) but applying them with a *scope lattice* as the grading monoid for multi-agent conversation appears to be new.
+7. **The configuration lattice** (Section 12.8). The scope lattice (comonadic, input restriction) and the tool powerset (monadic, co-domain restriction) meet in a product lattice navigated by the Harness. Tool restriction is the primary driver of co-domain narrowing; scope restriction is secondary. This connects the two halves of the formalism.
 
-8. **Scope renegotiation as scope extrusion** (Section 9). The connection between tool requests and π-calculus scope extrusion.
+8. **The graded monad construction for scoped agents** (Section 7). Graded monads are known (Katsumata, 2014; Orchard et al., 2019) but applying them with a *scope lattice* as the grading monoid for multi-agent conversation appears to be new.
 
-9. **The two-level structure** (Section 10). Object-level (monadic, monotone) and meta-level (endomorphisms on `Conv_State`, possibly lossy) operations. The Harness straddles both levels.
+9. **Permission protocol as a session type with co-domain effects** (Section 15). Each branch of the tool-use protocol has a formal co-domain effect (widen or narrow). Permission grants are scope extrusion events. The session type makes structural what the monadic framework leaves narrative.
 
-10. **Budget as a linear resource** (Section 10.3). Context window as a finite resource, connecting to quantitative type theory and resource-sensitive logic.
+10. **Parallel tool execution in π-calculus** (Section 15.3). Private result channels, concurrent execution with name restriction, and the barrier/promise distinction. The connection between π-calculus name restriction and the scope lattice.
+
+11. **The two-level structure** (Section 10). Object-level (monadic, monotone) and meta-level (endomorphisms on `Conv_State`, possibly lossy) operations. The Harness straddles both levels.
+
+12. **Budget as a linear resource** (Section 10.3). Context window as a finite resource, connecting to quantitative type theory and resource-sensitive logic.
 
 ### What needs further work:
 
@@ -677,11 +1118,13 @@ The Harness mediates between these worlds. It takes results from the Executor's 
 
 5. **Compaction as a comonadic morphism.** Does lossy summarization preserve comonadic structure? If `compact(A then B) ≠ compact(A) then compact(B)`, compaction isn't structure-preserving. It might be a Galois connection (abstract interpretation) rather than a morphism.
 
-6. **The right comonad.** The `Store` comonad (focused position), the `Env` comonad (read-only environment), and `Cofree` (annotated trees) are all candidates. The conversation might be `Cofree` over the message type.
+6. **The `Writer`-`Store` distributive law.** Section 12 identifies `Store Scope FocusedView` as the conversation comonad and `Writer M*` as the conversation monad. Does a distributive law exist between them? This would give the formal structure of a full turn (extraction composed with injection).
 
 7. **The relationship between `/memory` and the conversation monad.** The inverted transformer stack (persistent State outlives ephemeral Writer) needs formal treatment. The interaction pattern looks like a monad morphism between conversation and persistence monads.
 
-8. **Mechanical verification.** None of this has been verified in Coq or Agda.
+8. **Promises and backgrounded tasks** (Section 15.6). The synchronous protocol is formalized; the asynchronous extension (futures, deferred injection, the Harness controlling interleaving of concurrent streams) is deferred. This likely requires the distributive law from Conjecture 12.4 or something stronger.
+
+9. **Mechanical verification.** None of this has been verified in Coq or Agda.
 
 ---
 
@@ -691,6 +1134,8 @@ The Harness mediates between these worlds. It takes results from the Executor's 
 - Atkey, R. (2018). Syntax and semantics of quantitative type theory. *LICS*.
 - Brookes, S., & Geva, S. (1992). Computational comonads and intensional semantics. *Applications of Categories in Computer Science*, London Mathematical Society Lecture Notes 177.
 - Fowler, M. (2025). Harness engineering. *martinfowler.com*.
+- Honda, K. (1993). Types for dyadic interaction. *CONCUR*.
+- Honda, K., Yoshida, N., & Carbone, M. (2008). Multiparty asynchronous session types. *POPL*.
 - Hewitt, C., Bishop, P., & Steiger, R. (1973). A universal modular ACTOR formalism for artificial intelligence. *IJCAI*.
 - Katsumata, S. (2014). Parametric effect monads and semantics of effect systems. *POPL*.
 - McBride, C. (2016). I got plenty o' nuttin'. *A List of Successes That Can Change the World*, LNCS 9600.
