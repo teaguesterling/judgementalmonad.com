@@ -400,7 +400,7 @@ The Harness is a grade-reducing functor. It takes a high-graded computation and 
 *Ma* as a grade is a pair:
 
 ```
-ma = (world_coupling, accumulated_influence)
+ma = (world_coupling, decision_surface)
 ```
 
 And composition operates on both axes:
