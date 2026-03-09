@@ -48,4 +48,4 @@ This series proposes one. It draws on programming language theory (closures, alg
 
 ---
 
-*The formal companion — definitions, propositions, proofs, open problems — is forthcoming.*
+**[Formal Companion](formal-companion.md)** — Definitions, propositions, conjectures, and open problems. The tight version.

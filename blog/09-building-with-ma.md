@@ -78,7 +78,7 @@ A practitioner who follows the design rules above will build good systems withou
 
 **Transfer.** The framework connects agent architecture to programming language theory, cybernetics, and capability-based security. Solutions from those fields transfer. Algebraic effects give us handler composition. Object capabilities give us POLA. The fold model gives us compaction as a first-class operation. The specified band gives us the OS as a design template. Each connection is a bridge to decades of prior work.
 
-The formalism isn't the theory. It's the skeleton that lets the theory be tested, communicated, and improved. The formal companion (forthcoming) provides the proofs. The blog series provides the intuitions. Building with ma is where both meet practice.
+The formalism isn't the theory. It's the skeleton that lets the theory be tested, communicated, and improved. The [formal companion](formal-companion.md) provides the definitions, propositions, and conjectures. The blog series provides the intuitions. Building with ma is where both meet practice.
 
 ---
 

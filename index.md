@@ -1,24 +1,19 @@
 # The *Ma* of Multi-Agent Systems
 
-*A series on what programming language theory, Japanese aesthetics, and a late-night conversation about SQL macros reveal about the architecture of AI agent systems.*
+*A design theory for the space between agents.*
 
 ```{toctree}
 :maxdepth: 2
 :caption: The Series
 
-blog/blog-series-intro
-blog/conversations-as-closures
-blog/turn-anatomy
-blog/ma-critique
-blog/formal-framework
-```
-
-```{toctree}
-:maxdepth: 2
-:caption: Supplementary Material
-
-blog/actor-taxonomy
-blog/the-harness
-blog/scope-transitions
-blog/primer-kleisli-graded-pi
+blog/00-intro
+blog/01-the-four-actors
+blog/02-the-space-between
+blog/03-conversations-are-closures
+blog/04-raising-and-handling
+blog/05-predictability-as-embeddability
+blog/06-conversations-are-folds
+blog/07-computation-channels
+blog/08-the-specified-band
+blog/09-building-with-ma
 ```
