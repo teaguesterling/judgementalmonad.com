@@ -52,7 +52,7 @@ surface     trained     |              Inferencer|
             literal     | Executor               |
 ```
 
-Every actor in the specified band — regardless of world coupling — has a transparent decision surface. Its behavior can be understood by reading its rules. The OS at `(open, specified)` is as characterizable *in kind* as the Harness at `(scoped, specified)`. The OS is harder to audit (more rules over more state) but not harder to characterize (still transparent). The difference between "harder to audit" and "harder to characterize" is the whole point.
+Every actor in the specified band — regardless of world coupling — has a transparent decision surface. Its behavior can be understood by reading its rules. The OS at `(open, specified)` is as characterizable *in kind* as the Harness at `(scoped, specified)`. The OS is harder to audit (more rules over more state) but not harder to characterize (still transparent). Auditability is quantitative — how much specified logic do you need to read? Characterizability is qualitative — is the logic specified at all, or is it opaque? The difference is the whole point.
 
 The threat to regulation is never world coupling growth. It's **decision surface growth** — replacing specified rules with trained models in the regulator.
 
@@ -92,7 +92,7 @@ SELinux. AppArmor. Firewall rules. Specified policy over observed state. The pol
 
 For the conversation architecture: the permission configuration (auto-allow Read, ask for Bash, auto-deny network). Compaction thresholds. Budget management. All specified. All auditable. Operating over growing conversation state.
 
-**Each layer stays in the specified band independently.** The constraint layer is `(open, literal)` — it doesn't decide, it bounds. The observation layer is `(open, literal)` — it reports, it doesn't decide. The policy layer is `(open, specified)` — rules over observed state. None requires trained judgment. The composition of three specified layers is still specified.
+**Each layer stays in the specified band independently.** The constraint layer doesn't decide — it bounds. The observation layer doesn't decide — it reports. The policy layer decides, but with specified rules over observed state. None requires trained judgment. The composition of three specified layers is still specified.
 
 The gap between Layer 2 (what the Harness observes) and Layer 1 (what the sandbox constrains) is the region of *unmediated but bounded* activity. Persistent processes, filesystem mutations between turns, background state accumulation — these happen in the gap. The Harness doesn't mediate them, but the sandbox constrains them.
 
@@ -151,7 +151,7 @@ Opaque specification:       the rules are specified but invisible to the governe
 
 Both are specified. Both are characterizable by the administrator. But they create radically different environments for the actor. A transparent specification lets the Inferencer reason about its constraints — avoid proposing things it knows will be denied. An opaque specification forces the Inferencer to learn the constraints empirically, through trial and error, wasting budget on proposals that will fail.
 
-Opaque policies don't reduce the Inferencer's ma. They reduce its *useful* ma while keeping its *total* ma the same. The decision surface churns against invisible constraints. The grade stays high but the effective work output drops. The worst combination: high regulatory cost with low regulatory benefit.
+Opaque policies don't reduce the Inferencer's ma. They reduce the portion of its decision surface spent on proposals that could actually succeed, while keeping the total decision surface the same. The model churns against invisible constraints — exploring paths the policy will reject, re-deriving boundaries it could have respected from the start. The grade stays high but the effective work output drops. The worst combination: high regulatory cost with low regulatory benefit.
 
 The design principle: **minimize the gap between the full policy and its projection into the actor's scope.** Not all policies can be fully projected — some security constraints shouldn't be visible. But unnecessary opacity is a direct tax on system performance.
 
@@ -188,3 +188,4 @@ The Harness belongs at the hub not because it's simple. It belongs there because
 ---
 
 *Previous: [Computation Channels](07-computation-channels.md)*
+*Next: [Building With Ma →](09-building-with-ma.md)*

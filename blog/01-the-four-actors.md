@@ -163,4 +163,5 @@ The next post gives it a name.
 
 ---
 
+*Previous: [The Ma of Multi-Agent Systems](00-intro.md)*
 *Next: [The Space Between →](02-the-space-between.md)*

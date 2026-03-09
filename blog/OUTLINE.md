@@ -20,20 +20,16 @@ provides rigor for readers who want proofs.
 
 ---
 
-## 0. The Ma of Multi-Agent Systems (intro)
+## 0. The Ma of Multi-Agent Systems (intro) ✅
 
 **File:** `00-intro.md`
 **Rewrite of:** `blog/blog-series-intro.md`
-**Status:** Not yet written
+**Status:** Written
 
-The harness moment. Industry context (Fowler, OpenAI, LangChain benchmark).
-The gap: practice exists, composition algebra exists (Zhang & Wang MCE),
-design theory doesn't. This series proposes one. Series map.
-
-**Note:** Post 1 already carries a strong opening (the multi-agent scenario,
-industry framing, "what's missing is the unified theory"). The intro should
-complement, not duplicate. Consider whether this post is still needed or
-whether post 1 IS the intro.
+Compressed tl;dr of the full framework in ~4 paragraphs. Industry context
+(Fowler, OpenAI, LangChain benchmark). Series map linking all 10 posts.
+Complements post 1 — post 1 is observation-driven opening, post 0 is
+the summary for readers who want the punchline first.
 
 ---
 
@@ -125,97 +121,85 @@ The monad morphism preorder. Three conditions. Ocap parallel. Why formalize.
 
 ---
 
-## 6. Conversations Are Folds
+## 6. Conversations Are Folds ✅
 
 **File:** `06-conversations-are-folds.md`
 **Source:** `blog/conversations-are-folds.md`
-**Status:** Not yet written
+**Status:** Written, reviewed, revised
 
 The dynamical turn. Static structure (posts 2-5) meets temporal evolution.
 
-**Entry point:** Post 5's closing — "everything so far is static, but real
-conversations have a coupled recurrence."
-
-**Content:**
-- Every inference call is stateless (callback to post 1)
-- The conversation is `foldl step initial_state turns`
-- Context is input, not decision surface: d_reachable vs d_total
-- The composite entity (`StateT Conv_State IO` for the Harness)
-- Grade as a coupled recurrence: `g(n+1) = F(g(n), config(n))`
-- The Harness as dynamical system controller
-- The one-shot join (post 2) was always the right composition — it measures
-  one step; the fold composes the steps
-
-**Watch for:**
-- The fold model should connect to post 4's context-reconstruction insight
-  (each fold step is a fresh call with reconstructed context)
-- d_reachable vs d_total is new and important — the Inferencer's reachable
-  decision surface grows with context length even though total (weights) is fixed
-- Don't re-derive the grade lattice; use it as established vocabulary
-- The "composite entity" framing should build on post 4's handler framing
-  (the fold step IS the handler processing one turn)
+**Key decisions made:**
+- d_reachable vs d_total distinction: d_total (weights) is constant grade
+  component, d_reachable = f(d_total, |context|) grows with context length
+- Closure callback: "each step creates a fresh closure over the updated Conv_State"
+- StateT Conv_State IO: the composite's type IS the Harness's type (backwards
+  from expectation — brain is step function, plumbing is identity)
+- IO at bottom is the same under-refined IO from post 5 (honest, not a flaw)
+- Coupled recurrence uses d_reachable(n) throughout, not plain d(n)
+- Context management identified as single most leveraged Harness operation
+  (controls both world coupling AND effective decision surface simultaneously)
 
 ---
 
-## 7. Computation Channels
+## 7. Computation Channels ✅
 
 **File:** `07-computation-channels.md`
 **Source:** `blog/computation-channels.md`
-**Status:** Not yet written
+**Status:** Written, reviewed, revised
 
 The IO refinement that post 5 teased. What the computation can do TO the world.
 
-**Entry point:** Post 6's coupled recurrence raises the question: what
-determines whether the grade trajectory is bounded or self-amplifying?
-
-**Content:**
-- Data channels vs computation channels
-- The 9-level taxonomy (0-8): structured query → arbitrary code execution → controller modification
-- Three phase transitions: mutation, amplification, escape from fold
-- The computation level as derivative of the grade trajectory
-- The star topology as aspiration (breaks at level 6+)
-- The sandbox as the load-bearing boundary
-
-**Watch for:**
-- This is the post that delivers on the IO refinement promise from post 5
-- observe → modify → generate spectrum maps to the taxonomy levels
-- The bare vs agentic Inferencer distinction (post 5) becomes concrete here:
-  different tool sets place you at different computation channel levels
-- Connect to post 4: tools that accept agent-generated text as executable
-  specification (Bash, eval) are where the handler's finite strategies face
-  their hardest test
+**Key decisions made:**
+- Body covers levels 0-4 inline; full 9-level taxonomy in appendix
+- Level 4 expanded with halting-problem discussion and compounding across calls
+- "Bounded transducer or universal machine" given plain-language translation
+- Finer line within agentic case (not bare vs agentic — both are agentic)
+- observe → modify → generate mapped to the taxonomy levels
+- Sandbox as dynamics controller (determines which phase transitions reachable)
+- Closing reframed from "overwhelmed" to regulatory cost approaching undecidability
 
 ---
 
-## 8. The Specified Band
+## 8. The Specified Band ✅
 
 **File:** `08-the-specified-band.md`
 **Source:** `blog/the-specified-band.md`
-**Status:** Not yet written
+**Status:** Written, reviewed, revised
 
 The resolution. How can the Harness stay characterizable while mediating
 actors that can change the world?
 
-**Entry point:** Post 7 showed that computation channels can break the star
-topology. How does regulation survive?
+**Key decisions made:**
+- Removed per-layer grades (sandbox isn't an actor with a grade)
+- Grounded "useful ma" as "portion of decision surface spent on proposals
+  that could actually succeed"
+- Audit vs characterize distinction: auditability is quantitative (how much),
+  characterizability is qualitative (is it specified at all?)
+- "The loop closes" closing section traces full series arc (posts 1-8)
+- SELinux coda: opaque constraints are a tax on system performance
+- Ashby resolution: variety reduction + specified observation + capability
+  publishing + sandbox backstop
 
-**Content:**
-- The wrong worry (monitoring erodes characterizability)
-- The OS existence proof: (open, specified) is viable for regulators
-- The specified band across the full world coupling axis
-- Layered regulation: constraint, observation, policy
-- Capability publishing keeps the Harness specified
-- The SELinux coda: constraints must be projected into actor scope
-- The Ashby resolution: variety reduction, not variety matching
+---
 
-**Watch for:**
-- This is the payoff post — it should feel like a resolution, not more theory
-- The OS parallel is the strongest example in the series; give it room
-- Connect back to post 1's claim: "the Harness belongs at the hub because
-  its behavior is characterizable" — this post explains how it STAYS
-  characterizable under pressure
-- The Ashby resolution should feel like it closes the loop opened in post 2
-  (where Ashby was introduced)
+## 9. Building With Ma ✅
+
+**File:** `09-building-with-ma.md`
+**Status:** Written
+
+The practical "so what." Design rules, multi-agent systems, decision checklist.
+
+**Key decisions made:**
+- Six design rules derived from the framework (restrict tools not models,
+  computation channel level, sandbox > model config, stay specified, project
+  constraints, co-domain funnels)
+- Multi-agent section: multiple Inferencers with different tool sets/trajectories,
+  sub-agent boundaries as co-domain funnels, agent-to-agent communication routed
+  through Harness (capability-based security parallel)
+- Decision checklist: computation level → sandbox → tools → scope → interface → specified band
+- "What the formalism buys": diagnosis, prediction, transfer
+- Closing acknowledges formal companion is forthcoming
 
 ---
 
