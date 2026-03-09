@@ -34,9 +34,11 @@ The two roles map directly onto the conversation:
 | Handler modifying its state | Structure operations: compaction, tool registry changes, budget updates |
 | Nested handlers | Sub-agent boundaries (the outer Harness handles the sub-conversation's summary) |
 
-The Inferencer proposes `Read("src/main.py")` — it raises an effect. The Harness receives the proposal and the continuation (the Inferencer suspended, waiting for the file contents). The Harness checks permissions, dispatches the Executor, collects the result, injects it, and resumes the Inferencer with the file contents in its next input.
+The Inferencer proposes `Read("src/main.py")` — it raises an effect. The Harness receives the proposal, checks permissions, dispatches the Executor, collects the result, and includes the file contents in the Inferencer's next input.
 
-This is the turn cycle from post 1 (extract → process → inject), now with a formal name: the Harness is an algebraic effect handler.
+There's a subtlety here. In algebraic effects, the computation is literally suspended at the effect point, and the handler resumes it with a value. The Inferencer isn't suspended — post 1 established that each call is stateless. The model completes its forward pass, produces the proposal, and is done. The Harness *simulates* the continuation by reconstructing the input with the tool result included and making a new call. The observable behavior is the same — effect raised, result provided, computation continues — but the mechanism is reconstruction, not resumption. Each "continuation" is a fresh call with an augmented context.
+
+This is actually the deeper point. What feels like a continuous computation with effects is really a sequence of stateless calls, stitched together by the Harness reconstructing context at each step. The Harness doesn't just handle effects — it maintains the illusion of continuity that makes the effect model work. This is the turn cycle from post 1 (extract → process → inject), now with a formal name: the Harness is an algebraic effect handler, implemented through context reconstruction rather than computation suspension.
 
 ---
 
@@ -74,7 +76,7 @@ Each actor has internal effects — what happens inside its processing step. But
 
 This is the interface/internal ma distinction from post 2, now visible as a handler boundary. The Executor has its own internal handler that compresses `IO` to `Result | Error` before the Harness sees it. The Inferencer's internal handler is opaque — we don't have access to its implementation effects, only its interface output. The Principal's internal effects are unbounded — the Harness receives whatever the Principal chooses to send.
 
-The Harness itself has an effect signature too: `Extract | Gate | Inject | Compact | Yield` — the operations from post 1's turn cycle, now typed as a finite enumerable set. The Harness is self-characterizing: its interface IS its implementation, which is why it belongs at the hub.
+The Harness itself has an effect signature too: `Extract | Gate | Inject | Compact | Yield` — the operations from post 1's turn cycle, now typed as a finite enumerable set.
 
 ---
 
@@ -104,9 +106,9 @@ This is the difference between prediction and regulation:
 
 **Prediction** asks: what will the actor do? This requires understanding its internal computation — the implementation effects, the weights, the decision surface. For a trained model, this is intractable. For a human, it's impossible.
 
-**Regulation** asks: whatever the actor does, can I handle it? This requires understanding the interface — what effects can be raised, and what to do with each one. For any actor with a typed interface, this is tractable. The session type (auto-allow Read, ask for Bash, auto-deny network) IS the regulation strategy, and it operates entirely at the interface level.
+**Regulation** asks: whatever the actor does, can I handle it? This requires understanding the interface — what effects can be raised, and what to do with each one. For any actor with a typed interface, this is tractable. The permission configuration (auto-allow Read, ask for Bash, auto-deny network) IS the regulation strategy, and it operates entirely at the interface level.
 
-The Harness succeeds not because it predicts what the Inferencer will propose, but because it can handle any proposal the Inferencer makes. The handling strategy is finite, enumerable, auditable — low ma at the interface, regardless of the Inferencer's internal ma.
+The Harness succeeds not because it predicts what the Inferencer will propose, but because it can handle any proposal the Inferencer makes. The handling strategy — which effects get auto-allowed, which get escalated to the Principal, which get denied — is finite, enumerable, auditable. Low ma at the interface, regardless of the Inferencer's internal ma.
 
 This is why restriction has superlinear returns (post 2's supermodularity): reducing the set of effects an actor can raise makes the handler's job easier in proportion to how complex the actor is internally. Restricting a specified script's tools is nice. Restricting a trained model's tools eliminates the combinatorial interaction between vast decision surface and broad world coupling — the handler's finite strategies now cover the space.
 
