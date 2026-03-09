@@ -2,9 +2,11 @@
 
 *An honest accounting of where the formal framework is solid, where it's suggestive, and where it's doing hand-waving in a lab coat.*
 
+**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–9 remain open.
+
 ---
 
-## 1. Ma is three things wearing one name
+## 1. Ma is three things wearing one name — RESOLVED
 
 The unified definition says ma is "the space between what an actor receives and what it produces," determined by world coupling, decision surface, and interface restriction. But the formalism gives three different formal objects for ma:
 
@@ -18,11 +20,11 @@ These aren't three formalizations of one concept. They're formalizations of thre
 
 **The question**: Is ma the space (intuitive), the grade (compositional), the K-complexity (descriptive), or the preorder position (relational)? The text equivocates. Until this is resolved, "ma determines role" could mean any of several precise claims, each with different truth conditions.
 
-**Possible resolution**: Ma is the intuitive concept (the space between). The grade lattice, the K-complexity measure, and the monad morphism preorder are three *projections* of that concept — each formalizing a different aspect, none capturing the whole. This is honest but it means "ma" isn't a formal object. It's a design concept with multiple formal shadows.
+**Resolution**: Ma is the computation's *path space* — not the output space, but the space of ways inputs can become outputs. The grade lattice `(w, d) ∈ W × D` measures it. K-complexity of the co-domain projects it onto the output boundary (interface ma). The monad morphism preorder compares it (embeddability). Three tools, one concept. See [The Grade Lattice](the-grade-lattice.md).
 
 ---
 
-## 2. The grade lattice product ⊗ is undefined
+## 2. The grade lattice product ⊗ is undefined — RESOLVED
 
 The composition formula `ma(A using B) = (coupling_A ⊗ coupling_B, surface_A ⊗ surface_B)` is presented as "multiplicative." But ⊗ operates on what algebra?
 
@@ -30,11 +32,11 @@ The levels (sealed, pinhole, scoped, broad, open) are ordinal landmarks on a qua
 
 Without a concrete algebra, the formula is a diagram, not a theorem. The GCC progression is compelling as narrative but doesn't constrain the algebra enough to make predictions. Would a different ⊗ produce different architectural recommendations?
 
-**Possible resolution**: Define ⊗ as join (least upper bound) on each axis. This is concrete, well-defined on any lattice, and matches the examples: the compound system reaches at least as far as both components on each axis. The "multiplicative" language was misleading — it's monotone lattice composition, not ring multiplication. The cross-term (world coupling passing through a large decision surface) is then a *consequence* of the join interacting with the actor's behavior, not a property of ⊗ itself.
+**Resolution**: Composition is join on the product lattice: `ma(A using B) = (w_A ∨ w_B, d_A ∨ d_B)`. The "multiplicative" intuition comes from the *supermodularity of characterization difficulty* — increasing one axis has greater marginal effect when the other is already high. The cross-term (decision surface navigating world coupling) is a property of the interpretation function, not the algebra. See [The Grade Lattice](the-grade-lattice.md).
 
 ---
 
-## 3. Decision surface has no formal definition
+## 3. Decision surface has no formal definition — RESOLVED
 
 World coupling maps (roughly) to parameterized IO: `IO_null ≤ IO_sandbox ≤ IO_filesystem ≤ IO`. That's a formal object.
 
@@ -48,7 +50,7 @@ The cybernetics connection (Ashby's variety) could provide one: variety has a pr
 
 **Status**: Decision surface is an observation, not a formalization. The grid is a taxonomy, not a theory.
 
-**Possible resolution**: Either formalize decision surface (Ashby's variety or K-complexity of the function description are the most promising candidates) or explicitly scope the formal framework to the two aspects it *can* formalize — world coupling and interface restriction — and position the decision surface as the motivating informal concept that the formalism approximates from both sides.
+**Resolution**: Decision surface = log of the number of distinguishable input-dependent execution paths. Connects to Ashby's variety (the same thing measured in bits), VC dimension (capacity of the function class), and number of linear regions in piecewise-linear networks (Montufar et al., 2014). See [The Grade Lattice](the-grade-lattice.md).
 
 ---
 
