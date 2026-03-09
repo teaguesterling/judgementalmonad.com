@@ -2,7 +2,7 @@
 
 *Part 4: What survives formalization, what doesn't, and where the open problems are.*
 
-This document formalizes the structural claims from the series. Sections 1–10 formalize the conversation log, scopes, the conversation monad, and meta-operations. Sections 11–14 formalize the deeper structures: the interface monad ordering, the monad-comonad duality, interface *ma* vs. internal *ma*, and the fractal architecture. Section 15 formalizes the protocol layer — session types for permission negotiation and π-calculus for parallel tool execution. Section 16 traces a concrete Claude Code interaction through the formalism. Section 17 extracts design principles. Section 18 assesses what's novel and what needs further work.
+This document formalizes the structural claims from the series. Sections 1–10 formalize the conversation log, scopes, the conversation monad, and the raising/handling distinction (algebraic effects). Sections 11–14 formalize the deeper structures: the interface monad ordering, the monad-comonad duality, the grade lattice, interface *ma* vs. internal *ma*, and the fractal architecture. Section 15 formalizes the protocol layer — session types for permission negotiation and π-calculus for parallel tool execution. Section 16 traces a concrete Claude Code interaction through the formalism. Section 17 extracts design principles. Section 18 assesses what's novel and what needs further work.
 
 ---
 
@@ -327,36 +327,38 @@ This is essentially a graded monad over a *resource semiring*, which connects to
 
 **Proposition 10.5.** Meta-operations are not morphisms in the Kleisli category **Conv_K**. They operate at a different categorical level -- transforming the substrate that monadic operations work within, not performing operations within that substrate.
 
-### 10.5 Two-level structure
+### 10.5 Raising and handling
 
-**Definition 10.6 (Two-level structure).** The full framework has two levels:
+**Definition 10.6 (Raising and handling).** The full framework has two roles, mapping to algebraic effects (Plotkin & Pretnar 2009):
 
-1. **Object level** -- monadic. Agents read (through scopes) and append to the flat log `flat(s)`. The graded monad `Conv_s` from Section 7 handles this. Operations at this level preserve the append-only invariant, scope monotonicity, and consume budget monotonically.
+1. **Raising** — actors raise effects: appending to the log, proposing tool calls, producing output. This is monotone — the log grows, budget decreases, scopes widen within a phase. The graded monad `Conv_s` from Section 7 captures it.
 
-2. **Meta level** -- endomorphisms on `Conv_State`. Operations transform the structured conversation: history (compaction, clear), tools (add/remove), budget (reclaim via compaction). Operations at this level may violate monotonicity, reclaim budget, and change scope.
+2. **Handling** — the Harness handles raised effects: interpreting tool calls, gating permissions, compacting, reconfiguring scope and tools. Handling may violate monotonicity — compaction breaks prefix ordering, budget reclamation reverses the budget trajectory, scope can be reconfigured between phases.
 
-The relationship between levels: a meta-level operation transforms the *parameters* of the object-level monad. After compaction, the graded monad `Conv_s` still applies -- but over a different log `C(l)` instead of `l`, with a different budget. After a scope mutation, the grade changes from `s` to `R(s)`. The monadic structure is preserved; the ground it operates on shifts.
+The **monotonicity boundary** is between raising and handling, not between two "levels." A handling operation transforms the *parameters* of the raising monad. After compaction, the graded monad `Conv_s` still applies — but over a different log `C(l)` instead of `l`, with a different budget. After a scope reconfiguration, the grade changes from `s` to `R(s)`. The monadic structure is preserved; the ground it operates on shifts.
 
-**Remark.** This resolves the tension in Section 5. The claim that agent closures have "monotonically growing capture" is correct *at the object level* -- within a single uninterrupted computation phase. Meta-level operations are the *phase boundaries* where monotonicity is suspended and re-established on new ground.
+**Remark.** This resolves the tension in Section 5. The claim that agent closures have "monotonically growing capture" is correct *within raising* — a single uninterrupted computation phase. Handling operations are the *phase boundaries* where monotonicity is suspended and re-established on new ground.
 
-This also clarifies why compaction feels different from regular conversation turns. A message is a morphism in **Log** (extending the prefix order). Compaction is not -- it breaks the ordering and re-establishes it from a new base. The framework accommodates both, but they live at different categorical levels.
+This also clarifies why compaction feels different from regular conversation turns. A message is a morphism in **Log** (extending the prefix order). Compaction is not — it breaks the ordering and re-establishes it from a new base. Raising and handling accommodate both: raising preserves the append-only invariant; handling can transform the substrate.
 
-**Remark.** The quartermaster pattern straddles these two levels. Within a single task, the quartermaster operates at the object level: reading the log, selecting a scope, passing a kit. But the quartermaster's *scope mutation* -- changing what tools a worker can see -- is a meta-level operation on `Conv_State`. The quartermaster is the agent authorized to perform certain meta-level transformations on behalf of the Harness. This is precisely the "programmable semicolon" intuition: the quartermaster controls what happens *between* computation phases, not within them.
+**Remark.** The quartermaster pattern is an actor with delegated handler privileges. Within a single task, the quartermaster raises effects: reading the log, selecting a scope, passing a kit. But the quartermaster's *scope mutation* — changing what tools a worker can see — is a handling operation on `Conv_State`. The quartermaster is the agent authorized to handle certain effects on behalf of the Harness. This is handler composition/delegation, standard in algebraic effects — not an awkward straddling of levels.
+
+**Remark (Connection to algebraic effects).** The mapping to algebraic effects is almost exact: tool signatures = operation declarations, session type branches (§15.1) = handler pattern matching, the Harness's own IO = handler effectfulness. Handlers of algebraic effects have mature composition laws and type safety results (Plotkin & Power 2003, Kammar et al. 2013). The raising/handling framing potentially imports this theory. See [Raising and Handling](raising-and-handling.md) for the full treatment.
 
 ### 10.6 Four actors, three scopes
 
-The two-level structure becomes concrete when we observe that a real conversation has (at minimum) four actors with three distinct projections of the same underlying state. (Executors share the Harness's level but with narrow, argument-scoped views.)
+The raising/handling distinction becomes concrete when we observe that a real conversation has (at minimum) four actors with three distinct projections of the same underlying state. Each actor raises effects; the Harness handles them.
 
-| Actor | Read scope | Write scope | Level | *Ma* |
+| Actor | Read scope | Interface type (what handler receives) | Role | *Ma* |
 |---|---|---|---|---|
-| **Principal** | Terminal rendering (formatted markdown, tool summaries) | Natural language text | Object (via Harness) | Constitutive |
-| **Harness** | `Conv_State` (compartments, token counts, budget, tool registry) | Meta-operations (compaction, tool loading, context management) | Meta | Minimal |
-| **Inferencer** | Token vector (flattened, tokenized conversation filtered through scope) | Structured responses + tool calls | Object | Intrinsic |
-| **Executor** | Arguments + sandbox (just its inputs) | Computed results | Object (invoked by Harness) | Borrowed |
+| **Principal** | Terminal rendering (formatted markdown, tool summaries) | `MultimodalMessage` = text + images + files + structured selections | Raises (unhandled context) | Constitutive |
+| **Harness** | `Conv_State` (compartments, token counts, budget, tool registry) | `HarnessAction` = enumerable tagged union | Handles raised effects | Minimal |
+| **Inferencer** | Token vector (flattened, tokenized conversation filtered through scope) | `Response` = text blocks + tool call proposals | Raises effects (proposals) | Intrinsic |
+| **Executor** | Arguments + sandbox (just its inputs) | `Either E Result` (text, structured data, binary, error) | Raises (invoked by handler) | Borrowed |
 
 **Remark.** None of the actors sees the same thing. The Harness sees structural metadata (compartment boundaries, budget) that neither the Principal nor the Inferencer sees directly. The Inferencer sees the full tokenized context including system prompts the Principal never sees. The Principal sees the physical world and their own internal state that no other actor can access. The Executor sees only its arguments and its sandbox (filesystem, network, etc.).
 
-Critically, the write scopes are asymmetric. The Principal inputs unstructured text. The Inferencer inputs structured responses and tool calls. The Harness inputs meta-operations. The Executor inputs computed results. These are four different *write channels* into the same growing state.
+The interface types are what the handler receives at the boundary — not the implementation effects. The Inferencer's internal process (attention + sampling + chain-of-thought) is opaque; the handler receives one structured `Response`. The Executor's internal `IO_W` is compressed to `Either E Result` by the Executor's own internal handler (Prop. 13.3). The Principal provides multimodal input — images, files, and structured selections flow through the Harness, not just text.
 
 **Proposition 10.7 (The Harness is the quartermaster).** In a system like Claude Code, the Harness occupies exactly the quartermaster role:
 - It reads the task and the conversation history (its read scope includes `Conv_State`)
@@ -411,12 +413,14 @@ where:
 
 **Remark.** This is the same ordering as the blog post's co-domain gradient, but now we see the formal object: each monad determines an interface co-domain, and the ordering is by descriptive complexity of that co-domain. The four actors map cleanly:
 
-| Actor | Interface monad | Co-domain characterizability |
+| Actor | Interface type | Co-domain characterizability |
 |---|---|---|
-| **Executor** | `Either E` (result or error) | Low — output type + error type |
-| **Harness** | `State Conv_State` (deterministic given state) | Low — enumerable given rules |
-| **Inferencer** | `Distribution` (weighted over token sequences) | High — requires the weights |
+| **Executor** | `Either E Result` (result or error) | Low — output type + error type |
+| **Harness** | `StateT Conv_State IO` (manages state, lives in IO) | Low — enumerable given rules |
+| **Inferencer** | `Response` (text blocks + tool call proposals) | High — one sample from opaque process |
 | **Principal** | `IO` (depends on the world) | Maximal — requires the person |
+
+**Remark.** The Inferencer's interface is `Response`, not `Distribution(TokenSeq)` — sampling has already happened. The handler receives the structured output, not the distribution. Convention 13.3a (modeling the Inferencer's effects *as if* drawn from a distribution) is sufficient for the handler's purpose: receive the structured output, check protocol conformance, handle the proposed effects. The Harness is `StateT Conv_State IO`, not `State Conv_State` — it handles conversation state while raising its own effects in `IO` (process dispatch, file loading, image processing).
 
 ### 11.2 Ma as Kolmogorov complexity of the co-domain
 
@@ -519,17 +523,17 @@ The comonad operations now have precise meanings:
         -- at every scope position, the ability to see every other scope position
         -- this is the Harness's perspective: it can compute any actor's view
 
-    extend infer (view, s_inferencer) = (λs'. infer(view, s'), s_inferencer)
-        -- "what would inference produce under each possible scoping?"
-        -- a counterfactual: the Inferencer's output as a function of scope choice
+    extend f (view, s_inferencer) = (λs'. f(view, s'), s_inferencer)
+        -- "what would f compute from each possible scoping's perspective?"
+        -- the handler's design space: what each scoping would produce as input
 
 **Remark.** The `Store` comonad captures the Harness's structural role precisely:
 
 - **`extract`** is what the Inferencer (or any actor) experiences — it receives the focused view at its scope position. The actor never sees the full store; it sees `extract`.
 - **`duplicate`** is the Harness's god-view — access to every possible extraction, not just the current one. The Harness can compute what *any* actor would see under *any* scope. This is the formal content of "the Harness constructs each actor's view."
-- **`extend f`** applies a function `f : ConvStore → B` across all scope positions. If `f` is inference, this gives the counterfactual: "what would the Inferencer produce if we gave it a different scope?" This is what the Harness is implicitly optimizing when it chooses which tools to load or how aggressively to compact.
+- **`extend f`** where `f` is a comonadic operation captures "what would each actor *see* under each possible scoping?" — the handler's design space. The handler CAN compute this (it's just `view(s)` for each `s`). The actor's *response* to each view is opaque — it depends on the actor's internal ma, behind the interface boundary. The handler navigates this design space heuristically: choosing a scope that it expects (but cannot prove) will produce good results.
 
-The Harness has access to `duplicate` and `extend`. Other actors only ever see `extract`. This asymmetry — the Harness operates on the comonad, other actors operate on extracted values — is the formal content of the Harness's privileged position.
+The Harness has access to `duplicate` and `extend`. Other actors only ever see `extract`. This asymmetry — the Harness operates on the comonad, other actors operate on extracted values — is the formal content of the Harness's privileged position. The handler navigates a well-characterized design space (the comonadic side — what actors could see) to manage an opaque process (the actor's internal effects — what actors do with what they see). This is also the precise content of the regulation ≠ prediction distinction: the Harness doesn't need to predict what the actor will do (that would require `extend infer`, which is uncomputable without the weights); it needs to handle whatever arrives. See [Raising and Handling](raising-and-handling.md).
 
 ### 12.3 The turn as comonadic extraction followed by monadic injection
 
@@ -610,7 +614,7 @@ where `HarnessAction` is the sum type of everything the Harness can do:
       | Yield Conv_State
           -- turn complete, return updated state
 
-**Remark.** The Harness is a `State Conv_State` computation — it reads and writes `Conv_State`. But its *interface* type is `HarnessAction`, which is fully enumerable given the current `Conv_State` and configuration. This is the formal content of "minimal *ma*": the Harness's co-domain is a tagged union of characterizable operations. You can describe what the Harness might do without having the Harness — you just need its rules and the current state.
+**Remark.** The Harness is a `StateT Conv_State IO` computation — it reads and writes `Conv_State` while raising its own effects in `IO` (process dispatch, file loading, image processing). In algebraic effects terms: the Harness handles conversation effects while raising its own effects in an outer `IO` context. Its *interface* type is `HarnessAction`, which is fully enumerable given the current `Conv_State` and configuration. This is the formal content of "minimal *ma*": the Harness's co-domain is a tagged union of characterizable operations. You can describe what the Harness might do without having the Harness — you just need its rules and the current state. The `IO` is the handler's own effect, not visible at the interface.
 
 **Definition 12.6 (Harness as comonad-monad mediator).** The Harness's role in the turn cycle (Prop. 12.2) is precisely:
 
@@ -622,7 +626,7 @@ It produces:
 
 The first component constructs the comonad from raw state. The second component gates monadic injection back into state. The Harness is the function that **bridges** `Conv_State` to `Store` (comonadic) and `Conv` (monadic).
 
-**Proposition 12.7 (The Harness's *ma*).** The Harness inhabits `State Conv_State` with interface type `HarnessAction`. Its interface *ma* is:
+**Proposition 12.7 (The Harness's *ma*).** The Harness inhabits `StateT Conv_State IO` with interface type `HarnessAction`. Its interface *ma* is:
 
     ma_interface(Harness) = K(desc(HarnessAction))
 
@@ -665,6 +669,60 @@ Restricting an actor's configuration (narrower scope *and* fewer tools) cannot i
 
 **Corollary 12.11 (The configuration lattice connects both halves of the framework).** The scope lattice (Sections 2–3, comonadic) and the monad ordering (Section 11, monadic) meet in the configuration lattice. The Harness navigates this lattice when it sets up each actor: choosing a position in the scope lattice (what the actor sees) and a position in the tool powerset (what the actor can do). The *ma* ordering of actors (Executor < Harness < Inferencer < Principal) is not a consequence of either lattice alone — it's a consequence of the Harness's typical configuration choices: Executors get narrow scope + single tool (minimal), the Inferencer gets broad scope + gated tools (moderate), the Principal gets full physical world + unbounded agency (maximal).
 
+### 12.9 The grade lattice
+
+The configuration lattice (§12.8) describes what the Harness *gives* each actor. The monad morphism preorder (§11) describes what others *see* at the interface. Between them: the actor's computation — its path space. The grade lattice formalizes this missing middle.
+
+**Definition 12.12 (Grade lattice).** The *ma* grade of an actor A is the pair:
+
+    ma(A) = (w_A, d_A) ∈ W × D
+
+where `W` (world coupling) and `D` (decision surface) are join-semilattices:
+
+    W: sealed ≤ pinhole ≤ scoped ≤ broad ≤ open
+    D: literal ≤ specified ≤ configured ≤ trained ≤ evolved
+
+The product lattice `W × D` is ordered componentwise: `(w₁, d₁) ≤ (w₂, d₂)` iff `w₁ ≤ w₂` and `d₁ ≤ d₂`. This is a partial order — `(broad, specified)` and `(sealed, trained)` are incomparable, which is correct.
+
+World coupling maps to the parameterized IO family (§11.4): `IO_null ≤ IO_sandbox ≤ IO_filesystem ≤ IO`. Decision surface is formalized as the log of the number of distinguishable input-dependent execution paths through the actor's computation — connecting to Ashby's variety (1956), VC dimension, and number of linear regions in piecewise-linear networks (Montufar et al. 2014).
+
+**Proposition 12.13 (Configuration bounds grade).** For an actor A with Harness configuration `(s, T)`:
+
+    config₁ ≤ config₂  ⟹  grade(A, config₁) ≤ grade(A, config₂)
+
+Scope `s` restricts world coupling (less visible state = less reachable state). Tool set `T` affects both axes: each tool contributes world coupling (what world it touches) and multiplies with the actor's decision surface (the decision surface navigates tool outputs). Restricting configuration can only reduce the effective grade. The configuration lattice is the Harness's lever.
+
+**Proposition 12.14 (Grade bounds interface ma).** The actor's grade sets an upper bound on what its interface effects can express:
+
+    interface_ma(A) ≤ f(grade(A))    for some monotone f
+
+with equality when the interface is unconstrained, and strict inequality at co-domain funnels (§13.3). An Opus model restricted to `{Approve, Reject}` has high grade (vast path space) and low interface ma (two possible outputs). The funnel is the mechanism; the gap is the measure.
+
+**Proposition 12.15 (Composition is join).** When actor A uses tool B:
+
+    ma(A using B) = (w_A ∨ w_B, d_A ∨ d_B)
+
+The compound's world coupling is at least as broad as either component's. Its decision surface is at least as large as either component's. Join is well-defined on any lattice, commutative, associative, idempotent.
+
+**Remark (Supermodularity).** The characterization difficulty `χ : W × D → ℝ` of the resulting grade is supermodular: the marginal effect of increasing one axis is greater when the other is already high. Sandboxing (reducing w) matters most when the decision surface is large. Tool restriction matters most when both axes are high. This is the formal content of "restriction is the load-bearing operation" — grade reduction has superlinear returns. See [The Grade Lattice](the-grade-lattice.md) for the full analysis.
+
+**Proposition 12.16 (Harness as grade reduction).** A Harness operation `H` applied to actor `B` produces:
+
+    ma(H(B)) ≤ ma(B)   componentwise
+
+Sandboxing reduces `w`. Tool restriction reduces effective `w` and `d`. Fixed prompt templates channel `d`. The Harness is a grade-reducing functor — it maps high-grade computations to lower-grade ones.
+
+**Remark (Grade dynamics in conversations).** In conversations, grade reduction is not one-shot but ongoing. Each inference call is stateless — the conversation is a fold: `foldl step initial_state turns`. The grade evolves via a coupled recurrence `g(n+1) = F(g(n), config(n))` where the Harness controls `config(n)`. Context accumulation increases world coupling (more data entering through the input boundary) and reachable decision surface (more attention interactions through fixed weights). Compaction is the Harness applying grade reduction mid-conversation. The dynamics of this recurrence depend on the tool set's computation level — bounded for data channels (SQL, file read), self-amplifying for Turing-complete computation channels (Bash, `python -c`). See [Conversations Are Folds](conversations-are-folds.md) and [Computation Channels](computation-channels.md).
+
+**Remark (Three orderings, one causal chain).** The framework now has three orderings:
+
+    Configuration lattice          → Grade lattice          → Monad morphism preorder
+    (S × P(Tools))                   (W × D)                  (M, ≤_ma)
+    Harness's control surface        Actor's path space        Interface effect type
+    What the Harness gives           What the actor IS         What others see
+
+Configuration bounds grade (Prop. 12.13). Grade bounds interface ma (Prop. 12.14). The co-domain funnel (§13.3) makes the second bound strict — high grade mapped to low interface ma through a constrained interface type. The scope lattice (§2) is the first component of the configuration lattice — a projection, not a separate ordering. Three orderings: configuration (control), grade (measurement), preorder (comparison).
+
 ---
 
 ## 13. Interface Ma and Internal Ma
@@ -676,13 +734,13 @@ The key insight from Part 3: *ma* is measured at the **interface**, not inside t
 **Definition 13.1 (Implementation monad).** For an actor `A` whose internal computation can be described as a monad, define `M_impl` as its *implementation monad* — the monad (or monad transformer stack) that characterizes its internal effects.
 
 For some actors this is well-defined:
-- **Harness**: `State Conv_State` (or a transformer stack including error handling, configuration lookup)
+- **Harness**: `StateT Conv_State IO` — handles conversation state while raising its own effects in `IO` (process dispatch, file loading, image processing). The `IO` is the handler's own effect.
 - **Executor**: `IO_W` for the appropriate world `W`
 - **Sub-agent**: `Conv_s` (a scoped conversation monad with its own turn loop)
 
 For others it is not:
-- **Inferencer**: "Attention + sampling + chain-of-thought" is not a standard monad. We can *choose* to model it as `Distribution` (the probabilistic monad) or `State Weights`, but these are approximations, not descriptions of the actual computation.
-- **Principal**: Human cognition has no monad. `IO` is a catch-all, not a characterization.
+- **Inferencer**: "Attention + sampling + chain-of-thought" is not a standard monad. The interface is `Response` (text blocks + tool call proposals) — one structured sample from the internal process. Sampling has already happened. We can model the internal process *as if* it were `Distribution` (Conv. 13.3a), but the handler receives `Response`, not the distribution.
+- **Principal**: Human cognition has no monad. `IO` is a catch-all, not a characterization. The interface is `MultimodalMessage` — text, images, files, and structured selections.
 
 **Definition 13.2 (Interface monad).** Every actor `A` has an *interface monad* `M_iface` that describes its output space as seen by other actors. This is determined by the actor's interface type — its tool signature, its output format, its co-domain. This is always well-defined: the interface is what other actors actually observe.
 
@@ -695,7 +753,7 @@ This morphism maps internal computation to constrained external output. It is:
 - **Lossy** (many internal states map to the same interface output)
 - **Structure-preserving** (sequential composition inside maps to sequential composition outside)
 
-For the Harness (`State Conv_State ~> HarnessAction`) and Executors (`IO_W ~> Either E Result`), this is genuine: the implementation monad is standard, the interface monad is standard, and the morphism preserves monadic structure.
+For the Harness (`StateT Conv_State IO ~> HarnessAction`) and Executors (`IO_W ~> Either E Result`), this is genuine: the implementation monad is standard, the interface monad is standard, and the morphism preserves monadic structure. The Harness's `IO` is visible at the implementation level but not at the interface — the handler's own effects are behind its interface boundary, just as the Executor's `IO_W` is behind its.
 
 **Convention 13.3a (Interface boundary for opaque actors).** For the Inferencer and Principal, we *model* the interface boundary as if it were a monad morphism `η : M_impl ~> M_iface`, with `M_impl` chosen to approximate the actor's internal complexity. This is a modeling convention, not a mathematical claim — it lets us reason uniformly about all actors, at the cost of treating the Inferencer's internals as a black box with an assumed monadic structure. The useful properties (surjective, lossy) hold regardless of whether `M_impl` is genuinely a monad. What we lose is the guarantee that composition is preserved: we don't know that sequential inference steps compose the way monadic `bind` does.
 
@@ -1155,13 +1213,38 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 - **Gate inject carefully.** Every tool result widens the conversation's co-domain permanently (the log is append-only). Permission gates aren't just security — they're co-domain management. Each grant is irreversible within the object level.
 - **The Harness controls both boundaries.** If your architecture gives an actor control over its own extraction or injection, you've moved a Harness responsibility to a higher-*ma* actor. The system becomes harder to reason about.
 
+### Principle 6: The Harness manages trajectories, not just configurations
+
+From Section 12.9 and [Conversations Are Folds](conversations-are-folds.md): the Harness doesn't just set the initial configuration — it steers the grade trajectory over the life of the conversation. Compaction is grade reduction applied mid-conversation. Tool grants/revocations change the trajectory's direction. Context management controls both world coupling (what data is visible) and reachable decision surface (how many paths through the weights are exercised).
+
+*Design test*: does your Harness have a strategy for managing the conversation's grade over time, or does it just set initial configuration and hope? Compaction thresholds, progressive tool grants, and scope adjustment are trajectory management.
+
+### Principle 7: The regulator stays specified
+
+From [The Specified Band](the-specified-band.md): the OS proves that `(open, specified)` is viable — vast world coupling with transparent decision surface. The threat to the regulator is never broader world coupling; it's higher decision surface. An "intelligent" Harness that replaces specified rules with trained models becomes as hard to characterize as what it regulates.
+
+- **Constraint over observation over inference.** Sandbox first (bounds everything, zero ma). Observe what you can within the fold (tool inputs/outputs, Conv_State). Apply specified policy to observations. Never replace specified rules with trained models in the regulatory loop.
+- **Capability publishing keeps the Harness specified.** When agents create new tools, require effect signature declarations. The Harness evaluates declarations with specified rules. The sandbox enforces bounds regardless.
+
+*Design test*: is every decision in your Harness traceable to a specified rule? If you're using ML-based anomaly detection in the orchestration layer, you've left the specified band.
+
+### Principle 8: Computation channels determine dynamics
+
+From [Computation Channels](computation-channels.md): the most important property of your tool set is whether any tool accepts agent-generated text as executable specification. Data channels (file read, SQL) create bounded dynamics. Turing-complete channels (Bash, `python -c`) create self-amplifying dynamics where each step can increase the next step's computational reach.
+
+- **Classify each tool by computation level.** Read (level 0–2), mutate (level 3), compute (level 4), extend environment (level 5), persistent process (level 6), capability creation (level 7), controller modification (level 8).
+- **The computation level determines the derivative** of the grade trajectory — not a new axis, but how fast the grade can change between steps.
+- **The star topology is an aspiration.** At level 6+, subprocesses escape Harness mediation. The sandbox, not the Harness, becomes the load-bearing boundary for unmediated actors.
+
+*Design test*: if you have level 4+ tools, your regulatory model needs the sandbox as backstop. If you can stay at level 0 (SQL, structured queries), you get convergent dynamics for free.
+
 ---
 
 ## 18. What This Formalization Shows
 
 ### Claims from the series, assessed:
 
-**"Agents are closures."** *Partially formalized.* Agent closures (Def. 5.2) correspond to PL closures with one structural difference: monotonically growing capture vs. static capture (Prop. 5.3). This monotonicity holds at the object level (Section 10) but can be violated by meta-level operations like compaction. "Structural correspondence with a characterized divergence" — not identity, but precise enough to be a design guide.
+**"Agents are closures."** *Partially formalized.* Agent closures (Def. 5.2) correspond to PL closures with one structural difference: monotonically growing capture vs. static capture (Prop. 5.3). This monotonicity holds within raising (Section 10.5) but can be violated by handling operations like compaction. "Structural correspondence with a characterized divergence" — not identity, but precise enough to be a design guide.
 
 **"The conversation is the shared heap."** *Formalized.* The log monoid (Def. 1.2) serves as a shared, append-only store. Scopes (Def. 2.1) determine visibility. Clean.
 
@@ -1201,9 +1284,17 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 
 10. **Parallel tool execution in π-calculus** (Section 15.3). Private result channels, concurrent execution with name restriction, and the barrier/promise distinction. The connection between π-calculus name restriction and the scope lattice.
 
-11. **The two-level structure** (Section 10). Object-level (monadic, monotone) and meta-level (endomorphisms on `Conv_State`, possibly lossy) operations. The Harness straddles both levels.
+11. **The raising/handling reframing** (Section 10.5). Originally "two-level structure" — now dissolved into algebraic effects. Raising (monotone) vs handling (may break monotonicity). The Harness IS the handler. Session types ARE handler pattern matching. Connects to Plotkin & Pretnar (2009).
 
 12. **Budget as a linear resource** (Section 10.3). Context window as a finite resource, connecting to quantitative type theory and resource-sensitive logic.
+
+13. **The grade lattice** (Section 12.9). Ma as a 2D grade `(w, d) ∈ W × D` with decision surface formalized as log of distinguishable execution paths. Composition is join. Characterization difficulty is supermodular — the formal content of "restriction is load-bearing." Connects to Ashby's variety, VC dimension, and Montufar et al. (2014). Three orderings form a causal chain: configuration → grade → interface ma.
+
+14. **The fold model for conversations** (Section 12.9 Remark). Each inference call is stateless. The conversation is a fold over managed state. Reachable vs total decision surface. The Harness as dynamical system controller managing the grade trajectory via a coupled recurrence.
+
+15. **Computation channel taxonomy** (Principle 8). Tools classified by whether they accept agent-generated executable specifications. Levels 0–8 from structured queries to controller modification. Determines the dynamics of the grade recurrence — bounded or self-amplifying. Three phase transitions: mutation, amplification, escape from fold.
+
+16. **The specified band** (Principle 7). `(open, specified)` as the viable region for regulators. The OS as existence proof. Layered regulation (constraint, observation, policy). The Ashby resolution: variety reduction rather than variety matching.
 
 ### What needs further work:
 
@@ -1211,9 +1302,9 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 
 2. **Monad morphisms for inter-enclave sanitization.** A monad morphism preserves sequential composition. If sanitization is structure-preserving, it's a monad morphism. The temporal accumulation issue (Part 3) suggests it may not be — sanitization decisions depend on channel history, which breaks compositionality. This needs a weaker structure, possibly Galois connections.
 
-3. **The meta-level's algebraic structure.** Section 10 identifies meta-operations as endomorphisms on `Conv_State` but doesn't formalize their composition laws. The endomorphism monoid has structure worth characterizing.
+3. **The handler's algebraic structure.** Section 10.5 identifies handling operations as endomorphisms on `Conv_State` and maps them to algebraic effect handlers. Handler composition laws from the algebraic effects literature (Plotkin & Pretnar 2009) provide candidate structure. Remains: formal verification that the mapping is exact.
 
-4. **The graded monad needs mid-computation scope change.** Definition 7.1 assigns a fixed scope. In practice, scopes expand (tool requests). The two-level structure handles this at the meta level, but a unified treatment would be cleaner.
+4. **The graded monad needs mid-computation scope change.** Definition 7.1 assigns a fixed scope. In practice, scopes expand (tool requests). The raising/handling framing makes this natural — scope change is the handler reconfiguring between handled effects. Remains: formal treatment of handler-mediated scope change within the graded monad.
 
 5. **Compaction as a comonadic morphism.** Does lossy summarization preserve comonadic structure? If `compact(A then B) ≠ compact(A) then compact(B)`, compaction isn't structure-preserving. It might be a Galois connection (abstract interpretation) rather than a morphism.
 
@@ -1227,22 +1318,37 @@ From Section 12.3 and the worked example: the turn cycle is comonadic compressio
 
 10. **Mechanical verification.** None of this has been verified in Coq or Agda.
 
+11. **The coupled recurrence needs characterization.** `g(n+1) = F(g(n), config(n))` is stated (Section 12.9 Remark) but `F` is not given a type or constraints. Under what conditions does the trajectory converge? What determines the rate of grade inflation? The dynamical systems theory of grade trajectories is sketched but not formalized. See [Conversations Are Folds](conversations-are-folds.md).
+
+12. **Computation channel taxonomy needs formal grounding.** The levels (0–8) in Principle 8 are descriptive. A formal characterization — perhaps via the expressiveness of the specification language accepted by each tool — would connect to computability theory and give precise phase transition boundaries. See [Computation Channels](computation-channels.md).
+
+13. **The supermodularity claim needs proof or counterexample.** Is characterization difficulty literally supermodular on `W × D`, or approximately so? A formal proof would require defining `χ` precisely. An empirical test (measuring observer surprise as axes vary) could provide evidence. See [The Grade Lattice](the-grade-lattice.md).
+
 ---
 
 ## References
 
+- Ashby, W. R. (1956). *An Introduction to Cybernetics*. Chapman & Hall.
 - Atkey, R. (2009). Parameterised notions of computation. *Journal of Functional Programming*, 19(3-4).
 - Atkey, R. (2018). Syntax and semantics of quantitative type theory. *LICS*.
+- Bauer, A. (2018). What is algebraic about algebraic effects and handlers? *arXiv:1807.05923*.
 - Brookes, S., & Geva, S. (1992). Computational comonads and intensional semantics. *Applications of Categories in Computer Science*, London Mathematical Society Lecture Notes 177.
+- Conant, R. C., & Ashby, W. R. (1970). Every good regulator of a system must be a model of that system. *International Journal of Systems Science*, 1(2).
 - Fowler, M. (2025). Harness engineering. *martinfowler.com*.
 - Honda, K. (1993). Types for dyadic interaction. *CONCUR*.
 - Honda, K., Yoshida, N., & Carbone, M. (2008). Multiparty asynchronous session types. *POPL*.
 - Hewitt, C., Bishop, P., & Steiger, R. (1973). A universal modular ACTOR formalism for artificial intelligence. *IJCAI*.
+- Kammar, O., Lindley, S., & Oury, N. (2013). Handlers in action. *ICFP*.
 - Katsumata, S. (2014). Parametric effect monads and semantics of effect systems. *POPL*.
 - McBride, C. (2016). I got plenty o' nuttin'. *A List of Successes That Can Change the World*, LNCS 9600.
+- Miller, M. S. (2006). *Robust Composition: Towards a Unified Approach to Access Control and Concurrency Control*. PhD thesis, Johns Hopkins University.
 - Milner, R. (1999). *Communicating and Mobile Systems: The Pi-Calculus*. Cambridge University Press.
 - Moggi, E. (1991). Notions of computation and monads. *Information and Computation*, 93(1).
+- Montufar, G. F., Pascanu, R., Cho, K., & Bengio, Y. (2014). On the number of linear regions of deep neural networks. *NeurIPS*.
 - Orchard, D., Wadler, P., & Eades, H. (2019). Unifying graded and parameterised monads. *arXiv:1907.10276*.
 - Parnas, D. L. (1972). On the criteria to be used in decomposing systems into modules. *Communications of the ACM*, 15(12).
+- Plotkin, G., & Power, J. (2003). Algebraic operations and generic effects. *Applied Categorical Structures*, 11(1).
+- Plotkin, G., & Pretnar, M. (2009). Handlers of algebraic effects. *ESOP*.
+- Saltzer, J. H., & Schroeder, M. D. (1975). The protection of information in computer systems. *Proceedings of the IEEE*, 63(9).
 - Uustalu, T., & Vene, V. (2008). Comonadic notions of computation. *ENTCS*, 203(5).
 - Zhang, H., & Wang, M. (2025). Monadic context engineering for LLM agents. *arXiv:2512.22431*.
