@@ -329,7 +329,7 @@ GCC called directly by a human typing `gcc -O2 main.c`: the human is at (open, o
 
 GCC called by a Makefile: the human's degrees of freedom are now mediated through the Makefile, a fixed artifact at (sealed, specified). The Makefile *constrains* the human's latitude — they chose once, and now the build is more determined. The compound grade drops because the Makefile is acting as a Harness — it reduces the caller's grade before multiplication.
 
-GCC called by an LLM agent that decided which flags to use: the LLM is at (sealed, trained) — no runtime world coupling, but high accumulated influence from training. Its grade multiplies with GCC's (scoped, specified). The compound grade is higher than either alone because the LLM's accumulated influence (training shaped which flags to pick) multiplies with GCC's world coupling (which headers and libraries exist). The cross-term activates: the LLM's training *navigates* GCC's world coupling.
+GCC called by an LLM agent that decided which flags to use: the LLM is at (sealed, trained) — no runtime world coupling, but a vast decision surface from training. Its grade multiplies with GCC's (scoped, specified). The compound grade is higher than either alone because the LLM's decision surface (training shaped which flags to pick) multiplies with GCC's world coupling (which headers and libraries exist). The cross-term activates: the LLM's decision surface *navigates* GCC's world coupling.
 
 GCC called by an LLM agent inside a Nix build: Nix collapses GCC's world coupling from (scoped, specified) to (sealed, specified) — everything is hash-addressed, hermetic, pinned. The LLM's grade (sealed, trained) still multiplies, but it's multiplying with a much smaller factor on the world-coupling axis. The compound grade is lower than the non-Nix version. Nix is a grade-reducing functor on the world coupling axis.
 
@@ -361,10 +361,10 @@ ma = (world_coupling, accumulated_influence)
 And composition operates on both axes:
 
 ```
-ma(A using B) = (coupling_A ⊗ coupling_B, influence_A ⊗ influence_B)
+ma(A using B) = (coupling_A ⊗ coupling_B, surface_A ⊗ surface_B)
 ```
 
-where `⊗` is multiplicative on each axis. The Harness reduces both: a sandbox reduces world coupling, a restricted tool set reduces world coupling, a fixed prompt template reduces accumulated influence (it channels the LLM's vast influence space through a narrow specification). A security profile reduces both — it limits which data is touchable (coupling) and which computations are expressible (influence, by constraining what the agent can decide to do).
+where `⊗` is multiplicative on each axis. The Harness reduces both: a sandbox reduces world coupling, a restricted tool set reduces world coupling, a fixed prompt template reduces the effective decision surface (it channels the LLM's vast navigational capacity through a narrow specification). A security profile reduces both — it limits which data is reachable (coupling) and which processing paths are expressible (decision surface, by constraining what the agent can decide to do).
 
 This is a graded monad. The grade monoid is a 2D lattice with multiplicative composition — richer than natural numbers with addition, but tractable:
 
@@ -389,17 +389,21 @@ Two axes emerge as genuinely orthogonal, plus a parameter that modifies the grad
 | **Broad** | Reads a large surface with known boundaries (a filesystem, a codebase, an API ecosystem) | Schema restrictions, API scoping |
 | **Open** | Reads from an unbounded or opaque surface (the web, live feeds, the physical world) | Network policy, physical access |
 
-**Axis 2: Accumulated influence.** How much of the outside world was *already absorbed* into the function itself. Not what it touches now — what shaped it into *this particular function* rather than some other one.
+**Axis 2: Decision surface.** How much the computation's processing can be *influenced by its inputs* — how much navigational capacity the function brings to bear at runtime. Not just what it sees (that's Axis 1), but how much what it sees can *steer* what it does.
 
 | Level | Meaning | What you'd need to fully characterize it |
 |---|---|---|
-| **Literal** | Output IS the input or a trivial transform (`echo`, `identity`, constant) | Nothing — it's identity-like |
-| **Specified** | Algorithm explicitly written, readable (`strlen`, a SQL query, a shell script) | The source code |
-| **Configured** | Parameterized from a known, enumerable space (compiler flags, regex, hyperparameters) | The source + the parameter values |
-| **Trained** | Produced by high-dimensional optimization over data (neural network, learned policy) | The architecture + training data + process |
-| **Organic** | Shaped by lived experience, culture, biology (a human expert's judgment) | The person |
+| **Literal** | No decision-making. Output IS the input or a trivial transform (`echo`, `identity`, constant). Inputs cannot steer the processing — there is no processing. | Nothing — it's identity-like |
+| **Specified** | Decision surface is explicit and readable. A `grep` pattern, a SQL query, an `if` statement. Inputs steer the processing, but the steering mechanism is transparent — read the code, know how any input will be handled. | The source code |
+| **Configured** | Decision surface is parameterized from a known, enumerable space. Compiler flags, regex options, hyperparameters. The steering mechanism is transparent given the parameter values. | The source + the parameter values |
+| **Trained** | Decision surface was produced by high-dimensional optimization. Neural network weights, learned policies. Inputs steer the processing through a vast, opaque decision surface — the same input can be processed differently depending on how it interacts with the weights. | The architecture + training data + process |
+| **Organic** | Decision surface was shaped by lived experience, culture, biology. Inputs steer the processing through a lifetime of accumulated structure. Whether this is bounded or unbounded is an open question (and a very old one); what matters architecturally is that it's *beyond system characterizability* — no other actor can model it. | The person |
 
-These levels are landmarks on a *continuous* dimension, not discrete categories. The key insight: an `if` statement adds a tiny amount of accumulated influence — the programmer's domain knowledge shaped which condition to test. A 50-branch case statement adds more. A hand-written expert system with 10,000 rules adds much more. A neural network adds billions of bits of training-corpus-compressed knowledge. A human expert adds a lifetime. It's the same *kind* of thing at every scale: prior knowledge encoded into the structure of the function. The difference is quantitative — how many bits of external knowledge are baked in — not qualitative. The creation method (writing code vs gradient descent) is a proxy for the quantity, but it's the quantity that determines the grade.
+These levels are landmarks on a *continuous* dimension, not discrete categories. The key insight: an `if` statement is a tiny decision surface — one bit of navigational capacity, one point where inputs can steer the processing. A 50-branch case statement is a larger decision surface. A hand-written expert system with 10,000 rules is larger still. A neural network is vastly larger — billions of parameters, each contributing to how inputs get processed. A human expert brings a lifetime of structure to bear on every input. It's the same *kind* of thing at every scale: **internal structure that inputs can influence at runtime**. The difference is quantitative — how much decision-making capacity is active during execution — not qualitative.
+
+The structure was *accumulated* before runtime (by programming, by training, by living), but the *exercise* of that structure is a runtime property. This matters for agents: an LLM in a multi-turn conversation is accumulating decision surface *in real time*. Each turn adds context that shapes how it processes subsequent inputs. The conversation history becomes part of the active decision surface. In-context learning is decision surface growth happening at runtime, not just before it.
+
+The "organic" level is not necessarily a claim about infinity. It's a claim about **characterizability relative to the system**. A human's decision surface might be finite (bounded by neurons, by physics) but it's still beyond what any other actor in the system can model. The boundary between "trained" and "organic" isn't a boundary of size — it's a boundary of *parametric accessibility*. We have the weights. We don't have the person.
 
 **Stochasticity parameter.** Whether execution involves sampling from a distribution. This is NOT a full axis because it doesn't determine characterization difficulty — the key insight that decouples stochasticity from *ma*:
 
@@ -417,8 +421,8 @@ The axes are genuinely independent. The four corners prove it:
 
 |  | Low world coupling | High world coupling |
 |---|---|---|
-| **Low accumulated influence** | `1 + 1`. Simply specified, touches nothing. | `cat /dev/urandom`. Trivially specified, reads from the open world. |
-| **High accumulated influence** | Temp-0 LLM, no tools. Touches nothing at runtime, but the *way it computes* was shaped by the entire internet. | Human expert doing a web search. Both the process (shaped by a lifetime) and the data (live from the world) are high-dimensional. |
+| **Small decision surface** | `1 + 1`. Trivial processing, touches nothing. Inputs can't steer it (no decisions) and there's nothing external to read. | `cat /dev/urandom`. Trivial processing, reads from the open world. The world provides raw data, but the function can't be *steered* by it — it just passes it through. |
+| **Large decision surface** | Temp-0 LLM, no tools. Touches nothing at runtime, but brings a vast decision surface to bear on its inputs. The *same prompt* processed by different weights produces different output — the decision surface IS what matters, not the world. | Human expert doing a web search. Vast decision surface navigating vast world coupling. The expert's lifetime of accumulated structure determines what to search for, how to interpret results, when to stop. Both axes maximal. |
 
 No corner is empty. No corner is reducible to the other axis. The axes are orthogonal.
 
@@ -436,41 +440,43 @@ The two axes form a plane. Each cell is a single actor or computation, not a com
 
 Selected examples with both coordinates stated explicitly:
 
-| Actor | World coupling | Accumulated influence | Notes |
+| Actor | World coupling | Decision surface | Notes |
 |---|---|---|---|
 | `1 + 1` | Sealed | Literal | Both axes zero. The origin. |
-| `Read(file)` | Pinhole | Literal | Reads one datum, trivial transform. |
-| `gcc main.c` | Scoped (headers, libs in tree) | Specified | Compiler is a known, readable algorithm. Broad knowledge baked into its design, but that design is fully specified in source. |
-| Deterministic web search | Open | Specified | The search algorithm is written code; the world it searches is unbounded. |
-| K-means clustering | Scoped (dataset) | Specified (stochastic) | Specified algorithm, scoped data, but random initialization means non-deterministic execution. Stochasticity parameter, not axis movement. |
-| Smart thermostat | Pinhole (sensor) | Configured–Trained | Learned schedule from usage patterns. Moderate accumulated influence. |
-| Temp-0 LLM, no tools | Sealed | Trained | Zero world coupling, high accumulated influence. Hard to characterize despite being deterministic — because of what it *became* during training. |
-| Temp > 0 LLM, no tools | Pinhole (entropy source) | Trained (stochastic) | Sampling adds a pinhole of world coupling (entropy) and stochasticity. The accumulated influence dominates. |
-| LLM with web search | Open | Trained | Both axes high. The web coupling passes *through* the learned decision surface — this is where the cross-term is strongest. |
-| Agent writing + executing a tool | Broad–Open | Trained | The agent *bootstraps world coupling through specification* — its training shapes what code it writes, which determines what world the tool touches. Dynamic capability creation. |
-| Two humans conversing | Open | Organic | Both axes maximal. Each turn compounds: the other person's output (open world coupling) is processed through a lifetime of experience (organic accumulated influence). |
-| Human expert doing a web search | Open | Organic | The expert's accumulated influence *navigates* the world coupling. Same web, different search, different interpretation. |
+| `Read(file)` | Pinhole | Literal | Reads one datum, trivial transform. Inputs pass through; they can't steer the processing. |
+| `gcc main.c` | Scoped (headers, libs in tree) | Specified | The compiler has a complex but fully readable decision surface. Inputs (source code, flags) steer processing through explicit, inspectable rules. |
+| Deterministic web search | Open | Specified | The search algorithm is written code — its decision surface is transparent. But the world it searches is unbounded. High on one axis, low on the other. |
+| K-means clustering | Scoped (dataset) | Specified (stochastic) | Specified decision surface, scoped data, but random initialization means non-deterministic execution. Stochasticity parameter, not axis movement. |
+| Smart thermostat | Pinhole (sensor) | Configured–Trained | Learned schedule from usage patterns. Moderate decision surface — inputs (temperature readings) steer behavior through a learned model, not just explicit rules. |
+| Temp-0 LLM, no tools | Sealed | Trained | Zero world coupling, vast decision surface. Hard to characterize despite being deterministic — the same prompt processed by different weights produces different output. The decision surface IS what makes it hard to model. |
+| Temp > 0 LLM, no tools | Pinhole (entropy source) | Trained (stochastic) | Sampling adds a pinhole of world coupling (entropy) and stochasticity. The decision surface dominates the grade. |
+| LLM in multi-turn conversation | Scoped (conversation history) | Trained (growing) | Decision surface *grows at runtime* — each turn adds context that changes how subsequent inputs are processed. In-context learning is decision surface accumulation in real time. |
+| LLM with web search | Open | Trained | Both axes high. The web coupling passes *through* the vast decision surface — this is where the cross-term is strongest. The LLM's decision surface determines what to search for and how to interpret results. |
+| Agent writing + executing a tool | Broad–Open | Trained | The agent *bootstraps world coupling through its decision surface* — its training shapes what code it writes, which determines what world the tool touches. Dynamic capability creation. |
+| Two humans conversing | Open | Organic | Both axes maximal. Each turn compounds: the other person's output (open world coupling) is processed through a lifetime of accumulated decision surface (organic). |
+| Human expert doing a web search | Open | Organic | The expert's decision surface *navigates* the world coupling. Same web, different search, different interpretation. |
 
 Reading the grid:
 
-- **Origin** (sealed, literal): fully determined. The Harness's ideal — trivially characterizable on both axes.
-- **Far corner** (open, organic): maximally graded. The Principal. Two humans conversing live here.
-- **Left column** (sealed): output depends entirely on what the function *is*, not what it touches. A temp-0 LLM with no tools: high accumulated influence, zero world coupling. Deterministic but hard to characterize — because of what it became during training, not because of what it reads.
-- **Bottom row** (literal/specified): the function is transparent — read the code, know the behavior. World coupling alone determines the grade. A web scraper with fixed logic: easy to understand the processing, hard to predict the inputs.
-- **Diagonal**: both axes contribute, and the cross-term activates. An LLM with web search: world coupling passing through a high-dimensional decision surface. The world can *steer* the processing in ways it can't steer a specified function.
-- **Agent writing tools**: the most interesting cell. The agent's accumulated influence (trained) creates new world coupling (the tool it writes determines what world is reachable). This is *grade escalation through specification* — the accumulated influence axis bootstraps the world coupling axis. The Harness's job is to prevent unauthorized escalation.
+- **Origin** (sealed, literal): fully determined. The Harness's ideal — trivially characterizable on both axes. Inputs can't steer the processing and there's nothing external to read.
+- **Far corner** (open, organic): maximally graded. The Principal. Two humans conversing live here — vast decision surfaces navigating vast world coupling, compounding across turns.
+- **Left column** (sealed): output depends entirely on the decision surface, not on what the function touches. A temp-0 LLM with no tools: enormous decision surface, zero world coupling. Deterministic but hard to characterize — because of the navigational capacity it brings to bear, not because of external data.
+- **Bottom row** (literal/specified): the decision surface is transparent — read the code, know how any input will be handled. World coupling alone determines the grade. A web scraper with fixed logic: easy to understand the processing, hard to predict what it will encounter.
+- **Diagonal**: both axes contribute, and the cross-term activates. An LLM with web search: world coupling passing through a vast decision surface. The world can *steer* the processing in ways it can't steer a specified function.
+- **Agent writing tools**: the most interesting cell. The agent's decision surface (trained) creates new world coupling (the tool it writes determines what world is reachable). This is *grade escalation through specification* — the decision surface bootstraps world coupling. The Harness's job is to prevent unauthorized escalation.
+- **LLM in conversation**: the decision surface level *changes over time*. In-context learning means the trained decision surface grows with each turn as conversation context accumulates. The grade isn't static — it's a trajectory through the lattice.
 
-The grid replaces the informal continuum from Part 3. What was called "sealed" is (sealed, literal). What was loosely called "ocean" was conflating open world coupling with high accumulated influence — the two-axis structure separates them. A deterministic web search is (open, specified) — high on one axis, low on the other. A temp-0 LLM is (sealed, trained) — the opposite pattern. The old continuum couldn't distinguish these; the grid can.
+The grid replaces the informal continuum from Part 3. What was called "sealed" is (sealed, literal). What was loosely called "ocean" was conflating open world coupling with large decision surfaces — the two-axis structure separates them. A deterministic web search is (open, specified) — high on one axis, low on the other. A temp-0 LLM is (sealed, trained) — the opposite pattern. The old continuum couldn't distinguish these; the grid can.
 
-### The cross-term: world coupling × accumulated influence
+### The cross-term: world coupling × decision surface
 
-The two axes interact through composition. When a high-accumulated-influence actor (LLM) makes a call with high world coupling (web search), the *result* carries both — and they're not independent. The LLM's weights shaped which query it issued, which determined which slice of the live web it saw. The world coupling passes *through* a high-dimensional decision surface rather than a fixed algorithm. This is the multiplicative cross-term, and it's where the real architectural complexity lives.
+The two axes interact through composition. When an actor with a large decision surface (LLM) makes a call with high world coupling (web search), the *result* carries both — and they're not independent. The LLM's decision surface shaped which query it issued, which determined which slice of the live web it saw. The world coupling passes *through* the decision surface rather than through a fixed algorithm. This is the multiplicative cross-term, and it's where the real architectural complexity lives.
 
-**The blue-website example.** Consider a Python script that checks 10,000 websites, picks some at random, and reports whether any of them include the color blue. High world coupling (10,000 sites), stochastic (random selection), but trivially characterizable — the output is yes/no. Now consider an LLM agent doing the same task. Same world coupling, same stochasticity (if we add sampling), same *intended* output space. But the agent has higher accumulated influence — its weights create navigation room the script doesn't have. Maybe the agent encounters a page that says "green is a kind of blue" and its training (accumulated influence) causes it to reason differently about what counts as blue. Maybe it decides to explain its reasoning instead of giving yes/no. The *possibility exists* for the agent's processing to be influenced by what it sees in a way the script's processing cannot be.
+**The blue-website example.** Consider a Python script that checks 10,000 websites, picks some at random, and reports whether any of them include the color blue. High world coupling (10,000 sites), stochastic (random selection), but trivially characterizable — the output is yes/no. Now consider an LLM agent doing the same task. Same world coupling, same stochasticity (if we add sampling), same *intended* output space. But the agent has a vastly larger decision surface — its weights create navigational capacity the script doesn't have. Maybe the agent encounters a page that says "green is a kind of blue" and its decision surface causes it to reason differently about what counts as blue. Maybe it decides to explain its reasoning instead of giving yes/no. The *possibility exists* for the agent's processing to be influenced by what it sees in a way the script's processing cannot be.
 
-The script's processing is **transparent** — read the code, know exactly how inputs map to outputs. The agent's processing is **opaque** — the same inputs could lead to different reasoning paths depending on how the weights interact with the content. World influence passes through a fixed algorithm (low accumulated influence, predictable processing) vs through a learned decision surface (high accumulated influence, steerable processing).
+The script's decision surface is **transparent** — read the code, know exactly how inputs steer the processing. The agent's decision surface is **opaque** — the same inputs could steer the processing differently depending on how the weights interact with the content. World coupling through a small decision surface (specified function, predictable steering) vs through a vast decision surface (trained function, opaque steering).
 
-This is the cross-term in action: world coupling alone doesn't determine the compound grade. World coupling × accumulated influence does. The agent and the script see the same world, but the world can *steer* the agent in ways it can't steer the script. The steering is precisely the interaction between what the function touches (Axis 1) and what the function *is* (Axis 2).
+This is the cross-term in action: world coupling alone doesn't determine the compound grade. World coupling × decision surface does. The agent and the script see the same world, but the world can *steer* the agent in ways it can't steer the script. The steering capacity is precisely the decision surface — how much the function's behavior can be influenced by what flows through it.
 
 ### Compositional depth is structural, not a grade axis
 
@@ -486,11 +492,43 @@ The connection to the monad morphism preorder (§11): the preorder `M ≤ N` ord
 
 ### Asymmetry in engineering maturity
 
-We have mature engineering for controlling world coupling: sandboxes, containers, hermetic builds, `allowed_directories`, network access controls. We have almost nothing comparable for controlling accumulated influence. The "model evaluation" industry is attempting to build it, but it's primitive compared to the sandboxing toolchain.
+We have mature engineering for controlling world coupling: sandboxes, containers, hermetic builds, `allowed_directories`, network access controls. We have almost nothing comparable for controlling decision surfaces. The "model evaluation" and "interpretability" industries are attempting to build it, but they're primitive compared to the sandboxing toolchain.
 
-This asymmetry maps directly to the two axes: one is well-tooled, the other isn't. The framework explains *why* accumulated influence is harder to manage — to control it, you'd need to intervene in the process that shaped the function (training, lived experience), not just the environment the function runs in. Sandboxing controls the pipe; there's no equivalent operation that controls the accumulated weight of what the function *has become*.
+This asymmetry maps directly to the two axes: one is well-tooled, the other isn't. The framework explains *why* decision surfaces are harder to manage — to control them, you'd need to intervene in the internal structure of the function (its weights, its learned patterns, its accumulated experience), not just the environment it runs in. Sandboxing controls the pipe; there's no equivalent operation that controls what the function *does* with what flows through the pipe.
+
+The closest we have: prompt engineering (constrains what the decision surface attends to), tool restriction (limits what actions the decision surface can take), and output format constraints (narrows the co-domain regardless of the decision surface). These are all *indirect* — they work by restricting the decision surface's inputs and outputs, not by changing the surface itself. The Harness manages decision surfaces from the outside, through scope and tool restriction. Whether that's sufficient, or whether we'll eventually need to manage decision surfaces from the inside (interpretability, steering vectors, fine-tuning), is an open architectural question.
 
 ## Thread: where to look next
+
+### Cybernetics and control theory
+
+The decision surface axis connects deeply to the cybernetics tradition:
+
+- **Ashby, Law of Requisite Variety (1956)**: "Only variety can absorb variety." A controller's range of possible actions must match the system's range of possible disturbances. "Variety" in Ashby's sense is essentially decision surface size. Our framework's key move: the Harness doesn't match the Inferencer's variety — it *reduces* the Inferencer's interface variety (via tool restriction) so the Harness's low variety suffices. Co-domain funnels ARE variety attenuators.
+
+- **Conant-Ashby Good Regulator Theorem (1970)**: "Every good regulator of a system must be a model of that system." This IS the embeddability claim — but with a critical precision. The Harness can *model* the Inferencer's interface behavior. It cannot *emulate* the Inferencer. The distinction is load-bearing:
+
+  The Harness's model of the Inferencer is small: "it accepts a token window and produces structured output conforming to the tool-use protocol." That's enough to regulate. The session type from §15.1 IS this model — it describes the protocol structure (propose → gate → execute → collect) without describing the content. The Harness knows the *shape* of what will come back without knowing the *content*.
+
+  Formally, two morphisms do different work:
+  - `η_interface : M_iface_inferencer ~> M_harness` — EXISTS. The Harness can model the Inferencer's *interface* (protocol structure, output types). This is what enables regulation.
+  - `η_impl : M_impl_inferencer ~> M_harness` — does NOT exist. The Harness cannot model the Inferencer's *implementation* (inference, reasoning). This is what makes the Inferencer a black box.
+
+  The co-domain funnel (Prop 13.3 / Conv 13.3a) is the gap between these two: the interface morphism compresses the implementation into a regulable type. The Harness regulates the compressed type. The compression is lossy — the Harness can't recover the reasoning from the interface — and that's fine, because Conant-Ashby requires a model, not a replica. Regulation doesn't require emulation.
+
+- **Beer, Viable System Model (1972)**: Extends Ashby to organizations. Identifies variety attenuators (our co-domain funnels) and variety amplifiers (our tool grants). Management (our Harness) mediates between them. The structural correspondence with our four-actor model is worth examining in detail.
+
+- **Tishby, Information Bottleneck (1999)**: Formalizes the trade-off between compression and prediction. The Harness's scope construction IS an information bottleneck — filtering what reaches the Inferencer, keeping relevant signal, discarding noise. Too little filtering drowns the Inferencer in variety. Too much starves it of information. The "right" scope is the one that captures task-relevant information and nothing more.
+
+The cybernetics connection is potentially the strongest external validation: Ashby's variety is our decision surface. His Law of Requisite Variety explains why the Harness works by reduction rather than matching. The Good Regulator Theorem explains why embeddability (our monad morphism preorder) is the right criterion for mediation. These aren't analogies — they may be the same theory in different notation, sixty years apart.
+
+**Why formalize: the regulator's model.** Conant-Ashby says a good regulator must be a model of the system it regulates. The formal framework we're building in Parts 1–4 IS that model. The monad morphism preorder, the configuration lattice, the session types, the grade lattice — these are the components of the model that a Harness needs in order to regulate a multi-agent system. We're not formalizing for formalization's sake. We're building the minimum viable model that the regulator requires.
+
+This reframes the entire series: the question isn't "can we formalize agent architecture?" It's "what model does the Harness need to be a good regulator, and can we build it?" The answer is: a model of interface types (the monad morphism preorder tells you which effects embed in which), a model of scope (the Store comonad tells you how to project the conversation), a model of authorization (the session types tell you the protocol structure), and a model of composition (the grade lattice tells you how tool grants multiply latitude). That's the minimum. Everything in the formal framework either contributes to this regulatory model or should be cut.
+
+The practical implication: harness engineering is building regulators. The formal framework tells you what the regulator needs to know. A Harness that understands the grade lattice can make better tool-granting decisions. A Harness that understands the configuration lattice can navigate scope/tool trade-offs. A Harness that understands the interface morphism can audit actors it can't emulate. The formalism isn't downstream of the engineering — it's the specification for better engineering.
+
+### PL theory and effects
 
 - **Plotkin & Power (2003), Kammar et al. (2013)**: Algebraic effects. They have a notion of "sub-theory" that's like our monad morphism preorder but in algebraic language. If they've already formalized the effect ordering, we should cite them. If not, the connection is novel.
 - **Abramsky (1993)**: Computational interpretations of linear logic. Linear types and capabilities share structure — both track resources that can't be duplicated. Our budget model (Section 10.3) might connect.
