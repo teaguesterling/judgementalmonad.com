@@ -26,81 +26,31 @@ A `Read` tool takes an address and returns data. The agent selects from the worl
 
 Both contribute to world coupling. But computation channels do something data channels can't: they let the agent's trained decision surface reach *outside the weights* and do work in the world that feeds back into the next cycle. The agent writes a script, executes it, reads the result, and uses the result to write a better script. The composite's effective computational reach extends beyond what a single forward pass through the weights could achieve alone.
 
-This is the IO refinement that post 5 promised. `IO` collapsed three dimensions: what *enters* the computation (world coupling — post 2 handles this), what *exits* as output (interface restriction — co-domain funnels handle this), and what the computation can *do to the world*. The third dimension is what computation channels formalize.
+This is the IO refinement that post 5 promised. `IO` collapsed three dimensions: what *enters* the computation (world coupling — post 2 handles this), what *exits* as output (interface restriction — co-domain funnels handle this), and what the computation can *do to the world*. The third dimension is what computation channels formalize: a spectrum from observation (read the world) through modification (change the world) to generation (create new computations that act on the world).
 
 ---
 
-## The taxonomy
+## The spectrum
 
-Tools form a spectrum by how much computational agency they grant the agent. Each level changes the character of the coupled recurrence — how the grade can evolve between turns.
+Tools form a range by how much computational agency they grant the agent. The full taxonomy — nine levels with examples and grade dynamics — is in the appendix. Here's what matters for the framework.
 
-### Level 0: Structured query over fixed schema
+**Levels 0-2: observation.** SQL queries, file reads, sealed computation, read-only scripts. The agent can ask questions and process answers, but the world is unchanged after execution. Whether the query language is SQL (level 0), pure Python with no IO (level 1 — vast computational reach, zero world coupling; the agent got a calculator with no hands), or Python with file reads (level 2), the dynamics are the same: data accumulates in context, the trajectory drifts upward gently, and compaction resets it. A static regulator suffices.
 
-SQL `SELECT`, GraphQL queries, Elasticsearch queries. The specification language is expressive but bounded — the agent composes operations within a fixed language over a known schema. The space of possible queries is characterizable: enumerable given the schema, decidable, and the results are typed.
+**Level 3: mutation.** The computation writes to the world within the sandbox. Files created at turn n persist for reads at turn n+1. The trajectory becomes path-dependent — what the agent did changes what future observations return.
 
-The agent chooses *which question to ask*. It can't change what questions are expressible.
+**Level 4: amplification.** The critical level. The agent generates tokens. The tool interprets them as an executable specification and runs them. The result feeds back. The agent's trained decision surface becomes a **meta-decision-surface** — it selects which computations to create, the tools execute them, and the results inform the next selection.
 
-**Grade dynamics**: `Δw > 0` (data enters), `Δd_reachable ≈ 0` (the computation language can't expand). The trajectory grows on the world coupling axis as query results accumulate in context. Bounded by the schema.
+This doesn't require file write. `python -c "really long program"` achieves full computation amplification in a single tool call. The critical property isn't "can the agent write files" — it's **"does any tool accept agent-generated text as executable specification?"**
 
-### Level 1: Pure computation, sealed
+This is where post 4's handler framing faces its hardest test. The handler pattern-matches on the effect signature — but when the effect is "execute this Turing-complete program," the signature tells you almost nothing about what the execution will do.
 
-`python -c "print(2**1000)"`. Turing-complete specification, zero IO. The agent can compute anything computable — factor numbers, run simulations, solve systems of equations. The result comes back as tokens. Nothing in the world changed. No new capabilities acquired.
+The Harness isn't helpless. It can inspect the command string and apply rules: approve `cat`, deny `rm -rf`, escalate `pip install` to the Principal. For simple commands, this works. But the cost of regulation grows with the complexity of the specification. Did the agent write a 1,000-line script where line 524 runs `rm -rf /` inside a conditional that triggers only on specific input? That specific case could be checked for. But the general question — "what will this program do?" — has the shape of the halting problem. Each individual invocation is regulatable; the space of things to check is not enumerable.
 
-Vast computational reach, zero world coupling. The agent got a calculator with no hands.
+And across multiple calls, the problem compounds. The agent writes files at turn 3, reads them at turn 7, and executes a script at turn 12 that depends on both. The cumulative state the agent has built through the world becomes progressively harder to reason about. The Harness can track each step, but the cost of tracking grows with the product of specification complexity and accumulated world state — supermodularity again, now applied to regulation itself.
 
-**Grade dynamics**: `Δw = 0`, `Δd_reachable ≈ 0`. The computation's result enters context (growing `d_reachable` slightly via more attention interactions), but no world state entered and no world state changed. The trajectory is nearly flat.
+**Levels 5-8: the system changes itself.** Beyond amplification, tools can modify the execution environment (`pip install` — level 5), create persistent processes that outlive the tool call (`nohup python server.py &` — level 6), create new tools entirely (writing an MCP server — level 7), or modify the Harness's own parameters (editing `CLAUDE.md` — level 8). Each pushes further into territory where the fold model strains and the Harness's regulatory assumptions may no longer hold.
 
-### Level 2: Computation with read access
-
-`python -c "import json; data = json.load(open('config.json')); print(data['key'])"`. The computation can inspect the world, apply arbitrary logic to what it finds, and return synthesized results. Strictly more powerful than a `Read` tool because the agent controls the *processing*, not just the address. But no mutation — the world is unchanged after execution.
-
-**Grade dynamics**: `Δw > 0` (processed world data enters context), `Δd_reachable ≈ 0`. Similar to a data channel but with the agent controlling the processing pipeline, not just the query.
-
-### Level 3: Computation with write access
-
-`python -c "open('output.json', 'w').write(json.dumps(result))"`. The computation mutates the world within the sandbox. The mutation persists — the file exists after the process exits. Future tool calls can read what was written. The loop closes through *data*: write, then later read what you wrote.
-
-**Grade dynamics**: `Δw > 0` from reads AND from future reads of written state. The world the agent observes at turn n+1 includes artifacts from turn n. The trajectory becomes path-dependent: `g(n+1)` depends not just on `g(n)` and `config(n)` but on the specific actions taken at previous turns, because those actions changed the world.
-
-### Level 4: Computation amplification
-
-The critical level. The agent generates tokens. The tool interprets them as an executable specification and runs them. The result feeds back. The agent's trained decision surface becomes a **meta-decision-surface** — it selects which computations to create, the tools execute them, and the results inform the next selection.
-
-This doesn't require file write. `python -c "really long program"` achieves full computation amplification in a single tool call with no filesystem involvement. The critical property isn't "can the agent write files" — it's **"does any tool accept agent-generated text as executable specification?"**
-
-This is where post 4's handler framing faces its hardest test. The handler pattern-matches on the effect signature — but when the effect is "execute this Turing-complete program," the signature tells you almost nothing about what the execution will do. The handler can gate whether Bash runs. It can't characterize what a given Bash invocation will produce.
-
-**Grade dynamics**: `Δd_reachable > 0 via w`. The agent can change what's *computable* at the next turn. World state becomes decision surface. The trajectory can self-amplify — each step can increase the next step's computational reach.
-
-### Level 5: Environment modification
-
-`pip install pandas && python -c "import pandas; ..."`. The execution modifies the execution environment itself. After `pip install`, future computations have access to capabilities that didn't exist before. The agent didn't just compute within a fixed environment — it *extended* the environment.
-
-Levels 0-4 operate within a fixed computational environment. Level 5 modifies the environment. The *next* computation has a richer language than the *current* one.
-
-**Grade dynamics**: `Δd_reachable >> 0 via w`. The ceiling of the reachable decision surface moved up. The specification language's effective expressiveness grew because of a prior execution.
-
-### Level 6: Persistent processes
-
-`nohup python worker.py &` or `python -m http.server 8080 &`. The computation doesn't terminate when the tool call returns. A process persists — serving data, listening for connections, running background work. The agent has created an *actor*: something with its own lifetime, its own state, its own behavior.
-
-And this doesn't require explicit backgrounding. A `Bash` call that runs `python script.py` may spawn subprocesses that outlive the parent. The tool interface returns `exit code 0, stdout: "done"` while a child process continues running — reading files, modifying state, listening on ports — invisible to the Harness.
-
-The Harness sees the tool's interface output. It doesn't see the side effects.
-
-**Grade dynamics**: grade changes happening *outside the fold*. The persistent process modifies the world between turns, accumulates state the Harness doesn't track, and serves responses to future tool calls whose content depends on the process's invisible internal state.
-
-### Level 7: Capability creation
-
-The agent writes an MCP server. Or writes a shell script and makes it executable. Or modifies a configuration file that changes available tools. The agent is creating *new tools* — extending the composite's tool set from within.
-
-**Grade dynamics**: the configuration space itself grew. The Harness's control surface changed. The set of possible future configurations is larger than it was before.
-
-### Level 8: Controller modification
-
-The agent edits `CLAUDE.md`, modifies project settings, writes to memory files that change future scope construction. The computation is modifying the *Harness's parameters*. The controller is being modified by the controlled system.
-
-**Grade dynamics**: the dynamics function `F` itself changed. The Harness is operating on assumptions about its own configuration that may no longer hold.
+Level 6 deserves special attention: a persistent process has its own lifetime, its own state, its own behavior — invisible to the Harness. The tool interface returns `exit code 0, stdout: "done"` while a child process continues running, modifying state, listening on ports. The Harness sees the tool's interface output. It doesn't see the side effects.
 
 ---
 
@@ -116,7 +66,7 @@ Before this boundary, the world is read-only. After it, the agent can modify wha
 
 Before this boundary, tool outputs are data — inert tokens processed by fixed weights. After it, the agent specifies computations for external execution. The composite's effective reach extends beyond the weights. The grade trajectory can self-amplify.
 
-This is the most architecturally consequential boundary. It's where the composite goes from "a function that reads data" to "a function that directs computation." Post 5's bare/agentic distinction maps here: a bare Inferencer with only data-channel tools (levels 0-2) has convergent dynamics. An agentic Inferencer with computation-channel tools (level 4+) has potentially self-amplifying dynamics. The distinction isn't about having tools — it's about what kind of tools.
+This is the most architecturally consequential boundary. It's where the composite goes from "a function that reads data" to "a function that directs computation." Post 5 drew the line between bare and agentic Inferencers — no tools vs. tools. This taxonomy draws a finer line within the agentic case: an agentic Inferencer with only data-channel tools (levels 0-2) has convergent dynamics. An agentic Inferencer with computation-channel tools (level 4+) has potentially self-amplifying dynamics. The regulatory divide isn't about having tools — it's about what kind of tools.
 
 ### Between 5 and 6: escape from the fold
 
@@ -156,15 +106,15 @@ The sandbox isn't just a security boundary. It's a **dynamics controller**. It d
 
 This is why post 2's supermodularity applies so forcefully to sandbox configuration. Restricting the sandbox of a tool with a Turing-complete specification language doesn't just reduce world coupling. It eliminates phase transitions. It changes the character of the dynamics from potentially self-amplifying to convergent. That's not a linear improvement — it's a qualitative shift in what kind of regulatory problem the Harness faces.
 
-For the Harness's regulation problem, the key question about any tool set isn't "what's the grade?" but "what dynamics does this tool set create?" A tool set with only data channels creates convergent dynamics — a static regulator suffices. A tool set with Turing-complete computation channels creates potentially self-amplifying dynamics — the Harness needs to manage the derivative, not just the position. The single most important property: **does any tool accept agent-generated text as executable specification, and how expressive is that specification language?**
+For the Harness's regulation problem, the key question about any tool set isn't "what's the grade?" but "what dynamics does this tool set create?" The single most important property: **does any tool accept agent-generated text as executable specification, and how expressive is that specification language?**
 
-This determines whether the composite is a bounded transducer or a universal machine. The Harness is choosing which to instantiate — and the choice happens at the level of tool configuration, not model selection.
+This determines whether the composite is a bounded transducer or a universal machine — whether the agent can only look things up, or whether it can write and run arbitrary programs. The Harness is choosing which to instantiate. And the choice happens at the level of tool configuration, not model selection. Swapping Haiku for Opus changes the quality of the agent's decisions. Granting Bash changes what kind of system you're running.
 
 ---
 
 But here's the uncomfortable fact. Most useful agentic systems operate at level 4 or above. Writing and running code. Installing dependencies. Creating test fixtures. These aren't edge cases — they're the core workflow. The regulatory challenges at these levels aren't hypothetical; they're what every coding agent faces every session.
 
-If the star topology breaks at level 6, and the Harness's finite strategies are overwhelmed at level 4, and the most productive configurations live in exactly this range — how can the Harness remain characterizable while mediating actors that can reshape the world?
+If the star topology breaks at level 6, and the cost of regulation grows toward undecidability at level 4, and the most productive configurations live in exactly this range — how can the Harness remain characterizable while mediating actors that can reshape the world?
 
 The operating system has been solving this problem for decades.
 
@@ -172,3 +122,63 @@ The operating system has been solving this problem for decades.
 
 *Previous: [Conversations Are Folds](06-conversations-are-folds.md)*
 *Next: [The Specified Band →](08-the-specified-band.md)*
+
+---
+
+## Appendix: The full taxonomy
+
+Each level with examples and grade dynamics notation. Levels 0-4 operate within a fixed computational environment. Levels 5+ modify the environment or the system itself.
+
+### Level 0: Structured query over fixed schema
+
+SQL `SELECT`, GraphQL queries, Elasticsearch queries. The specification language is expressive but bounded — the agent composes operations within a fixed language over a known schema. The space of possible queries is characterizable: enumerable given the schema, decidable, and the results are typed. The agent chooses *which question to ask*. It can't change what questions are expressible.
+
+**Grade dynamics**: `Δw > 0` (data enters), `Δd_reachable ≈ 0` (the computation language can't expand). Bounded by the schema.
+
+### Level 1: Pure computation, sealed
+
+`python -c "print(2**1000)"`. Turing-complete specification, zero IO. The agent can compute anything computable — factor numbers, run simulations, solve systems of equations. Nothing in the world changed.
+
+**Grade dynamics**: `Δw = 0`, `Δd_reachable ≈ 0`. The trajectory is nearly flat.
+
+### Level 2: Computation with read access
+
+`python -c "import json; data = json.load(open('config.json')); print(data['key'])"`. The computation can inspect the world and apply arbitrary logic. Strictly more powerful than a `Read` tool because the agent controls the *processing*, not just the address. No mutation.
+
+**Grade dynamics**: `Δw > 0` (processed world data enters context), `Δd_reachable ≈ 0`.
+
+### Level 3: Computation with write access
+
+`python -c "open('output.json', 'w').write(json.dumps(result))"`. The computation mutates the world within the sandbox. Future tool calls can read what was written. The loop closes through data.
+
+**Grade dynamics**: `Δw > 0` from reads AND from future reads of written state. The trajectory becomes path-dependent.
+
+### Level 4: Computation amplification
+
+The agent generates tokens interpreted as executable specification. The result feeds back. The agent's decision surface becomes a meta-decision-surface.
+
+**Grade dynamics**: `Δd_reachable > 0 via w`. The trajectory can self-amplify.
+
+### Level 5: Environment modification
+
+`pip install pandas && python -c "import pandas; ..."`. The execution modifies the execution environment. Future computations have access to capabilities that didn't exist before.
+
+**Grade dynamics**: `Δd_reachable >> 0 via w`. The specification language's effective expressiveness grew.
+
+### Level 6: Persistent processes
+
+`nohup python worker.py &`. The computation doesn't terminate when the tool call returns. A process persists with its own lifetime, state, and behavior.
+
+**Grade dynamics**: grade changes happening *outside the fold*. The persistent process modifies the world between turns, invisible to the Harness.
+
+### Level 7: Capability creation
+
+The agent writes an MCP server, creates executable scripts, or modifies configuration files that change available tools. New tools created from within.
+
+**Grade dynamics**: the configuration space itself grew. The Harness's control surface changed.
+
+### Level 8: Controller modification
+
+The agent edits `CLAUDE.md`, modifies project settings, writes to memory files that change future scope construction. The controller is being modified by the controlled system.
+
+**Grade dynamics**: the dynamics function `F` itself changed.
