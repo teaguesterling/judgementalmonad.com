@@ -50,18 +50,21 @@ For our actors:
 |---|---|---|
 | **Executor** | `Result \| Error` | Low — embeds in almost everything |
 | **Harness** | `Extract \| Gate \| Inject \| Compact \| Yield` | Low — enumerable, embeds widely |
-| **Inferencer** | Structured response (text + tool proposals) | High — rich output type |
+| **Bare Inferencer** | Text (no tool proposals) | Mid — rich output, but no world effects |
+| **Agentic Inferencer** | Text + tool proposals (effects on the world) | High — can raise effects that modify the world through tools |
 | **Principal** | Unbounded IO | Top — everything embeds in IO; IO embeds in nothing simpler |
+
+The bare/agentic distinction matters. A bare Inferencer — no tools, sealed — is a three-actor system: Principal, Harness, Inferencer. The Principal controls all world interaction. An agentic Inferencer has tools, which means Executors, which means the Inferencer can reach the world through the Harness's mediation. That's the full four-actor system, and the regulation challenge is qualitatively different: the Harness must now manage not just what the Inferencer sees (scope) but what it can *do* (tool set). The grade shifts from (sealed, trained) to (sealed–broad, trained) — the tools grant world coupling that the model alone doesn't have.
 
 A note on `IO` at the top: this is more of a confession than a characterization. Assigning the Principal "unbounded IO" says "can do anything" — which is true but not informative. It characterizes by declining to characterize.
 
-And `IO` is doing too much work lower in the preorder, too. An Executor that reads a file and an Executor that executes arbitrary shell commands are both "doing IO," but they're qualitatively different effects — different in what they can do *to* the world, not just what they can read *from* it. Post 2's world coupling axis refined the input side of IO (how much world can enter). There's a corresponding refinement needed on the output side: reading, writing, and executing are not the same effect, and the difference matters enormously for regulation. A later post takes this up directly.
+And `IO` is doing too much work lower in the preorder, too. It collapses at least three things that matter for regulation: how much world can *enter* the computation (post 2's world coupling axis handles this), what the computation can *do to* the world (observe it? modify it? generate new computations that act on it?), and what shape exits as *output* (the interface restriction that funnels address). An Executor that reads a file and an Executor that executes arbitrary shell commands both "do IO," but they're qualitatively different on the second dimension — one observes, the other can reshape the world. Post 2 refined the first. The funnel pattern partially addresses the third. The second — what the computation can do to the world, from observation through modification to generation — is where the real regulatory challenge lives. A later post takes this up directly.
 
-**Trust flows down the preorder.** If M ≤ N, then N can simulate M — so N can reason about what M might do. The Inferencer (high) can model the Harness (low). The Harness can model the Executor. Everyone can model the Executor. Nobody can model the Principal without being the Principal.
+**Trust flows down the preorder.** If M ≤ N, then N can simulate M — so N can reason about what M might do. An agentic Inferencer (high) can model the Harness (low). The Harness can model the Executor. Everyone can model the Executor. Nobody can model the Principal without being the Principal.
 
-**Opacity flows up.** If M ≤ N but N ≰ M, then M cannot simulate N. The Harness cannot model the Inferencer's internal computation. The Executor cannot model anyone above it. The gaps are structural, not incidental — they're determined by which effect types embed in which.
+**Opacity flows up.** If M ≤ N but N ≰ M, then M cannot simulate N. The Harness cannot model the Inferencer's internal computation — bare or agentic. The Executor cannot model anyone above it. The gaps are structural, not incidental — they're determined by which effect types embed in which.
 
-This is why the star topology (post 1) works: the Harness sits at a low point in the preorder, so every other actor can reason about what the Harness will do. If you put the Inferencer at the hub, nobody below it could model the hub's behavior. The topology falls out of the preorder.
+This is why the star topology (post 1) works: the Harness sits at a low point in the preorder, so every other actor can reason about what the Harness will do. If you put an agentic Inferencer at the hub — an LLM deciding which agents run, managing state, routing messages — nobody below it could model the hub's behavior. The topology falls out of the preorder.
 
 ---
 
@@ -81,11 +84,14 @@ All three are needed:
 |---|---|---|---|---|
 | **Executor** | Yes | Yes — sandbox config visible | Yes — bounded computation | **Yes** |
 | **Harness** | Yes — embeds in everything | Yes — `Conv_State` in the log | Yes — enumerable actions | **Yes** |
-| **Inferencer** (open weights) | Yes | Yes — weights published | **No** — simulation = running the model | **No** |
-| **Inferencer** (closed weights) | Yes | **No** — weights proprietary | N/A | **No** |
+| **Bare Inferencer** (open weights) | Yes | Yes — weights published | **No** — simulation = running the model | **No** |
+| **Bare Inferencer** (closed weights) | Yes | **No** — weights proprietary | N/A | **No** |
+| **Agentic Inferencer** | Yes | Partially — weights may be closed, tool config is visible | **No** — simulation = running model + tools | **No** |
 | **Principal** | Top of preorder | **No** — mind inaccessible | **No** — unbounded | **No** |
 
-The open-weights Inferencer is the critical case. It has conditions 1 and 2 — the effect type embeds, and the weights are published. But condition 3 fails: simulating what the model will produce for a given input requires... running the model. The simulation costs as much as the original. That's not prediction; it's replication.
+The open-weights bare Inferencer is the critical case for understanding the three conditions. It has conditions 1 and 2 — the effect type embeds, and the weights are published. But condition 3 fails: simulating what the model will produce for a given input requires... running the model. The simulation costs as much as the original. That's not prediction; it's replication.
+
+The agentic Inferencer is the critical case for regulation. It's *harder* than the bare case because the model's proposals can trigger real-world effects through tools. The Harness can't predict which tool calls will be proposed (condition 3 still fails), but it can handle whatever arrives (post 4). The tool set determines which effects are *possible* — and that's what the Harness regulates. Granting `{Read}` creates a different regulatory challenge than granting `{Read, Write, Bash}`, even with the same model behind the proposals.
 
 This is the formal content of post 4's regulation ≠ prediction distinction. The Harness doesn't predict the Inferencer because prediction is intractable (condition 3 fails). It *regulates* by handling at the interface — which only requires knowing the effect signature (condition 1), not the parameters or the simulation cost.
 
