@@ -4,6 +4,36 @@
 
 ---
 
+## What *ma* is
+
+**Ma (間) is the space between what an actor receives and what it produces.**
+
+In Japanese aesthetics, 間 is the space between things that is itself functional. The silence between notes that gives the music shape. The empty room that makes the architecture. The unpainted area that directs the eye. Ma isn't absence — it's the structural element that makes everything around it work.
+
+In our framework: every actor receives inputs and produces outputs. Between them is a space — the space where processing happens, where decisions are made, where inputs become outputs. A pure function has no space: input determines output, the mapping is rigid. An `if` statement has a sliver of space: one branch point where the input could go two ways. A neural network has vast space: billions of pathways between input and output. A human has a lifetime of space: everything between "I read this" and "I said that."
+
+**Ma is this space.** It is:
+
+- **Shaped by restriction.** The Harness controls what enters the space (scope construction — the comonadic side) and what can exit (tool restriction — the monadic side). The Harness can't fill the space — that's the actor's own processing. But it shapes the boundaries. Harness engineering is shaping ma so the architecture works.
+
+- **Filled by the decision surface.** What occupies the space between inputs and outputs is the actor's internal structure — its code, its weights, its experience. The decision surface is what *fills* the space. A small decision surface (specified function) fills it transparently. A vast decision surface (trained model, human expert) fills it opaquely.
+
+- **Measured by characterizability.** How hard is it to describe what could come out, given what went in? This is the formal measure — co-domain characterizability under the interface typing. Low ma: easy to characterize (the space is small or transparent). High ma: hard to characterize (the space is vast or opaque).
+
+Three things determine an actor's ma:
+
+1. **World coupling** — what can enter the space at runtime (the input boundary)
+2. **Decision surface** — what fills the space (the processing between input and output)
+3. **Interface restriction** — what can exit the space (the output boundary, shaped by tools and co-domain funnels)
+
+The grade lattice captures the first two. The co-domain funnel (Prop 13.3) captures the third. Ma is the result: the *shaped* space, after the Harness has carved the boundaries.
+
+**Ma determines role** because the size and shape of this space determines what the actor can do within it. A tightly carved space (low ma) is good for mediation — there's little room for surprising behavior, so other actors can model it. A vast space (high ma) is good for inference — the actor needs room to reason. An unshaped space (maximal ma) is the Principal's — it can't be carved from within the system.
+
+The architecture lives in the restrictions, not in the actors. The Harness is the artist arranging the empty space so that the actors can work.
+
+---
+
 ## The claim
 
 The monad morphism preorder on computational effects (`M ≤ N iff ∃ η : M ~> N`) formalizes a notion of **predictability**: an actor operating in N can *simulate* an actor operating in M. The morphism is the simulation.
