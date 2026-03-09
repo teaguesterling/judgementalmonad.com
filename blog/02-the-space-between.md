@@ -42,7 +42,7 @@ This distinction is the crux. Getting it wrong leads to the wrong formalization.
 
 ## One axis isn't enough
 
-The original formulation treated *ma* as a single continuum: low (Executor) to high (Principal). But edge cases break it.
+At first glance, *ma* looks like a single continuum: low (Executor) to high (Principal). But edge cases break it.
 
 A deterministic web search: high world coupling (reads from the entire internet), small decision surface (follows a fixed algorithm). A temperature-0 LLM with no tools: zero world coupling (reads nothing at runtime), vast decision surface (billions of steerable pathways). These aren't more or less *ma* — they're different *kinds* of *ma*. The single axis can't express this.
 
@@ -221,7 +221,7 @@ Not a model of the Inferencer's path space — that would require the weights. N
 
 Ashby's variety is decision surface. His Law of Requisite Variety says a controller's variety must match the system's. The framework's move: the Harness doesn't match — it *reduces*. Tool restriction and sandboxing lower the Inferencer's effective grade until the Harness's small decision surface suffices to regulate it. Co-domain funnels are variety attenuators.
 
-This reframes the entire effort. The grade lattice, the configuration lattice, the session types, the monad morphism preorder — these are the components of the minimum viable model that a Harness needs to be a good regulator. Conant-Ashby says this model must exist for regulation to work. We're specifying what it contains.
+This reframes the entire effort. The grade lattice and the interface/internal distinction are the first components of the minimum viable model that a Harness needs to be a good regulator. Conant-Ashby says this model must exist for regulation to work. Later posts will add the remaining components — how to compare actors, how to track conversations over time, what guarantees the Harness can provide.
 
 ---
 
