@@ -2,7 +2,7 @@
 
 *An honest accounting of where the formal framework is solid, where it's suggestive, and where it's doing hand-waving in a lab coat.*
 
-**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–7 resolved in [Raising and Handling](raising-and-handling.md). Point 8 resolved in-place. Point 9 remains open.
+**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–7 resolved in [Raising and Handling](raising-and-handling.md). Point 8 resolved in-place. Point 9 resolved in [Conversations Are Folds](conversations-are-folds.md), [Computation Channels](computation-channels.md), [The Specified Band](the-specified-band.md).
 
 ---
 
@@ -143,7 +143,7 @@ The decision surface axis (absent from `formal-framework.md`) belongs in the gra
 
 ---
 
-## 9. The composition story is incomplete for conversations
+## 9. The composition story is incomplete for conversations — RESOLVED
 
 `grade(A calls B)` handles tool-call composition: A invokes B once, gets a result back. This is one-shot, unidirectional.
 
@@ -151,7 +151,7 @@ But conversations are *iterated, bidirectional* composition. The Inferencer and 
 
 The composition formula doesn't capture this. It's a one-shot product, not an iterative one. The decision surface of a conversation isn't the product of the participants' decision surfaces — it's the *trajectory* through the grade lattice as the conversation unfolds.
 
-**Status**: The tool-call composition story is clean. The conversation-as-iterated-composition story is an open problem.
+**Resolution**: Each inference call is stateless. The conversation is a fold — iterated one-shot composition where the Harness threads state via `Conv_State`. There is no special "conversation composition." The grade evolves via a coupled recurrence `g(n+1) = F(g(n), config(n))` whose dynamics depend on the computation level of the tool set (bounded for data channels, self-amplifying for Turing-complete computation channels). The one-shot join is the asymptotic ceiling the trajectory approaches. The Harness is a controller for this dynamical system, navigating the configuration lattice to manage the grade trajectory. See [Conversations Are Folds](conversations-are-folds.md), [Computation Channels](computation-channels.md), [The Specified Band](the-specified-band.md).
 
 ---
 
@@ -175,13 +175,13 @@ These survive scrutiny and do real formal work:
 
 ## What needs the most work
 
-Points 1–8 resolved. Remaining:
+All 9 critique points resolved. Remaining integration work:
 
-1. **Composition story incomplete for conversations** (point 9). Tool-call composition (one-shot join) is clean. Conversation-as-iterated-composition (multi-turn with feedback, decision surface growing at runtime) is an open problem. The grade of a conversation is a trajectory through the lattice, not a single point.
+1. **Integrate the algebraic effects connection into the formal framework.** The raising/handling reframing (point 6) is currently in working notes. Sections 10.5 (two-level structure), 12.2 (Store extend), and the monad assignment table in §11 should be updated to reflect the handler framing.
 
-2. **Integrate the algebraic effects connection into the formal framework.** The raising/handling reframing (point 6) is currently in working notes. Sections 10.5 (two-level structure), 12.2 (Store extend), and the monad assignment table in §11 should be updated to reflect the handler framing.
+2. **Integrate the grade lattice into the formal framework.** The grade lattice (resolving points 1-3) and the three-orderings relationship (point 8) should appear in the formal framework after §12.8 (configuration lattice), connecting the Harness's control surface to the interface ordering. The framework's Section 11 should reference the grade as the definition of ma, with K-complexity and the preorder as projections.
 
-3. **Integrate the grade lattice into the formal framework.** The grade lattice (resolving points 1-3) and the three-orderings relationship (point 8) should appear in the formal framework after §12.8 (configuration lattice), connecting the Harness's control surface to the interface ordering. The framework's Section 11 should reference the grade as the definition of ma, with K-complexity and the preorder as projections.
+3. **Integrate the conversation dynamics into the formal framework.** The trajectory view, coupled recurrence, computation channel taxonomy, and reachable/total decision surface distinction should extend the composition story in the formal framework.
 
 ---
 
@@ -196,6 +196,8 @@ The original version of this critique concluded that the framework was strongest
 - The monad assignments are refined to effect signatures with correct interface types.
 - Predictability gains a third condition (computational tractability) and the regulation/prediction distinction.
 
-What remains weakest: the **composition story for conversations** (multi-turn, iterated, with decision surface growing at runtime) and the **relationship between the three orderings** (scope lattice, monad morphism preorder, grade lattice). These are genuine open problems, not hand-waving.
+All nine critique points are now resolved. The framework is a **structural theory of agent architecture** grounded in a **measurement theory of computational latitude**, extended by a **dynamical theory of conversation trajectories**. The structural theory (Store comonad, session types, configuration lattice, handler framing) formalizes relationships and flows. The measurement theory (grade lattice, supermodularity, decision surface) formalizes actor properties. The dynamical theory (fold model, coupled recurrence, computation channels, reachable decision surface, controller Harness) formalizes how conversations evolve. They connect through the Harness: the handler navigates the grade lattice (measurement) while managing the Store comonad (structure) while controlling the grade trajectory (dynamics).
 
-The honest framing, updated: the formal framework is a **structural theory of agent architecture** grounded in a **measurement theory of computational latitude**. The structural theory (Store comonad, session types, configuration lattice, handler framing) formalizes relationships and flows. The measurement theory (grade lattice, supermodularity, decision surface) formalizes actor properties. They connect through the Harness: the handler navigates the grade lattice (measurement) while managing the Store comonad (structure). The framework needs both halves, and both halves are now at least partially formalized.
+The conversation composition answer was deceptively simple: "it's just iterated one-shot." But the analysis of the composite entity's dynamics revealed genuinely new structure. The computation channel taxonomy (data channels vs computation channels, with phase transitions at mutation, amplification, and escape-from-fold) determines whether the grade trajectory is bounded or self-amplifying. The `(open, specified)` band — with the OS as existence proof — identifies the viable region for regulators. The fold model distinguishes reachable from total decision surface, with context length as the mediating variable. None of this was visible from the static grade lattice alone; it required asking what happens when you iterate.
+
+What remains is integration: the blog posts ([The Grade Lattice](the-grade-lattice.md), [Raising and Handling](raising-and-handling.md), [Conversations Are Folds](conversations-are-folds.md), [Computation Channels](computation-channels.md), [The Specified Band](the-specified-band.md)) contain the resolutions, but `formal-framework.md` hasn't been updated to incorporate them. The framework needs a coherent editing pass, not new theory.

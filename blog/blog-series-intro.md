@@ -93,6 +93,12 @@ The series doesn't replace harness engineering or MCE — it provides the **desi
 
 **Part 4: [Toward a Formal Framework](formal-framework.md).** The interface monad ordering as the formal object for *ma*. The Store comonad for scope construction; the monad-comonad duality with the Harness at the boundary. Interface *ma* vs. internal *ma* as monad morphisms. The fractal architecture: every actor has internal conversation structure, self-similar at every scale. Session types for the permission protocol; π-calculus for parallel tool execution and scope extrusion. A worked example tracing a Claude Code tool call through the formalism. Design principles derived from the math. An honest accounting of what's novel and what's Moggi (1991) with better marketing.
 
+**Part 5: [Conversations Are Folds](conversations-are-folds.md).** Every inference call is stateless. The "conversation" is an illusion created by the Harness including previous turns in the next input — a fold over managed state. The composite entity's grade evolves via a coupled recurrence. Reachable vs total decision surface. Context management as the Harness's most leveraged operation.
+
+**Part 6: [Computation Channels](computation-channels.md).** Not all tools are data channels. Tools that accept agent-generated text as executable specification create self-amplifying dynamics in the grade trajectory. A taxonomy from structured queries (level 0) through persistent processes (level 6) to controller modification (level 8). Three phase transitions: mutation, computation amplification, and escape from the fold.
+
+**Part 7: [The Specified Band](the-specified-band.md).** The OS already solved the regulation problem: vast world coupling with transparent decision surface. The `(open, specified)` band is the viable region for regulators. Layered regulation (constraint, observation, policy). Capability publishing as staying specified. The SELinux lesson: constraints must be projected into the actor's scope. The Ashby resolution.
+
 ---
 
 This work grew out of building [Fledgling](https://github.com/teaguesterling/fledgling), a SQL-based code intelligence toolkit for AI agents. The practical questions — what should an agent see? how do tools compose? what context matters? — led to the structural observations. The structural observations led to the formal framework. The formal framework led to *ma*.
