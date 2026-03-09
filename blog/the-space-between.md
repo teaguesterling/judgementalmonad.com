@@ -6,13 +6,17 @@
 
 ## What *ma* is
 
-Every actor in a multi-agent conversation has an output space — the set of things it could produce. *Ma* is how hard that output space is to describe.
+Every actor in a multi-agent conversation receives inputs and produces outputs. Between them is a space — the space where processing happens, where decisions are made, where inputs become outputs. *Ma* (間) is this space.
 
-A file-read tool's output space: "a string, or an error." Trivially characterized. A deterministic orchestrator's output space: "enumerable given its rules and state." Characterizable with effort. A language model's output space: "all possible token sequences up to the context limit" — but that tells you almost nothing. To actually describe what it might produce, you'd need the weights. A human's output space: requires the person to describe.
+A file-read tool: no space. The input (a path) determines the output (a string). The mapping is rigid — there's no room between. A deterministic orchestrator: a thin space. Given its rules and state, you can enumerate what it will do. A language model: vast space. The same input processed through different weights produces different output — billions of pathways between input and output. A human: the space is a lifetime.
 
-***Ma* is the descriptive complexity of the co-domain under the interface typing.** Formally, it's Kolmogorov-flavored: how compressible is the description of the output space? The more *ma*, the more the description resists compression.
+***Ma* is the space between what an actor receives and what it produces** — shaped by restriction, filled by the actor's decision surface, measured by characterizability.
 
-This is not unpredictability. A SHA-256 is unpredictable — you can't guess which hash — but its output space is trivially characterized: "uniform over 256-bit strings." Low *ma*. A temperature-0 LLM is technically deterministic, but its output space requires the weights themselves to describe. High *ma*. A random die is maximally non-deterministic, but its co-domain is `{1,2,3,4,5,6}`. Low *ma*. The distinction between specific-output-unpredictability (Shannon entropy) and output-space-characterizability (Kolmogorov complexity of the co-domain description) is the crux.
+- **Shaped by restriction.** The Harness controls what enters the space (scope construction) and what can exit (tool restriction). The Harness can't fill the space — that's the actor's own processing. But it shapes the boundaries. Harness engineering is shaping *ma* so the architecture works.
+- **Filled by the decision surface.** What occupies the space between inputs and outputs is the actor's internal structure — its code, its weights, its experience. A small decision surface (specified function) fills it transparently. A vast decision surface (trained model, human expert) fills it opaquely.
+- **Measured by characterizability.** How hard is it to describe what could come out, given what went in? Low *ma*: easy to characterize (the space is small or transparent). High *ma*: hard to characterize (the space is vast or opaque).
+
+This is not unpredictability. A SHA-256 is unpredictable — you can't guess which hash — but the space between input and output is trivially characterized: "a uniform mapping over 256-bit strings." Low *ma*. A temperature-0 LLM is technically deterministic, but the space between its input and output is the entire weight manifold. High *ma*. A random die is maximally non-deterministic, but there is essentially no space between "roll" and "{1,2,3,4,5,6}." Low *ma*. The distinction between specific-output-unpredictability (Shannon entropy) and input-output-space-characterizability is the crux.
 
 ---
 

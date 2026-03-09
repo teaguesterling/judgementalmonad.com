@@ -113,9 +113,15 @@ Answer: *ma* is a property of the actor *relative to its interface*. The SHA's i
 
 Composing two low-*ma* actors doesn't guarantee a low-*ma* result. A pipeline of SHA → lookup-table-keyed-on-hash could have emergent co-domain complexity. So *ma* doesn't compose additively — it depends on how the co-domains interact. This is consistent with the monadic framework (monad transformer composition can change the co-domain structure non-additively) but means *ma* isn't a simple additive metric.
 
-### The aesthetics are still doing work
+### The aesthetics aren't just decoration — they're the definition
 
-*Ma* is a beautiful concept. The co-domain framing gives it formal content, but the aesthetic resonance — negative space, the pause between notes — is still part of why it's memorable and useful as a design vocabulary. That's fine. Design vocabularies *should* be evocative. The formal object (co-domain characterizability) is precise; the name (*ma*) is evocative. Both are doing their jobs.
+The co-domain characterizability framing is precise but incomplete. It focuses on the *output side*: how hard is the output space to describe? But the aesthetic 間 is about something more fundamental: **the space between**. The space between notes. The space between walls. The space between what goes in and what comes out.
+
+The final refinement: ***ma* is the space between what an actor receives and what it produces.** Not just the output space — the entire space between inputs and outputs, shaped by restriction, filled by the actor's decision surface, measured by characterizability. Three things determine it: world coupling (what can enter), decision surface (what fills the space), interface restriction (what can exit).
+
+This resolves the lingering tension between the aesthetic concept (negative space, exclusion, the gaps between things) and the formal concept (output space complexity). They're the same thing: the Harness creates the gaps (restriction), and the gaps shape the space (ma). The architecture lives in the restrictions, not in the actors. The aesthetic was pointing at the structural insight all along — we just needed the formal framework to see it clearly.
+
+The name *ma* isn't evocative decoration on a formal concept. It IS the concept. The space between.
 
 ---
 

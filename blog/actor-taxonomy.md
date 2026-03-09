@@ -12,11 +12,17 @@ We use "actor" in the sense of Hewitt (1973): an entity with private state that 
 
 ## The Central Axis: *Ma*
 
-*Ma* (間) — the space between, the negative space, the part that's invisible — is the single axis along which actors vary. It is the **descriptive complexity of an actor's output space**: how much information is needed to characterize not what the actor *will* produce, but what it *could* produce.
+*Ma* (間) — the space between what an actor receives and what it produces. Every actor has inputs and outputs. Between them is a space: the space where processing happens, where decisions are made. *Ma* is this space — shaped by restriction, filled by the actor's decision surface, measured by characterizability.
 
-This is not unpredictability. A SHA-256 hash is unpredictable (you can't guess which hash), but its output space is trivially characterized: "uniform over 256-bit strings." Low *ma*. A temperature-0 LLM is technically deterministic, but its output space requires the weights themselves to describe. High *ma*. A human's output space requires the person — their experience, context, physical state — to describe. Maximal *ma*.
+A SHA-256 hash is unpredictable (you can't guess which hash), but the space between input and output is trivially characterized: "a uniform mapping." Low *ma*. A temperature-0 LLM is technically deterministic, but the space between its input and output is the entire weight manifold — billions of pathways that could have gone differently. High *ma*. A human's space is a lifetime of accumulated structure, all active at runtime. Maximal *ma*.
 
-Formally: *ma* is the entropy of the co-domain under the interface typing — a Kolmogorov-flavored measure of how compressible the description of the output space is. The more *ma*, the more the co-domain description resists compression.
+Three things determine an actor's *ma*:
+
+- **World coupling** — what can enter the space at runtime (the input boundary)
+- **Decision surface** — what fills the space (the internal structure that inputs can influence)
+- **Interface restriction** — what can exit the space (the output boundary, shaped by tools and co-domain constraints)
+
+Not unpredictability (SHA is unpredictable, low *ma*). Not hidden state (lookup table has vast state, low *ma*). Not variability (random die has six outcomes, low *ma*). *Ma* is the *space between* — how much room exists between receiving and producing, and how hard that room is to characterize.
 
 ### Properties that correlate with *ma*
 

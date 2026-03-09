@@ -45,7 +45,13 @@ This gives us set-theoretic operations on scopes for free.
 
 ## 3. Scope Boundaries
 
-The original *ma* observation — "the space between agents is functional" — has two distinct formalizations in this framework. **Scope boundaries** (this section) formalize what each actor can't *see*: input restriction. **Co-domain characterizability** (Section 11) formalizes how hard each actor's output space is to *describe*: output complexity. These are different things — one is about input, the other about output. They connect through the Harness's configuration lattice (Section 12.8): the Harness couples scope restriction with tool restriction, and it's the tool restriction that narrows the co-domain.
+*Ma* (間) is the space between what an actor receives and what it produces. Three things determine it, and this framework formalizes each separately:
+
+1. **World coupling** — what can enter the space at runtime (input boundary). **Scope boundaries** (this section) formalize what each actor can't *see*: input restriction.
+2. **Decision surface** — what fills the space (internal structure inputs can influence at runtime). This is the actor's capacity to be *steered* by its inputs — from a pure function (no steering) to a neural network (billions of steerable pathways) to a human (a lifetime of steerable context).
+3. **Interface restriction** — what can exit the space (output boundary). **Co-domain characterizability** (Section 11) formalizes how hard each actor's output space is to *describe*: output complexity.
+
+These are different things — scope boundaries are about input, co-domain characterizability is about output, and the decision surface is about what happens in between. They connect through the Harness's configuration lattice (Section 12.8): the Harness couples scope restriction with tool restriction, and it's the tool restriction that narrows the co-domain. The Harness is a grade-reducing functor — it reduces world coupling (scope construction) and interface restriction (tool grants) before composition.
 
 ### 3.1 Complementary scopes
 
@@ -385,7 +391,7 @@ This is `StateT MemStore (Writer M*) A` -- the memory state threaded through a c
 
 ## 11. The Interface Monad Ordering
 
-This section formalizes *ma* as co-domain characterizability. The intuition from Part 3: *ma* is how hard it is to describe an actor's output space. Here we make this precise as a partial order on monads.
+This section formalizes the **interface restriction** aspect of *ma* — how hard it is to describe an actor's output space. Recall: *ma* is the space between what an actor receives and what it produces, shaped by world coupling (Section 3), filled by the decision surface, and measured by characterizability. Here we make the measurement precise as a partial order on monads.
 
 ### 11.1 The co-domain gradient
 
@@ -420,7 +426,7 @@ where:
 
 where `K` is Kolmogorov complexity and `desc(M(O))` is a description of the set `{m(o) | o ∈ O}` — the image of the monadic co-domain.
 
-**Remark.** This is Kolmogorov-flavored, not literal Kolmogorov complexity (which is uncomputable). The definition captures the intuition: how much information is needed to describe what the actor *could* produce. For a file-read tool: "a string or an error" — a few bits. For a language model: "any token sequence the weights would assign nonzero probability" — essentially the model size. The ordering on actors by *ma* is an ordering on their interface monads by co-domain complexity.
+**Remark.** This is Kolmogorov-flavored, not literal Kolmogorov complexity (which is uncomputable). The definition captures the interface restriction aspect of *ma*: how much information is needed to describe what the actor *could* produce — i.e., how big the space between inputs and outputs is, measured at the output boundary. For a file-read tool: "a string or an error" — a few bits. For a language model: "any token sequence the weights would assign nonzero probability" — essentially the model size. The ordering on actors by *ma* is an ordering on their interface monads by co-domain complexity. Note that this measures the *interface* ma (the output boundary), not the full space — the decision surface and world coupling contribute to ma but are formalized elsewhere (Sections 3, 12.8).
 
 ### 11.3 Monad morphisms as the ordering relation
 

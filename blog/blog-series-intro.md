@@ -47,9 +47,11 @@ But *ma* goes deeper than scoping. It's a property of the actors themselves.
 
 Consider what it means to *characterize* an actor's output. For a file-read tool, you can describe the output space concisely: "a string, or an error." For a deterministic orchestrator, you can enumerate its possible actions given its rules and state. For a language model — what would you say? "Any token sequence up to the context limit"? That's technically true but tells you almost nothing. To actually characterize what the model might output, you'd need... the model itself.
 
-***Ma* is the descriptive complexity of an actor's output space** — how much information is needed to characterize not what the actor *will* produce, but what it *could* produce.
+***Ma* is the space between what an actor receives and what it produces.** A pure function has no space: input determines output. An `if` statement has a sliver: one point where inputs can steer the processing. A neural network has a vast space: billions of pathways between input and output. A human has a lifetime.
 
-This is not the same as unpredictability. A SHA-256 hash is unpredictable — you can't guess which hash you'll get — but its output space is trivially characterized: "a uniform distribution over 256-bit strings." Low *ma*. A temperature-0 language model is technically deterministic for any given input, but its output space across inputs is essentially the model itself. High *ma*. Unpredictability is about specific outputs. *Ma* is about the *space* of possible outputs.
+The space is shaped by *restriction* — what can enter it (scope), what can exit it (tools). It's filled by the actor's *decision surface* — the internal structure that inputs can influence at runtime. And it's measured by *characterizability* — how hard is it to describe what could come out, given what went in?
+
+This is not the same as unpredictability. A SHA-256 hash is unpredictable — you can't guess which hash you'll get — but the space between input and output is trivially characterized: "a uniform mapping over 256-bit strings." Low *ma*. A temperature-0 language model is technically deterministic for any given input, but the space between its input and output is the entire weight manifold. High *ma*. Unpredictability is about specific outputs. *Ma* is about the *space* between inputs and outputs.
 
 The four actors fall on a clean gradient:
 
