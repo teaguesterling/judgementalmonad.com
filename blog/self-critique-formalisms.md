@@ -79,35 +79,21 @@ Key corrections: the Harness is `StateT Conv_State IO` (handles conversation sta
 
 ---
 
-## 6. The two-level structure is porous
+## 6. The two-level structure is porous — RESOLVED
 
-Object level (monadic, append-only) vs meta level (endomorphisms on `Conv_State`). The distinction is motivated by the analog to compile-time vs runtime in PLs — one structures the other.
+**Resolution**: Replace "two levels" with **raising vs handling** from algebraic effects (Plotkin & Pretnar 2009). Raising (appending to log, proposing tool calls) is monotone. Handling (interpreting effects, compacting, reconfiguring) may break monotonicity. The monotonicity boundary is between these two roles, not between two "levels."
 
-But the boundary is crossed constantly:
-- The quartermaster "straddles both levels"
-- Promises blur the boundary (Section 15.6)
-- The Harness operates at both simultaneously
-- Scope expansion (tool grants) is a meta-level operation triggered by object-level proposals
+This dissolves every porosity case: the quartermaster has delegated handler privileges (handler composition), promises are deferred handling (handler suspends interpretation), the Harness IS the handler (not straddling levels). The session types from §15.1 are literally the handler's pattern matching on raised effects.
 
-In a real PL, the compile-time/runtime distinction is sharp because of *staging* — compile-time decisions are made before runtime begins. Here there's no staging. Both levels execute concurrently and interact continuously. The "two levels" may be a category error — applying a staged metalanguage intuition to an unstaged system.
-
-**What survives**: The distinction between *append-only operations* (adding messages to the log) and *structure-modifying operations* (compaction, tool mutation, scope change) is real and useful. These have different algebraic properties — the former preserves the prefix ordering, the latter doesn't. But calling them "levels" implies a staging discipline that doesn't exist.
-
-**Possible resolution**: Replace "two levels" with "two operation classes": log operations (monadic, monotone, within-phase) and structure operations (endomorphisms, possibly non-monotone, phase-boundary). The Harness interleaves both. No staging claim needed.
+Connection to algebraic effects literature: handlers of algebraic effects have mature composition laws and type safety results. The mapping is almost exact — tool signatures = operation declarations, session type branches = handler cases, handler's own IO = handler effectfulness. See [Raising and Handling](raising-and-handling.md).
 
 ---
 
-## 7. Predictability requires computational tractability
+## 7. Predictability requires computational tractability — RESOLVED
 
-The two conditions for predictability: (1) structural embeddability (monad morphism exists) and (2) parametric accessibility (parameters known).
+**Resolution**: Add a third condition: (3) computational tractability — the simulation must be cheaper than running the system. The open-weights Inferencer has conditions 1+2 but not 3 (simulation = running the model = replication, not prediction).
 
-Missing: (3) computational tractability — can you *run* the simulation in reasonable time?
-
-A temperature-0 LLM with published weights is both structurally embeddable and parametrically accessible. Is it predictable? Only if you can afford to run inference. The morphism exists; the parameters are accessible; but computing the simulation requires GPU-hours.
-
-This matters for the Conant-Ashby connection: "every good regulator must be a model of the system." But a model must be *cheaper to run* than the system it models. The Harness models the Inferencer's interface because the interface model is *cheap* — `HarnessAction` is an enumerable tagged union. Emulation is ruled out not just by parametric inaccessibility but by computational cost. The Harness can check "is this a valid tool call?" in microseconds; it cannot check "is this the response the Inferencer would give?" without running the Inferencer.
-
-This third condition is missing from the formal framework. Its absence means "predictability = embeddability + accessibility" is a necessary condition, not a sufficient one.
+The handler framing sharpens this further: **regulation is strictly weaker than prediction**. The handler doesn't need to predict what the actor will do — it needs to handle whatever arrives. Prediction requires embeddability + accessibility + tractability. Regulation requires knowing the effect signature + having a handling strategy. The Harness succeeds because it regulates (handles effects via the session type) rather than predicts (simulates the Inferencer). This is the precise content of Conant-Ashby: the "model" the regulator needs is the effect signature + handling strategy, not a simulation. See [Raising and Handling](raising-and-handling.md).
 
 ---
 
@@ -159,19 +145,15 @@ These survive scrutiny and do real formal work:
 
 ## What needs the most work
 
-In order of priority:
+Points 1–7 resolved. Remaining:
 
-1. **Reconcile the three formal objects called "ma."** Either define ma as a single formal object with the grade, K-complexity, and preorder as derived quantities, or explicitly name them as separate concepts (ma-grade, ma-complexity, ma-expressiveness) that project from a shared informal concept. The current equivocation undermines every claim of the form "ma determines X."
+1. **Three orderings, unclear relationship** (point 8). The scope lattice, monad morphism preorder, and grade lattice are three partial orders. The configuration lattice couples the first two. The grade lattice is a third structure that needs explicit connection. The decision surface axis is absent from `formal-framework.md` entirely.
 
-2. **Formalize decision surface or scope the framework honestly.** Either adopt Ashby's variety (or K-complexity of the function) as the formal measure, or explicitly say: "the formal framework captures boundary aspects of ma; the interior (decision surface) is the open problem." Don't present a two-axis lattice as a formal contribution when one axis is informal.
+2. **Composition story incomplete for conversations** (point 9). Tool-call composition (one-shot join) is clean. Conversation-as-iterated-composition (multi-turn with feedback, decision surface growing at runtime) is an open problem. The grade of a conversation is a trajectory through the lattice, not a single point.
 
-3. **Define ⊗ concretely.** If it's join on a lattice, say so. If it's something else, define it. The GCC narrative constrains the algebra but doesn't determine it.
+3. **Integrate the algebraic effects connection into the formal framework.** The raising/handling reframing (point 6) is currently in working notes. Sections 10.5 (two-level structure), 12.2 (Store extend), and the monad assignment table in §11 should be updated to reflect the handler framing.
 
-4. **Add computational tractability** as a third condition for predictability. This completes the Conant-Ashby connection: a good regulator must be a model that is *cheaper than* the system.
-
-5. **Weaken `extend` claims.** Keep `extract`/`duplicate` as the honest comonadic content. Reframe `extend` as the formal design space, not a computable counterfactual.
-
-6. **Soften the two-level language.** "Two operation classes" rather than "two levels." The staging metaphor implies a separation that doesn't exist.
+4. **Integrate the grade lattice into the formal framework.** The grade lattice (resolving points 1-3) is currently a separate document. The formal framework's Section 3 (scope boundaries) and Section 11 (interface monad ordering) should reference the grade as the definition of ma, with K-complexity and the preorder as projections.
 
 ---
 
