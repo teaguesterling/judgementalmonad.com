@@ -2,7 +2,7 @@
 
 *An honest accounting of where the formal framework is solid, where it's suggestive, and where it's doing hand-waving in a lab coat.*
 
-**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–9 remain open.
+**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–7 resolved in [Raising and Handling](raising-and-handling.md). Points 8–9 remain open.
 
 ---
 
@@ -54,32 +54,28 @@ The cybernetics connection (Ashby's variety) could provide one: variety has a pr
 
 ---
 
-## 4. The monad assignments to actors are stipulative
+## 4. The monad assignments to actors are stipulative — RESOLVED
 
-| Actor | Assigned monad | Problem |
+The assignments blurred implementation and interface effects. The handler framing (algebraic effects) resolves this: the monad assignments are **effect signatures** — what each role raises, and what the handler receives at the interface boundary.
+
+| Actor | Implementation effects | Interface type (what handler receives) |
 |---|---|---|
-| Harness | `State Conv_State` | The Harness also does IO (reads config, dispatches processes). Is it `StateT Conv_State IO`? |
-| Inferencer | `Distribution` | Acknowledged as a "modeling convention" (Conv 13.3a). But `Distribution` assumes you know the sample space — the point of high ma is that you *don't*. |
-| Principal | `IO` | IO is the "everything" monad. It characterizes the Principal by not characterizing them. |
-| Executor | `Either E` | File-read executors do `IO_sandbox`, not `Either`. The *interface* type is `Either`; the *implementation* is `IO_W`. |
+| **Executor** | `IO_W` (world interaction) | `Either E Result` (text, structured data, binary, error) |
+| **Inferencer** | Opaque (attention + sampling) | `Response` = text blocks + tool call proposals |
+| **Principal** | `IO` (unbounded) | `MultimodalMessage` = text + images + files + structured selections |
+| **Harness** | `StateT Conv_State IO` | `HarnessAction` = enumerable tagged union |
 
-The assignments work as *interface* monads (what other actors observe) but not as *implementation* monads. This is acknowledged in Section 13, but the co-domain gradient (Def 11.1) presents the ordering `Identity ≤ ... ≤ IO` as a single chain, blurring which level of description it applies to.
+Key corrections: the Harness is `StateT Conv_State IO` (handles conversation state, lives in IO for dispatch/loading). The Inferencer's interface is `Response` not `Distribution(TokenSeq)` — sampling has already happened. The Principal provides multimodal input, not just text — images, files, and structured selections flow through the Harness.
 
-**The deeper issue**: The monad morphism preorder is well-defined on actual monads. But the "monads" assigned to the Inferencer and Principal are modeling conventions, not descriptions. The preorder is doing real work (it formalizes trust, embeddability, predictability) — but only on the actors whose monad assignments are genuine (Harness, Executors). For the high-ma actors, it's "as if" reasoning. This is explicitly acknowledged (Conv 13.3a is admirably honest), but it means the central claim — "ma determines role" via the monad preorder — is formally grounded for half the actors and informally motivated for the other half.
+**Resolution**: The handler doesn't need the implementation effect — it pattern-matches on the interface type. Prop 13.3 (Executor boundary = genuine monad morphism) becomes: the Executor has its own internal handler that compresses `IO_W` to `Either E Result`. Conv 13.3a (Inferencer boundary = modeling convention) becomes: the Inferencer's internal handler is opaque to the outer handler. See [Raising and Handling](raising-and-handling.md).
 
 ---
 
-## 5. The Store comonad `extend` over-promises
+## 5. The Store comonad `extend` over-promises — RESOLVED
 
-Section 12.2 claims:
+`extend` was interpreted as "what would inference produce under each possible scoping?" — a counterfactual the handler can't compute (it would require running inference under every scoping, which requires the weights).
 
-> `extend infer (view, s_inferencer)` = "what would inference produce under each possible scoping?"
-
-This treats inference as a function `ConvStore → B`. But inference is stochastic — it's `ConvStore → Distribution(B)`. The `extend` would give `Store Scope (Distribution(B))`, not a clean counterfactual. And the Harness can't actually compute this — it would need to *run* inference under each possible scoping, which requires the model weights.
-
-The Store comonad captures the *structural role* of the Harness beautifully: the asymmetry between `extract` (what actors see) and `duplicate` (the Harness's god-view) is real and important. But the `extend` interpretation as a counterfactual optimization tool over-promises. The Harness doesn't evaluate "what would inference produce under each scoping?" It uses heuristics and rules to choose a scoping, then runs inference once.
-
-**What survives**: `extract` and `duplicate` are honest. The Harness constructs views (`extract`) and has access to all possible views (`duplicate`). The `extend` interpretation should be weakened from "computable counterfactual" to "formal characterization of the design space the Harness navigates heuristically."
+**Resolution**: `extend f` where `f` is a comonadic operation captures "what would each actor *see* under each possible scoping?" — the handler's design space. The handler CAN compute this (it's just `view(s)` for each `s`). The actor's *response* to each view is opaque (internal ma, behind the interface boundary). `extract` and `duplicate` are unchanged and honest. `extend` is the handler navigating a well-characterized design space (the comonadic side) to manage an opaque process (the actor's internal effects). See [Raising and Handling](raising-and-handling.md).
 
 ---
 
