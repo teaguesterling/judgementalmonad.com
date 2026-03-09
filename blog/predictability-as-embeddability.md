@@ -54,6 +54,21 @@ Both are needed:
 
 The Inferencer is structurally embeddable (you *could* simulate inference if you had the weights) but parametrically opaque (you don't have the weights). This is the formal content of "high internal ma": the implementation parameters are hidden behind the interface.
 
+### Model vs emulation
+
+These two conditions correspond to two fundamentally different capabilities:
+
+- **Condition 1 alone (structural embeddability) = modeling.** You know the *shape* of what the actor can produce — the interface type, the protocol structure, the co-domain. You can reason about what *kind* of output to expect without predicting the specific output. The session type from §15.1 is a model: it says "the Inferencer will propose tool calls conforming to this protocol" without saying which ones.
+
+- **Conditions 1 + 2 (embeddability + accessibility) = emulation.** You know both the shape and the parameters. You can predict the specific output — replay the computation, audit the decisions, verify the results.
+
+This distinction recurs throughout the framework:
+- **Prop 13.3 vs Conv 13.3a**: genuine monad morphism (model + emulate) for Harness/Executors vs modeling convention (model only) for Inferencer/Principal
+- **The Turing test thread**: the interface morphism `η` is surjective and lossy — model = you know the image of η (interface type); emulate = you can locate the specific implementation within the fiber of η
+- **Conant-Ashby Good Regulator Theorem**: "every good regulator must be a model of the system." A *model*, not an *emulation*. The Harness regulates the Inferencer by modeling its interface — it knows the protocol structure, the output types, the tool signatures. It doesn't need the weights. Regulation requires knowing the shape of what will come back, not predicting the content.
+
+This is why the formal framework matters practically: it's building the minimum viable *model* that a regulator needs. The monad morphism preorder tells you which interface types embed in which. The session types tell you the protocol structure. The grade lattice tells you how tool grants compose. None of this requires emulating the Inferencer — it requires modeling the interface well enough to regulate.
+
 ### Connection to interface ma vs internal ma
 
 - **Structural embeddability** is about the **interface monad** — what effect type does the actor present?
@@ -62,8 +77,8 @@ The Inferencer is structurally embeddable (you *could* simulate inference if you
 Interface ma (Section 13) captures both: the interface monad determines structural embeddability, and the interface boundary (Prop 13.3 / Conv 13.3a) determines what parameters leak through.
 
 An actor with low interface ma is one where:
-- The interface monad is low in the preorder (structurally embeddable by many), AND
-- The parameters visible at the interface are sufficient to reconstruct behavior (parametrically accessible)
+- The interface monad is low in the preorder (structurally embeddable by many = widely modelable), AND
+- The parameters visible at the interface are sufficient to reconstruct behavior (parametrically accessible = emulable)
 
 ---
 
