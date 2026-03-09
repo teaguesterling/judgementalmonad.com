@@ -2,7 +2,7 @@
 
 *An honest accounting of where the formal framework is solid, where it's suggestive, and where it's doing hand-waving in a lab coat.*
 
-**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–7 resolved in [Raising and Handling](raising-and-handling.md). Points 8–9 remain open.
+**Status**: Points 1–3 resolved in [The Grade Lattice](the-grade-lattice.md). Points 4–7 resolved in [Raising and Handling](raising-and-handling.md). Point 8 resolved in-place. Point 9 remains open.
 
 ---
 
@@ -97,19 +97,49 @@ The handler framing sharpens this further: **regulation is strictly weaker than 
 
 ---
 
-## 8. Three orderings, unclear relationship
+## 8. Three orderings, unclear relationship — RESOLVED
 
-The framework introduces three partial orders:
+The framework has four partial orders. They form a causal chain, not a confused tangle:
 
-1. **Scope lattice** (Section 2): orders what actors can see. Comonadic side.
-2. **Monad morphism preorder** (Section 11): orders effect expressiveness. Monadic side.
-3. **Grade lattice** (predictability-as-embeddability): orders world coupling × decision surface. New.
+```
+Configuration lattice          → Grade lattice          → Monad morphism preorder
+(S × P(Tools))                   (W × D)                  (M, ≤_ma)
+Harness's control surface        Actor's path space        Interface effect type
+What the Harness gives           What the actor IS         What others see
+```
 
-The configuration lattice (Section 12.8) couples the first two as a product `(Scope × P(Tools))`. But the grade lattice is a third structure that doesn't obviously embed in the configuration lattice.
+**Configuration bounds grade.** The Harness's configuration `(s, T)` determines the actor's effective grade. Scope `s` restricts world coupling (less visible state = less reachable state for the Inferencer). Tool set `T` affects both axes: each tool contributes world coupling (what world it touches) and multiplies with the actor's decision surface (the decision surface navigates tool outputs). Restricting configuration can only reduce the effective grade:
 
-Where does the decision surface appear in `formal-framework.md`? Nowhere. It lives entirely in the working notes. If decision surface is one of the three determinants of ma, and the formal framework doesn't formalize it, the framework formalizes two-thirds of its central concept.
+```
+config₁ ≤ config₂  ⟹  grade(A, config₁) ≤ grade(A, config₂)
+```
 
-**Possible resolution**: The grade lattice belongs in the working notes (as it currently is) until the decision surface axis is formalized. The formal framework should be explicit that it formalizes the *boundary* aspects of ma (what enters and exits the space) and leaves the *interior* aspect (what fills the space) informal. Section 3's new three-part introduction to ma should flag this asymmetry.
+The configuration lattice is the Harness's lever. It controls grade from outside.
+
+**Grade bounds interface ma.** The actor's grade `(w, d)` — its computational path space — sets an upper bound on what its interface effects can express. You can't produce richer interface effects than your path space supports. But the co-domain funnel (§13.3) can make interface ma strictly *lower* than the grade — an actor with high grade funneled through a narrow interface type (Approve/Reject) has low interface ma despite vast path space.
+
+```
+interface_ma(A) ≤ f(grade(A))    for some monotone f
+```
+
+with equality when the interface is unconstrained, and strict inequality at co-domain funnels.
+
+**The monad morphism preorder compares interface ma.** `M ≤_ma N` means N can embed M's interface effects — N can *model* M. This is the comparison tool for trust and predictability, operating on the interface projection.
+
+**Where each ordering does its work:**
+
+| Ordering | Domain | What it captures | Who uses it |
+|---|---|---|---|
+| **Configuration lattice** `(S × P(Tools))` | Harness decisions | What the actor is given | The Harness (navigating the lattice) |
+| **Grade lattice** `(W × D)` | Actor computation | The actor's path space (internal ma) | The architect (reasoning about system properties) |
+| **Monad morphism preorder** `(M, ≤_ma)` | Interface effects | What others can model (interface ma) | Other actors (reasoning about trust, embeddability) |
+| **Scope lattice** `(S, ≤)` | Message visibility | What actors can see | Subsumed by configuration lattice (S is the first component) |
+
+The scope lattice is the first component of the configuration lattice — it's not a separate ordering but a projection. So there are really three: configuration (control), grade (measurement), preorder (comparison).
+
+**What was missing was the bounding relationships, not the connection.** The original framework had the configuration lattice and the monad preorder but no formal object for the actor's path space between them. The grade lattice fills that gap. Configuration → grade → interface ma is the causal chain. The Harness controls configuration; the grade is the result; the interface ma is the projection that other actors reason about.
+
+The decision surface axis (absent from `formal-framework.md`) belongs in the grade lattice, which belongs between the configuration lattice and the monad preorder in the framework's structure. When integrating, the grade lattice should appear after §12.8 (configuration lattice) and before the design principles (§17), connecting the Harness's control surface to the interface ordering.
 
 ---
 
@@ -145,24 +175,27 @@ These survive scrutiny and do real formal work:
 
 ## What needs the most work
 
-Points 1–7 resolved. Remaining:
+Points 1–8 resolved. Remaining:
 
-1. **Three orderings, unclear relationship** (point 8). The scope lattice, monad morphism preorder, and grade lattice are three partial orders. The configuration lattice couples the first two. The grade lattice is a third structure that needs explicit connection. The decision surface axis is absent from `formal-framework.md` entirely.
+1. **Composition story incomplete for conversations** (point 9). Tool-call composition (one-shot join) is clean. Conversation-as-iterated-composition (multi-turn with feedback, decision surface growing at runtime) is an open problem. The grade of a conversation is a trajectory through the lattice, not a single point.
 
-2. **Composition story incomplete for conversations** (point 9). Tool-call composition (one-shot join) is clean. Conversation-as-iterated-composition (multi-turn with feedback, decision surface growing at runtime) is an open problem. The grade of a conversation is a trajectory through the lattice, not a single point.
+2. **Integrate the algebraic effects connection into the formal framework.** The raising/handling reframing (point 6) is currently in working notes. Sections 10.5 (two-level structure), 12.2 (Store extend), and the monad assignment table in §11 should be updated to reflect the handler framing.
 
-3. **Integrate the algebraic effects connection into the formal framework.** The raising/handling reframing (point 6) is currently in working notes. Sections 10.5 (two-level structure), 12.2 (Store extend), and the monad assignment table in §11 should be updated to reflect the handler framing.
-
-4. **Integrate the grade lattice into the formal framework.** The grade lattice (resolving points 1-3) is currently a separate document. The formal framework's Section 3 (scope boundaries) and Section 11 (interface monad ordering) should reference the grade as the definition of ma, with K-complexity and the preorder as projections.
+3. **Integrate the grade lattice into the formal framework.** The grade lattice (resolving points 1-3) and the three-orderings relationship (point 8) should appear in the formal framework after §12.8 (configuration lattice), connecting the Harness's control surface to the interface ordering. The framework's Section 11 should reference the grade as the definition of ma, with K-complexity and the preorder as projections.
 
 ---
 
 ## The meta-observation
 
-The strongest parts of the framework are the *structural* claims: the Store comonad for scope construction, the monad-comonad duality, the session types for protocols, the configuration lattice. These formalize *architectural relationships* — who sees what, how information flows, where the boundaries are.
+The original version of this critique concluded that the framework was strongest as a structural theory (Store comonad, session types, configuration lattice) and weakest as a measurement theory (what ma IS, how it composes). That was true at the time. The grade lattice and handler reframing have partially closed the gap:
 
-The weakest parts are the *measurement* claims: what ma IS (as a number, a grade, a position), how it composes quantitatively, what the decision surface IS formally. These attempt to formalize *actor properties* — intrinsic characteristics rather than relationships.
+- Ma now has a definition (the computation's path space) and a measure (the grade `(w, d) ∈ W × D`).
+- Composition is defined (join on the product lattice) with the "multiplicative" intuition grounded in supermodularity.
+- Decision surface has a formal definition (log of distinguishable input-dependent execution paths, connecting to Ashby's variety and VC dimension).
+- The two-level structure is replaced by raising/handling from algebraic effects — no staging fiction, clean handler delegation.
+- The monad assignments are refined to effect signatures with correct interface types.
+- Predictability gains a third condition (computational tractability) and the regulation/prediction distinction.
 
-This pattern is not accidental. Category theory is a theory of *structure-preserving maps between structures* — it's naturally good at relationships and naturally bad at intrinsic properties. The framework is strongest when it uses categorical tools for categorical questions (how do scopes compose? what's the Harness's structural role? how do permission branches interact?) and weakest when it uses them for non-categorical questions (how complex is this actor's decision surface? how much ma does this computation have?).
+What remains weakest: the **composition story for conversations** (multi-turn, iterated, with decision surface growing at runtime) and the **relationship between the three orderings** (scope lattice, monad morphism preorder, grade lattice). These are genuine open problems, not hand-waving.
 
-The honest framing: the formal framework is a **structural theory of agent architecture** — it formalizes relationships, boundaries, and flows. Ma is the **motivating concept** that guided the structural theory. The structural theory doesn't fully formalize ma, and it doesn't need to. The design principles (Section 17) follow from the structural theory alone. Ma is the intuition; the math is the architecture.
+The honest framing, updated: the formal framework is a **structural theory of agent architecture** grounded in a **measurement theory of computational latitude**. The structural theory (Store comonad, session types, configuration lattice, handler framing) formalizes relationships and flows. The measurement theory (grade lattice, supermodularity, decision surface) formalizes actor properties. They connect through the Harness: the handler navigates the grade lattice (measurement) while managing the Store comonad (structure). The framework needs both halves, and both halves are now at least partially formalized.
