@@ -617,13 +617,13 @@ All trajectories converge. The framework's dynamic claims are about RATES within
 
 **Definition 8.12 (Regulatory convergence).** Let `R(n)` be the Harness's per-turn regulatory cost at turn n -- the computational effort required to evaluate all specified rules against the observed state `(w_actual(n), d_reachable(n))` and the proposed actions. The system is *regulatorily convergent* if `R(n)` is bounded for all n. It is *regulatorily divergent* if `R(n)` grows faster than the Harness can process -- the system evolves faster than it can be characterized.
 
-**Proposition 8.13 (Regulatory convergence criteria).** The computational class and effect signature of the tool set determine regulatory convergence:
+**Proposition 8.13 (Regulatory convergence criteria).** The specification predicate and effect signature of the tool set determine regulatory convergence:
 
-| Tool class | `delta_w_info` | `delta_w_effect` | Decoupled? | R(n) | Convergence |
+| Tool configuration | `delta_w_info` | `delta_w_effect` | Decoupled? | R(n) | Convergence |
 |---|---|---|---|---|---|
-| Total (data channel) | O(C) | ~ delta_w_info | No | Decidable, O(1) | Regulatorily convergent |
-| Partial + write effects | O(small) | O(unbounded) | **Yes** | Undecidable (Rice's) | Regulatorily divergent |
-| Partial + sandbox | O(small) | O(bounded by sandbox) | Partially | Decidable within sandbox | Convergent if sandbox is tight |
+| Data channel | O(C) | ~ delta_w_info | No | Decidable, O(1) | Regulatorily convergent |
+| Computation channel + write effects | O(small) | O(unbounded) | **Yes** | Undecidable (Rice's) | Regulatorily divergent |
+| Computation channel + sandbox | O(small) | O(bounded by sandbox) | Partially | Decidable within sandbox | Convergent if sandbox is tight |
 | Multi-agent, unstructured | O(T_B . log P(d_B)) | Coupled to B's effects | Yes | Undecidable (emergent) | Divergent without funnels |
 | Multi-agent, structured | O(log K) | Bounded by schema | No | Decidable | Convergent |
 
@@ -714,11 +714,9 @@ The **semantic predicate** `interprets_specification(t)` is a binary property: d
 - **No** (data channel): `Read(path)`, `Glob(pattern)`, `SQL SELECT`. The input selects from the world or queries it within a fixed language. The tool resolves the input; the agent chooses *what to look at*. The space of possible outputs is characterizable given the interface.
 - **Yes** (computation channel): `Bash("python -c '...'")`, code execution, any tool whose evaluator is Turing-complete. The input is a program; the tool executes it. The agent chooses *what to do*. By Rice's theorem, non-trivial semantic properties of the computation are undecidable. The Harness is structurally limited to syntactic approximation of the tool call's behavior.
 
-This is the D axis (decision surface) applied to tools. The grounding is Rice's theorem directly: when the tool interprets an executable specification, the Harness cannot in general answer "what will this tool call do?" -- and that question is what the Harness needs to answer to regulate the tool call. The boundary is not about termination specifically (that is one undecidable property among many) but about *semantic opacity*: the Harness goes from being able to characterize the space of possible outputs to being structurally unable to vet the computation.
+This is the D axis (decision surface) applied to tools. The grounding is Rice's theorem directly: when the tool interprets an executable specification, the Harness cannot in general answer "what will this tool call do?" -- and that question is what the Harness needs to answer to regulate the tool call. The boundary is about *semantic opacity*: the Harness goes from being able to characterize the space of possible outputs to being structurally unable to vet the computation. Not just "will it terminate?" (one undecidable property) but "will it delete files?", "will it produce the same output as last time?", "is it safe?" — all undecidable for the same reason. The Harness can pattern-match on the input string (syntactic approximation), but the gap between syntactic pattern and semantic behavior is the trust surface (Def. 9.14).
 
-**Remark (The termination question is a special case).** At the specification boundary, the Harness loses the ability to answer any non-trivial semantic question about the computation. Termination is the most operationally visible instance -- a non-terminating tool call consumes the Harness's time budget and may never return control -- but it is not the primary concern. "Will this delete files?" "Will this produce the same output as last time?" "Is this safe?" are all undecidable for the same reason. The Harness can pattern-match on the input string (syntactic approximation), but the gap between syntactic pattern and semantic behavior is the trust surface (Def. 9.14).
-
-**Remark (Operational granularity within the boundary).** The binary predicate admits finer operational distinctions. Total functions (always terminate) guarantee the Harness regains control; partial functions may not. Bounded computations (resource-limited) are operationally total regardless of theoretical class. The spectrum -- bounded < total < partial -- characterizes how reliably the Harness regains control, which matters for regulation. But the primary architectural distinction is the binary one: once the tool interprets executable specifications, Rice's theorem applies and the Harness faces a qualitatively different regulatory problem. The operational spectrum is about managing *within* that regime.
+**Remark (Operational granularity within the boundary).** The binary predicate admits finer operational distinctions. Termination is the most operationally visible: total functions guarantee the Harness regains control; partial functions may not; bounded computations (resource-limited) are operationally total regardless of theoretical class. The spectrum — bounded < total < partial — characterizes how reliably the Harness regains control, which matters for regulation. But the primary architectural distinction is the binary one: once the tool interprets executable specifications, Rice's theorem applies and the Harness faces a qualitatively different regulatory problem. The operational spectrum is about managing *within* that regime.
 
 **Remark (Why not the Chomsky hierarchy?).** An earlier formulation used `chomsky(input_lang(t))` -- the Chomsky level of the tool's input grammar. This conflates syntactic recognition with computational expressiveness. Lambda calculus has a context-free grammar but Turing-complete semantics. Python's syntax is context-free but its evaluator computes partial recursive functions. The Chomsky hierarchy classifies what automaton is needed to *parse* the input; `interprets_specification(t)` classifies what the tool *does* with the parsed input. These are independent: CF syntax is compatible with any computational power. The LangSec insight (Bratus, Patterson, Sassaman 2011) -- that every input-accepting tool is implicitly an interpreter -- is valid as a design warning (tools may compute more than their interface suggests), but the Chomsky level of the input grammar is not the right formal foundation for the decidability results below.
 
@@ -727,7 +725,7 @@ This is the D axis (decision surface) applied to tools. The grounding is Rice's 
 | Grade axis | Tool instantiation | Formal foundation |
 |---|---|---|
 | W (world coupling) | Effect signature | Moggi (1991), capability types (Miller 2006) |
-| D (decision surface) | Executable specification predicate | Rice's theorem, Felleisen (1991) |
+| D (decision surface) | Executable specification predicate | Rice's theorem; Felleisen (1991) on expressive power |
 
 The nine-level taxonomy from blog post 7 is a linearization of a product of three axes: effect signature, executable specification predicate, and mediation structure. The coarse lattice (post 2) and the fine taxonomy (post 7) are the same structure at different resolutions.
 
@@ -796,7 +794,7 @@ The invariant breaks when semantic opacity meets write effects. Neither alone is
 
 | Transition | What becomes opaque | The Harness can't answer |
 |---|---|---|
-| 2→3 (mutation) | Accumulated world state | "What is the current state of the world?" |
+| 2→3 (mutation) | Accumulated world state | "What has changed since I last looked?" |
 | 3→4 (amplification) | Computation semantics | "What will this tool call do?" |
 | 6→7 (escape) | Capability surface | "What can this system do?" |
 
