@@ -782,7 +782,7 @@ This is the formal content of the level 3-to-4 phase transition: below RE, the c
 
 2. **Amplification (3 to 4)**: **Chomsky boundary -- CF to RE.** The agent generates tokens interpreted as executable specifications. This is the LangSec boundary, the HRU boundary (Harrison, Ruzzo, Ullman 1976), and the Rice's theorem boundary. The configuration invariant can break. Decidability of characterization is lost. This is the most architecturally consequential transition because it is a shift in what KIND of regulatory problem the Harness faces.
 
-3. **Escape from fold (5 to 6)**: Meta-effect boundary. Still RE input, but effects include creating persistent processes with their own lifetime and state -- invisible to the Harness. The star topology breaks. The fold model (section 8) becomes an approximation.
+3. **Escape from fold (6 to 7)**: Meta-effect boundary. Still RE input, but effects include spawning subprocesses with their own lifetime and state -- invisible to the Harness. The star topology breaks. The fold model (section 8) becomes an approximation.
 
 ### 9.5 The sandbox as invariant restorer
 

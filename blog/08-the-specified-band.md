@@ -102,7 +102,7 @@ This is honest regulation. Not the fiction that the Harness mediates everything 
 
 ## Capability publishing
 
-Post 7's level 7 (capability creation) poses a specific challenge: the agent creates new tools. How does the Harness evaluate them without leaving the specified band?
+Post 7's level 6 (capability creation) poses a specific challenge: the agent creates new tools. How does the Harness evaluate them without leaving the specified band?
 
 The naive approach requires the Harness to *infer* the tool's safety — read its code, reason about its effects. This requires trained judgment in the regulatory loop. The Harness jumps from `(broad, specified)` to `(broad, trained)`. The cross-term activates. The regulator becomes opaque.
 

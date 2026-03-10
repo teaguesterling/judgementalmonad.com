@@ -48,9 +48,9 @@ The Harness isn't helpless. It can inspect the command string and apply rules: a
 
 And across multiple calls, the problem compounds. The agent writes files at turn 3, reads them at turn 7, and executes a script at turn 12 that depends on both. The cumulative state the agent has built through the world becomes progressively harder to reason about. The Harness can track each step, but the cost of tracking grows with the product of specification complexity and accumulated world state — supermodularity again, now applied to regulation itself.
 
-**Levels 5-8: the system changes itself.** Beyond amplification, tools can modify the execution environment (`pip install` — level 5), create persistent processes that outlive the tool call (`nohup python server.py &` — level 6), create new tools entirely (writing an MCP server — level 7), or modify the Harness's own parameters (editing `CLAUDE.md` — level 8). Each pushes further into territory where the fold model strains and the Harness's regulatory assumptions may no longer hold.
+**Levels 5-8: the system changes itself.** Beyond amplification, tools can modify the execution environment (`pip install` — level 5), create new tools entirely (writing an MCP server — level 6), spawn subprocesses that outlive the tool call (level 7), or modify the Harness's own parameters (editing `CLAUDE.md` — level 8). Each pushes further into territory where the fold model strains and the Harness's regulatory assumptions may no longer hold.
 
-Level 6 deserves special attention: a persistent process has its own lifetime, its own state, its own behavior — invisible to the Harness. The tool interface returns `exit code 0, stdout: "done"` while a child process continues running, modifying state, listening on ports. The Harness sees the tool's interface output. It doesn't see the side effects.
+Level 7 deserves special attention: a spawned subprocess has its own lifetime, its own state, its own behavior — invisible to the Harness. The tool interface returns `exit code 0, stdout: "done"` while a child process continues running, modifying state, listening on ports. The world changes between turns through a channel the Harness doesn't mediate. This is where Δw becomes not just large but *unobserved* — the Harness can't characterize the delta because it doesn't see it happening.
 
 ---
 
@@ -68,13 +68,13 @@ Before this boundary, tool outputs are data — inert tokens processed by fixed 
 
 This is the most architecturally consequential boundary. It's where the composite goes from "a function that reads data" to "a function that directs computation." Post 5 drew the line between bare and agentic Inferencers — no tools vs. tools. This taxonomy draws a finer line within the agentic case: an agentic Inferencer with only data-channel tools (levels 0-2) has convergent dynamics. An agentic Inferencer with computation-channel tools (level 4+) has potentially self-amplifying dynamics. The regulatory divide isn't about having tools — it's about what kind of tools.
 
-### Between 5 and 6: escape from the fold
+### Between 6 and 7: escape from the fold
 
-Before this boundary, every computation is invoked by the Harness, returns a result, and terminates. The fold is intact — post 6's model holds exactly. The Harness's regulatory model is structurally complete because every computation is accounted for.
+Before this boundary, every computation is invoked by the Harness, returns a result, and terminates. The agent can extend the language (level 5) and create new tools (level 6), but the fold is intact — post 6's model holds exactly. The Harness's regulatory model is structurally complete because every computation is accounted for.
 
-After it, there's computation happening that the Harness didn't invoke and whose results it doesn't receive. The star topology from post 1 — the Harness mediates all communication — breaks. The persistent process communicates with the world, and with the agent via the filesystem or localhost, without Harness mediation.
+After it, there's computation happening that the Harness didn't invoke and whose results it doesn't receive. The star topology from post 1 — the Harness mediates all communication — breaks. Spawned subprocesses communicate with the world, and with the agent via the filesystem or localhost, without Harness mediation.
 
-This is the point where the framework's central architectural principle faces its limits. The star topology was an aspiration. At level 6+, it's an approximation — and the gap between aspiration and reality is where regulatory failures live.
+This is the point where the framework's central architectural principle faces its limits. The star topology was an aspiration. At level 7+, it's an approximation — and the gap between aspiration and reality is where regulatory failures live.
 
 ---
 
@@ -88,11 +88,13 @@ The grade `g = (w, d_reachable)` is where the composite IS in the lattice at a p
 |---|---|---|---|---|
 | 0 | Compute in isolation | = 0 | ≈ 0 | Flat — a calculator |
 | 1 | Query the world | > 0 | ≈ 0 | Data accumulation |
-| 2 | Process world data | > 0 | > 0 | Richer accumulation |
-| 3 | Modify the world | > 0 | > 0 | Path-dependent |
-| 4 | Create computations | > 0 | > 0 via w | Self-amplifying |
+| 2 | Process world data | > 0 | > 0 (enriched context) | Richer accumulation |
+| 3 | Modify the world | > 0 (path-dependent) | > 0 (enriched context) | Path-dependent |
+| 4 | Create computations | > 0 | >> 0 via feedback | Self-amplifying |
 | 5 | Extend the language | > 0 | >> 0 via w | Ceiling-raising |
-| 6-8 | Modify the system | Δ(system) | Δ(system) | Lattice-reshaping |
+| 6 | Create new tools | Δ(config) | Δ(config) | Config-reshaping |
+| 7 | Spawn subprocesses | >> 0 (unmediated) | — (outside fold) | Fold escape |
+| 8 | Modify the controller | Δ(F) | Δ(F) | Dynamics-reshaping |
 
 The parallel to the grade levels themselves is not coincidental. World coupling levels (post 2) describe the pipe's diameter. Decision surface levels describe the function's steering capacity. Computation levels describe how fast those properties can change. They're measuring the same structure on different timescales: position, and the rate of change of position.
 
@@ -102,7 +104,7 @@ The parallel to the grade levels themselves is not coincidental. World coupling 
 
 This taxonomy makes the sandbox's role precise.
 
-A sandbox constrains a computation's world coupling — `allowed_directories` bounds what it can read, network lockdown bounds what it can reach. That's Axis 1 of the grade. But the sandbox also constrains the computation *level*: disable network access and level 6 processes can't listen for external connections. Disable write access and level 3 mutations are impossible. Disable package installation and level 5 environment modification is blocked.
+A sandbox constrains a computation's world coupling — `allowed_directories` bounds what it can read, network lockdown bounds what it can reach. That's Axis 1 of the grade. But the sandbox also constrains the computation *level*: disable network access and level 7 subprocesses can't listen for external connections. Disable write access and level 3 mutations are impossible. Disable package installation and level 5 environment modification is blocked.
 
 The sandbox isn't just a security boundary. It's a **dynamics controller**. It determines which phase transitions are reachable. A tool set that includes Bash with full sandbox access operates at levels 0-8 simultaneously — the agent can reach any level through sufficiently creative use of a Turing-complete specification language. A tool set that includes Bash with read-only, network-isolated sandbox caps at level 2. Same tool, radically different dynamics.
 
@@ -116,7 +118,7 @@ This determines whether the composite is a bounded transducer or a universal mac
 
 But here's the uncomfortable fact. Most useful agentic systems operate at level 4 or above. Writing and running code. Installing dependencies. Creating test fixtures. These aren't edge cases — they're the core workflow. The regulatory challenges at these levels aren't hypothetical; they're what every coding agent faces every session.
 
-If the star topology breaks at level 6, and the cost of regulation grows toward undecidability at level 4, and the most productive configurations live in exactly this range — how can the Harness remain characterizable while mediating actors that can reshape the world?
+If the star topology breaks at level 7, and the cost of regulation grows toward undecidability at level 4, and the most productive configurations live in exactly this range — how can the Harness remain characterizable while mediating actors that can reshape the world?
 
 The operating system has been solving this problem for decades.
 
@@ -167,17 +169,17 @@ The agent generates tokens interpreted as executable specification. The result f
 
 **Grade dynamics**: `Δd_reachable >> 0 via w`. The specification language's effective expressiveness grew.
 
-### Level 6: Persistent processes
+### Level 6: Capability creation
 
-`nohup python worker.py &`. The computation doesn't terminate when the tool call returns. A process persists with its own lifetime, state, and behavior.
+The agent writes an MCP server, creates executable scripts, or modifies configuration files that change available tools. New tools created from within. The fold still holds — the Harness still mediates every tool invocation — but its configuration space grew.
 
-**Grade dynamics**: grade changes happening *outside the fold*. The persistent process modifies the world between turns, invisible to the Harness.
+**Grade dynamics**: `Δ(config)` — the Harness's control surface changed. New tools mean new possible computations, new effect signatures to evaluate.
 
-### Level 7: Capability creation
+### Level 7: Subprocess spawning
 
-The agent writes an MCP server, creates executable scripts, or modifies configuration files that change available tools. New tools created from within.
+The computation spawns a subprocess that outlives the tool call. Background workers, servers, watchers — any process that persists with its own lifetime, state, and behavior after the tool returns.
 
-**Grade dynamics**: the configuration space itself grew. The Harness's control surface changed.
+**Grade dynamics**: `Δw >> 0` (unmediated) — the subprocess modifies the world between turns, invisible to the Harness. `Δd_reachable` is not characterizable from the Harness's perspective: there's computation happening it can't observe. The fold from post 6 breaks here.
 
 ### Level 8: Controller modification
 
