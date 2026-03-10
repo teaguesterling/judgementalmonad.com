@@ -4,7 +4,7 @@
 
 ---
 
-I spent the last few months building a formal theory of multi-agent systems. It's nine posts, a formal companion with proofs, case studies. It draws on programming language theory, cybernetics, and capability-based security. It's called *The Ma of Multi-Agent Systems* and I'm genuinely proud of it.
+I spent the last ~~few months~~ /few nights/ building a formal theory of multi-agent systems. It's nine posts, a formal companion with proofs, case studies. It draws on programming language theory, cybernetics, and capability-based security. It's called *The Ma of Multi-Agent Systems* and I'm genuinely proud of it.
 
 You are not going to read it.
 
