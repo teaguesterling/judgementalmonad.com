@@ -2,7 +2,7 @@
 
 *Definitions, propositions, conjectures, and open problems for the framework developed in [The Ma of Multi-Agent Systems](00-intro.md).*
 
-This document formalizes the structural claims from the blog series. It assumes the reader has the blog for motivation, examples, and design intuitions. It follows mathematical dependency order, not the blog's narrative order. Cross-references to specific posts are given where the informal treatment lives.
+This document formalizes the structural claims from the blog series. It assumes the reader has the blog for motivation, examples, and design intuitions. It follows mathematical dependency order, not the blog's narrative order. Cross-references to specific posts are given where the informal treatment lives. Worked examples applying the formalism to concrete systems are in the [case studies](case-studies.md).
 
 **Labeled environments.** *Definition*: precise formal statement. *Proposition*: proven or provable. *Conjecture*: stated precisely but open. *Convention*: modeling choice, not a truth claim. Gaps are marked honestly — they are the work queue.
 
@@ -575,51 +575,218 @@ This is what the Harness must regulate for.
 
 **Gap.** The recurrence `F` is stated but not given a type or constraints. The dynamical systems theory of grade trajectories — convergence, rate of inflation, stability — is the most important open problem in the framework.
 
+### 8.4 Multi-agent coupling
+
+**Definition 8.10 (Communication channel cardinality).** When agent A delegates to agent B through the Harness, the *communication channel cardinality* `kappa` is the number of distinguishable messages B can return per round:
+
+- For a structured channel (schema with K configurations): `kappa = K`
+- For an unstructured channel (arbitrary text): `kappa = P(d_B)^(T_B / c_B)`, where `T_B` is B's context window size and `c_B` is B's average tokens per turn
+
+The unstructured cardinality reflects B's full computation capacity: B makes `T_B / c_B` decisions, each with `P(d_B)` distinguishable paths.
+
+**Proposition 8.11 (Multi-agent characterization difficulty).** For a single agent A working over `N = T_A / c` turns:
+
+```
+chi_single = (T_A / c) . log P(d_A)
+```
+
+Linear in the token window `T_A`.
+
+For agent A delegating to agent B over K rounds, where B works internally for `M = T_B / c_B` turns per round:
+
+```
+chi_two = (T_A / c_A) . (log P(d_A) + (T_B / c_B) . log P(d_B))
+        = chi_A_solo + (T_A . T_B) / (c_A . c_B) . log P(d_B)
+```
+
+The amplification term is proportional to the **product** of the two context windows.
+
+*Proof.* Over K rounds, A makes K decisions (each from `P(d_A)` paths). Each round, B makes M decisions internally (each from `P(d_B)` paths). The total distinguishable K-round histories is `(P(d_A) . P(d_B)^M)^K`. Taking logs: `K . (log P(d_A) + M . log P(d_B))`. Substituting `K = T_A / c_A` and `M = T_B / c_B` gives the result. QED
+
+**Corollary 8.12 (Quadratic growth).** A single agent with token window `2T` has `chi ~ 2T . log P(d)`. Two agents with windows `T` each have `chi ~ T^2 . log P(d)`. The second agent changes the growth rate from linear to quadratic in total token budget. For N agents in a pipeline:
+
+```
+chi_pipeline ~ (T_1 . T_2 . ... . T_N) / (c_1 . ... . c_N) . log P(d_last)
+```
+
+Polynomial of degree N in total budget. Still finite (token windows bound everything), but the degree grows with agent count.
+
+**Corollary 8.13 (Funnel decoupling).** A co-domain funnel with schema cardinality K at the A-B boundary replaces the amplification term:
+
+```
+(T_A . T_B) / (c_A . c_B) . log P(d_B)  -->  (T_A / c_A) . log K
+```
+
+The funnel decouples A's characterization difficulty from B's context window entirely. Growth returns to linear. This is the formal content of the design rule "co-domain funnels at every boundary" (blog post 9).
+
+**Remark (Token windows as the universal bound).** All quantities above are finite because token windows are finite. The framework's dynamic claims — convergence, divergence, amplification — are about growth rates within these bounds, not about infinity. A "divergent" trajectory is one that reaches the bound quickly; a "convergent" one reaches it slowly or not at all. The practical question is whether the system exhausts its regulatory budget before the token window is consumed.
+
 ---
 
 ## 9. Computation Channels and Trajectory Dynamics
 
-Not all tools are data channels. Some are computation amplifiers. Blog post 7 develops the taxonomy; post 8 develops the regulatory consequences.
+Not all tools are data channels. Some are computation amplifiers. Blog post 7 develops the taxonomy; post 8 develops the regulatory consequences. This section grounds both in the Chomsky hierarchy and the effect lattice, connecting them to the grade lattice (section 4) and the coupled recurrence (section 8).
 
-### 9.1 Data channels vs computation channels
+### 9.1 The tool grade
 
-**Definition 9.1 (Data channel).** A tool where the input is an address and the tool resolves it. `Read("/etc/hostname")`, `SQL SELECT`, `Glob("*.py")`. The agent selects from the world. The space of possible queries is characterizable given the interface.
+**Definition 9.1 (Tool grade).** The grade of a tool `t` decomposes into two well-studied hierarchies:
 
-**Definition 9.2 (Computation channel).** A tool where the input is a program and the tool executes it. `Bash("python -c '...'")`, `eval(code)`. The agent specifies a computation. The space of possible computations is bounded by the specification language's expressiveness — potentially Turing-complete.
+```
+grade(t) = (effects(t), chomsky(input_lang(t)))
+```
 
-### 9.2 The computation level as derivative
+The **effect signature** `effects(t)` is the set of side effects the tool can perform, drawn from a lattice:
 
-**Definition 9.3 (Computation level).** The computation level characterizes how fast the grade can change between steps — it is the derivative of the trajectory, not a third axis:
+```
+Pure < FileRead < FileWrite < Network < ProcessSpawn < ArbitrarySyscalls
+```
 
-| Level | What it enables | dw | d(d_reachable) | Character |
-|---|---|---|---|---|
-| 0-2 | Observe (query, pure compute, read) | > 0 | ~ 0 | Data accumulation |
-| 3 | Mutate (write within sandbox) | > 0 | ~ 0 | Path-dependent |
-| 4 | Amplify (generate executable specs) | > 0 | > 0 via w | Self-amplifying |
-| 5 | Extend (modify execution environment) | > 0 | >> 0 via w | Ceiling-raising |
-| 6-8 | Reshape (persistent processes, capability creation, controller modification) | d(system) | d(system) | Lattice-reshaping |
+This is the W axis (world coupling) applied to tools -- grounded in the capability/effect systems literature (Moggi 1991, Plotkin & Power 2003, Koka's effect rows).
 
-### 9.3 Phase transitions
+The **input language class** `chomsky(input_lang(t))` is the Chomsky hierarchy level of the language the tool accepts as input:
 
-**Definition 9.4 (Phase transitions).** Three level boundaries are qualitative shifts:
+```
+Regular (Type 3) < Context-free (Type 2) < Context-sensitive (Type 1) < RE (Type 0)
+```
 
-1. **Mutation (2 to 3)**: The world becomes writable. The trajectory becomes path-dependent — what the agent did changes what future observations return.
+This is the D axis (decision surface) applied to tools -- grounded in LangSec (Bratus, Patterson, Sassaman 2011): every tool that accepts input is implicitly an interpreter, and the input IS a program for that interpreter. The computation level is the Chomsky level of the input language.
 
-2. **Amplification (3 to 4)**: The agent generates tokens interpreted as executable specifications. The composite's effective reach extends beyond the weights. The trajectory can self-amplify. This is the most architecturally consequential boundary.
+**Proposition 9.2 (Tool grade IS the grade lattice).** The tool grade `(effects(t), chomsky(input_lang(t)))` is the grade lattice `(w, d) in W x D` (Def. 4.1) with formal content supplied:
 
-3. **Escape from fold (5 to 6)**: Persistent processes have their own lifetime, state, and behavior — invisible to the Harness. The star topology breaks. The fold model (section 8) becomes an approximation.
+| Grade axis | Tool instantiation | Formal foundation |
+|---|---|---|
+| W (world coupling) | Effect signature | Moggi (1991), capability types (Miller 2006) |
+| D (decision surface) | Chomsky level of input language | LangSec (Bratus et al. 2011), Felleisen (1991) |
 
-### 9.4 The sandbox as dynamics controller
+The nine-level taxonomy from blog post 7 is a linearization of this product. The coarse lattice (post 2) and the fine taxonomy (post 7) are the same structure at different resolutions.
 
-**Proposition 9.5 (Sandbox controls dynamics).** The sandbox determines which phase transitions are reachable. A tool set including `Bash` with full sandbox access operates at levels 0-8. The same `Bash` with read-only, network-isolated sandbox caps at level 2. Same tool, radically different dynamics.
+### 9.2 Data channels vs computation channels
 
-This is supermodularity (Prop. 4.7) applied to sandbox configuration: restricting the sandbox of a computation-channel tool does not just reduce world coupling — it eliminates phase transitions. A qualitative shift in what kind of regulatory problem the Harness faces.
+**Definition 9.3 (Data channel).** A tool where `chomsky(input_lang(t)) <= CF`. The input is an address, a structured query, or a template. `Read("/etc/hostname")` (Regular), `SQL SELECT` (CF), `Glob("*.py")` (Regular). The space of possible inputs is characterizable: the Harness can enumerate or bound the set of valid queries.
 
-### 9.5 Regulation at level 4+
+**Definition 9.4 (Computation channel).** A tool where `chomsky(input_lang(t)) = RE`. The input is a program and the tool executes it. `Bash("python -c '...'")`, code execution tools. The agent specifies a computation. The space of possible computations is Turing-complete. By Rice's theorem, non-trivial semantic properties of the input programs are undecidable.
 
-**Conjecture 9.6 (Halting-problem shape of regulation).** At computation level 4, the Harness can inspect each command and apply specified rules (approve `cat`, deny `rm -rf`, escalate `pip install`). For simple commands this works. But the general question — "what will this program do?" — has the shape of the halting problem. Each individual invocation is regulatable; the space of things to check is not enumerable. Across multiple calls, the problem compounds: the cost of regulation grows with the product of specification complexity and accumulated world state.
+The data/computation channel distinction is the Chomsky boundary at CF vs RE. This is a qualitative shift in decidability, not just a quantitative increase in expressiveness.
 
-**Gap.** This conjecture links the computation channel taxonomy to computability theory. A formal characterization — perhaps via the expressiveness of the specification language — would give precise phase transition boundaries. Currently descriptive, not algebraic.
+### 9.3 The static/dynamic grade and the configuration invariant
+
+**Definition 9.5 (Static and dynamic grade).** The grade has both static and dynamic forms:
+
+```
+grade_config    = (W_config, d_total)           -- determined by Harness configuration
+grade_actual(n) = (W_actual(n), d_reachable(n)) -- realized at turn n
+```
+
+where:
+
+- `W_config` -- the set of world states the agent is ALLOWED to access (permissions, sandbox bounds)
+- `W_actual(n)` -- the set of world states the agent HAS accessed (what's in the context window at turn n)
+- `d_total` -- the full path space of the weights (constant)
+- `d_reachable(n)` -- the activatable portion given current context (Def. 8.4)
+
+For an inference agent, `W_actual` is exactly the context window. The agent cannot observe anything outside it. But it can request more via tool calls, converting `W_config` into `W_actual`.
+
+**Definition 9.6 (Configuration invariant).** The *configuration invariant* holds when the dynamic grade stays bounded by the static grade:
+
+```
+grade_actual(n) <= grade_config    for all n
+```
+
+Equivalently: `W_actual(n) <= W_config` and `d_reachable(n) <= d_total`. The agent's realized capabilities never exceed its configured allowance.
+
+**Proposition 9.7 (Chomsky level determines the invariant).** The configuration invariant is determined by `chomsky(input_lang(t))`:
+
+| Chomsky level | Invariant | Reason |
+|---|---|---|
+| Regular, CF | Holds | Each tool call accesses a bounded slice of W_config. Cannot create new resources. |
+| CS | Holds | Cross-referencing within existing resources. Cannot exceed configuration. |
+| RE | **Can break** | A single tool call can create files, install packages, open connections -- expanding W_reachable beyond W_config. |
+
+This is the formal content of the level 3-to-4 phase transition: below RE, the configuration bounds the system. At RE, the agent can expand its own reachable world.
+
+`chomsky(input_lang(t))` is the **conversion rate** from static to dynamic grade -- it determines how fast `W_actual` approaches `W_config`, and whether it can exceed it.
+
+### 9.4 Phase transitions (grounded)
+
+**Definition 9.8 (Phase transitions).** Three level boundaries are qualitative shifts, now grounded in the formal hierarchies:
+
+1. **Mutation (2 to 3)**: Effect boundary -- `FileRead` to `FileWrite`. Same Chomsky class (CF). The trajectory becomes path-dependent (mutations change future reads), but the configuration invariant holds. Decidability is preserved.
+
+2. **Amplification (3 to 4)**: **Chomsky boundary -- CF to RE.** The agent generates tokens interpreted as executable specifications. This is the LangSec boundary, the HRU boundary (Harrison, Ruzzo, Ullman 1976), and the Rice's theorem boundary. The configuration invariant can break. Decidability of characterization is lost. This is the most architecturally consequential transition because it is a shift in what KIND of regulatory problem the Harness faces.
+
+3. **Escape from fold (5 to 6)**: Meta-effect boundary. Still RE input, but effects include creating persistent processes with their own lifetime and state -- invisible to the Harness. The star topology breaks. The fold model (section 8) becomes an approximation.
+
+### 9.5 The sandbox as invariant restorer
+
+**Proposition 9.9 (Sandbox restores the configuration invariant).** The sandbox determines which phase transitions are reachable. For an RE-input tool (Bash), the sandbox restricts the effect signature: no network eliminates level 5, filesystem bounds cap level 3-4, resource limits (cgroups) bound computation time and space.
+
+```
+level_theoretical(Bash) = (ArbitrarySyscalls, RE)     -- grade: (open, RE)
+level_sandboxed(Bash, S) = (FileWrite_bounded, RE)    -- grade: (scoped, RE)
+```
+
+The input language is still RE -- the agent can still write arbitrary programs. But the effect restriction ensures `W_reachable <= W_config` by preventing the effects that would expand it. The sandbox restores the configuration invariant without restricting the Chomsky level.
+
+This is supermodularity (Prop. 4.7) applied to sandbox configuration: restricting the effect axis of an RE-input tool does not just reduce world coupling -- it eliminates phase transitions. A qualitative shift in what kind of regulatory problem the Harness faces.
+
+**Remark (Connection to formal policy systems).** SELinux's Type Enforcement and cgroup resource controls are the OS instantiation of this pattern. SELinux restricts the effect axis via a finite type relation `(source_type, target_type, object_class, permission)` -- decidable by construction because the domain is finite. Cgroups restrict resource bounds -- connecting to bounded Turing machines and complexity classes (space-bounded TMs run in at most `2^O(s(n))` time). Together they narrow the gap between `level_sandboxed` and `level_theoretical`. The HRU result (1976) is the formal justification: the general safety problem for access matrices is undecidable, but for restricted models (mono-operational systems, finite type relations), safety IS decidable. SELinux's restricted policy language is a deliberate choice to stay in the decidable regime.
+
+### 9.6 Regulation at level 4+
+
+**Proposition 9.10 (Halting-problem shape of regulation).** At `chomsky = RE`, the Harness can inspect each command and apply specified rules (approve `cat`, deny `rm -rf`, escalate `pip install`). For simple commands this works -- the Harness performs pattern matching on the input string, which is decidable. But the general question -- "what will this program do?" -- is undecidable by Rice's theorem. Each individual invocation may be regulatable by syntactic inspection; the semantic question is not enumerable. Across multiple calls, the problem compounds: the cost of regulation grows with the product of specification complexity and accumulated world state.
+
+**Remark (Decidable approximations).** Rice's theorem bars exact semantic analysis but permits sound approximation. Abstract interpretation (Cousot & Cousot 1977) provides the framework: map concrete semantics to abstract domains via Galois connections, trading precision for decidability. Type systems, effect systems, and model checking are all instances. The practical hierarchy: syntactic pattern matching (simplest, least precise) < type-based analysis < abstract interpretation < model checking (most precise, most expensive). Each is a decidable approximation of the undecidable semantic question. The Harness's rule-based permission system is the simplest level -- syntactic pattern matching on tool inputs.
+
+### 9.7 Emergent computation channels
+
+**Proposition 9.11 (Delegation as computation channel).** When agent A delegates to agent B via natural language, the delegation channel has the structure of a computation channel (Def. 9.4), regardless of B's individual tool set:
+
+1. A sends a natural-language specification (the program)
+2. B interprets and executes it using its tools over its context window (the execution)
+3. B returns a result (the output)
+
+The input language (natural language) is at least as expressive as any programming language. B's decision surface is `d_B = trained`. By Prop. 4.4, `grade(A using B) = (w_A V w_B, d_A V d_B) = (something, trained)`. The compound's decision surface is trained regardless of the individual tools' computation levels.
+
+Two agents, each with data-channel-only tools (level 2-3), compose into a system with an emergent computation channel (level 4) at the delegation boundary. The computation channel arises from composition, not from any individual tool.
+
+**Corollary 9.12 (Funnels prevent emergence).** A co-domain funnel at the A-B boundary constrains B's output to a structured schema. This projects B's effective decision surface at the interface from `trained` to `specified` (bounded by the schema). The delegation channel drops from level 4 back to level 2-3. The funnel prevents the computation channel from emerging.
+
+### 9.8 The trust surface
+
+**Definition 9.13 (Computation level trichotomy).** For a tool `t` used by agent `A` in sandbox `S`:
+
+```
+level_theoretical(t)       -- what the tool can compute (determined by tool)
+level_sandboxed(t, S)      -- what the sandbox allows (determined by configuration)
+level_effective(t, A)      -- what the agent actually does (determined by training)
+```
+
+These satisfy: `level_effective(t, A) <= level_sandboxed(t, S) <= level_theoretical(t)`.
+
+**Definition 9.14 (Trust surface).** The *trust surface* is the gap:
+
+```
+trust_surface(t, A, S) = level_sandboxed(t, S) - level_effective(t, A)
+```
+
+Within this gap, regulation relies on the agent's training rather than specified constraints. A test runner (`pytest`) in a network-isolated sandbox has `level_theoretical = 4+`, `level_sandboxed ~ 3` (can write files, can't reach network), `level_effective ~ 2` (the agent writes tests, not exploits). The trust surface is the gap between 3 and 2.
+
+**Example.** An agent writes Python tests and runs them via a test runner:
+
+| Level | What determines it | Value |
+|---|---|---|
+| Theoretical | pytest executes arbitrary Python | 4+ |
+| Sandboxed | No network, filesystem bounds, resource limits | ~3 |
+| Effective | Agent's training: write tests, not programs | ~2 |
+| Trust surface | Gap between sandboxed and effective | ~1 |
+
+The sandbox eliminates levels 4+ (no network, no environment modification). Training keeps usage at level 2 (structured test patterns). The trust surface is the region where a sufficiently creative or misaligned agent could operate within the sandbox but outside intended use — writing tests that are actually programs.
+
+**Proposition 9.15 (Specified band and the trust surface).** The specified band (section 10) says: regulate based on `level_sandboxed`, not `level_effective`. If you need level 2 dynamics, either use level 2 tools or sandbox level 4 tools down to level 2. Relying on `level_effective` puts trained judgment in the regulatory loop — the Harness's characterizability erodes.
+
+A zero trust surface — `level_sandboxed = level_effective` — means the sandbox fully specifies the tool's behavior. This is achievable for data-channel tools (the tool's interface constrains it) but generally not for computation-channel tools (the sandbox constrains effects but not the computation itself).
+
+**Gap.** The trust surface is defined informally. Formalizing it requires a metric on computation levels (not just an ordering) and a way to measure what "the agent actually does" without relying on the training distribution — which is the very trained judgment the specified band says to avoid. This may be fundamentally circular for computation-channel tools, which would explain why the practical response is always to sandbox rather than to trust.
 
 ---
 
@@ -771,9 +938,9 @@ Prioritized by novelty and testability.
 
 The grade trajectory `g(n+1) = F(g(n), config(n))` is stated (Prop. 8.6) but `F` is not characterized. Under what conditions does the trajectory converge, diverge, or cycle? How do computation channel levels (section 9) affect the stability boundary? What is the optimal compaction strategy for a given tool set? This is the most important open problem — it connects the static framework to operational predictions.
 
-### 12.2 Computation channel formalization (high priority)
+### 12.2 Computation channel formalization (partially addressed)
 
-The nine-level taxonomy (Def. 9.3) is descriptive. A formal characterization — perhaps via the Chomsky hierarchy of the specification language each tool accepts, or via the expressiveness of the tool's input language — would give precise phase transition boundaries and connect to computability theory.
+The tool grade (Def. 9.1) grounds the nine-level taxonomy in the Chomsky hierarchy (input language) and effect lattice (permitted operations). The configuration invariant (Def. 9.6, Prop. 9.7) gives the phase transition at CF-to-RE a formal criterion: whether the invariant `grade_actual <= grade_config` holds. **Remaining:** formalize the effect lattice as precisely as the Chomsky hierarchy is formalized. Characterize the interaction between effect restriction and input language class — when does restricting effects compensate for RE input? The decidable approximation hierarchy (syntactic matching < types < abstract interpretation < model checking) needs formal treatment of precision/cost tradeoffs.
 
 ### 12.3 Supermodularity: relaxing the independence assumption (medium priority)
 
@@ -819,10 +986,13 @@ None of this has been verified in Agda, Lean, or Coq. The monad/comonad definiti
 - Atkey, R. (2009). Parameterised notions of computation. *JFP*, 19(3-4).
 - Atkey, R. (2018). Syntax and semantics of quantitative type theory. *LICS*.
 - Bauer, A. (2018). What is algebraic about algebraic effects and handlers? *arXiv:1807.05923*.
+- Bratus, S., Patterson, M., & Sassaman, L. (2011). The halting problems of network stack insecurity. *;login:*, USENIX.
 - Brookes, S., & Geva, S. (1992). Computational comonads and intensional semantics. *Applications of Categories in Computer Science*, LMS Lecture Notes 177.
 - Conant, R. C., & Ashby, W. R. (1970). Every good regulator of a system must be a model of that system. *IJSS*, 1(2).
 - Cousot, P., & Cousot, R. (1977). Abstract interpretation: A unified lattice model for static analysis of programs. *POPL*.
+- Felleisen, M. (1991). On the expressive power of programming languages. *Science of Computer Programming*, 17(1-3).
 - Fowler, M. (2025). Harness engineering. *martinfowler.com*.
+- Harrison, M. A., Ruzzo, W. L., & Ullman, J. D. (1976). Protection in operating systems. *Communications of the ACM*, 19(8).
 - Honda, K. (1993). Types for dyadic interaction. *CONCUR*.
 - Honda, K., Yoshida, N., & Carbone, M. (2008). Multiparty asynchronous session types. *POPL*.
 - Kammar, O., Lindley, S., & Oury, N. (2013). Handlers in action. *ICFP*.
@@ -832,9 +1002,11 @@ None of this has been verified in Agda, Lean, or Coq. The monad/comonad definiti
 - Milner, R. (1999). *Communicating and Mobile Systems: The Pi-Calculus*. Cambridge University Press.
 - Moggi, E. (1991). Notions of computation and monads. *Information and Computation*, 93(1).
 - Montufar, G. F., Pascanu, R., Cho, K., & Bengio, Y. (2014). On the number of linear regions of deep neural networks. *NeurIPS*.
+- Nielson, F., & Nielson, H. R. (1999). Type and effect systems. *Correct System Design*, LNCS 1710.
 - Orchard, D., Wadler, P., & Eades, H. (2019). Unifying graded and parameterised monads. *arXiv:1907.10276*.
 - Plotkin, G., & Power, J. (2003). Algebraic operations and generic effects. *Applied Categorical Structures*, 11(1).
 - Plotkin, G., & Pretnar, M. (2009). Handlers of algebraic effects. *ESOP*.
 - Saltzer, J. H., & Schroeder, M. D. (1975). The protection of information in computer systems. *Proc. IEEE*, 63(9).
+- Spencer, R., Smalley, S., Loscocco, P., et al. (1999). The Flask security architecture: System support for diverse security policies. *USENIX Security*.
 - Uustalu, T., & Vene, V. (2008). Comonadic notions of computation. *ENTCS*, 203(5).
 - Zhang, H., & Wang, M. (2025). Monadic context engineering for LLM agents. *arXiv:2512.22431*.

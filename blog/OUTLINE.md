@@ -206,8 +206,8 @@ The practical "so what." Design rules, multi-agent systems, decision checklist.
 ## Formal Companion
 
 **File:** `formal-companion.md`
-**Rewrite of:** `blog/formal-framework.md` (1354→~600 lines)
-**Status:** Not yet written
+**Rewrite of:** `blog/formal-framework.md` (1354→~800 lines)
+**Status:** Written, supermodularity proof completed (Prop. 4.7)
 
 Not a blog post. Pure formal development: definitions, propositions, proofs,
 open problems. No narrative. No worked examples (those live in post 1).
@@ -242,6 +242,25 @@ No design principles (those live in the posts).
 - Drop §17 (design principles — distributed across posts)
 - Re-prioritize open problems (coupled recurrence and computation channels
   first, distributive law and mechanical verification later)
+
+---
+
+## Case Studies
+
+**File:** `case-studies.md`
+**Status:** Written
+
+Worked examples applying the formalism to concrete systems. Three studies:
+1. Context window as world coupling ceiling — tool restriction maximally
+   effective at context limit
+2. Communication channel amplification — two convergent agents producing
+   divergent composite dynamics through unstructured communication
+3. Structured build output (blq) as co-domain funnel — drops both axes
+   of chi simultaneously, keeps multi-agent composition additive
+
+**Key result:** Self-amplification can arise from communication topology,
+not just computation channels. Structured inter-agent communication keeps
+chi composition additive; unstructured makes it multiplicative.
 
 ---
 
