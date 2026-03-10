@@ -305,7 +305,7 @@ These are independent (blog post 2, post 5):
 
 | Configuration | Internal ma | Interface ma | Example |
 |---|---|---|---|
-| Large model, restricted tools | High | Low | Opus as auditor (Approve/Reject) |
+| Large model, restricted tools | High | Low | Opus as reviewer (Approve/Reject/RequestChanges) |
 | Small model, many tools | Low | High | Haiku with 50 tools |
 | Large model, unrestricted | High | High | Unconstrained Inferencer |
 | Deterministic rules, narrow output | Low | Low | Static tool whitelist |
@@ -316,7 +316,7 @@ Internal ma determines decision quality. Interface ma determines auditability.
 
 **Definition 4.11 (Co-domain funnel).** A co-domain funnel is an actor where `ma_internal >> ma_interface` — the implementation is strictly richer than the interface. The funnel compresses high internal ma through a constrained output type.
 
-Examples: an Opus auditor with `{Approve, Reject}`, a sub-agent whose full conversation compresses to `Either(Result, Error)`, a tool-selection agent that outputs a finite kit.
+Examples: an Opus reviewer with `{Approve, Reject, RequestChanges}`, a sub-agent whose full conversation compresses to `Either(Result, Error)`, an explorer that compresses broad codebase reading into structured findings.
 
 **Proposition 4.12 (Funnels as monad morphisms).** For actors with well-defined implementation monads, the funnel is a monad morphism `eta : M_impl ~> M_iface` that is surjective on the co-domain (every output is reachable) and lossy (many internal states map to the same output). See section 6.3.
 

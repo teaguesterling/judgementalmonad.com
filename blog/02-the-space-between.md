@@ -10,7 +10,7 @@ Every actor in a multi-agent conversation receives inputs and produces outputs. 
 
 In Japanese aesthetics, 間 (*ma*) is the concept that the space between things is itself functional. The pause that gives the notes shape. The empty room that makes the architecture. *Ma* isn't absence — it's the structural element that makes everything around it work.
 
-Agent architectures have *ma*. Every scoping decision creates two things: what an agent can see, and what it can't. The tool-selection agent doesn't see the worker's line-by-line analysis — and that's *why* it can think clearly about tool selection. The exclusions aren't limitations. They're the negative space that makes each agent's scope useful.
+Agent architectures have *ma*. Every scoping decision creates two things: what an agent can see, and what it can't. The planner doesn't see the worker's line-by-line analysis — and that's *why* it can think clearly about strategy. The exclusions aren't limitations. They're the negative space that makes each agent's scope useful.
 
 But *ma* goes deeper than scoping. It's a property of the actors themselves.
 
@@ -184,7 +184,7 @@ Here's the distinction that makes the framework architecturally useful.
 
 *Ma* is measured at the **interface** — the output space as seen by other actors. What happens inside is the actor's own business.
 
-An auditor backed by Opus that reviews thousands of log entries with deep chain-of-thought reasoning: enormous internal *ma*. But its interface is `Approve | Reject` — two possible outputs. Low interface *ma*. The restriction isn't on the model — it's on the tools.
+A reviewer backed by Opus that analyzes thousands of lines of code with deep chain-of-thought reasoning: enormous internal *ma*. But its interface is `Approve | Reject | RequestChanges` — three possible outputs. Low interface *ma*. The restriction isn't on the model — it's on the tools.
 
 This means:
 
@@ -197,7 +197,7 @@ This means:
 
 **Internal *ma* determines quality** — how good the actor's decisions are within its constrained output space. **Interface *ma* determines auditability** — how well other actors can reason about what it might produce.
 
-A good co-domain funnel has high internal *ma* and low interface *ma*. The quartermaster (inference-backed tool selection → finite kit), the security auditor (deep review → Approve/Reject), the sub-agent boundary (full conversation loop → summarized result) — all instances of the same pattern. Rich processing compressed to a characterizable interface.
+A good co-domain funnel has high internal *ma* and low interface *ma*. The reviewer (deep analysis → Approve/Reject/RequestChanges), the explorer (broad codebase reading → structured findings), the sub-agent boundary (full conversation loop → summarized result) — all instances of the same pattern. Rich processing compressed to a characterizable interface.
 
 ---
 
@@ -231,7 +231,7 @@ The grade lattice and supermodularity together make testable claims:
 
 **Restriction has more leverage than model improvement.** The Harness operates on the grade (reducing world coupling, channeling decision surface). The model operates *within* the grade. Supermodularity means grade reduction has superlinear returns. Before upgrading the model, ask whether the current model is bottlenecked by its capability (internal *ma*) or by what it's given to work with (the Harness's extraction).
 
-**Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal *ma* (good reasoning) and low interface *ma* (characterizable output). A Haiku model with 50 tools has low internal *ma* and high interface *ma*. The first is a better auditor.
+**Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal *ma* (good reasoning) and low interface *ma* (characterizable output). A Haiku model with 50 tools has low internal *ma* and high interface *ma*. The first is a better reviewer.
 
 **The same model with different tools is a different system.** Changing the tool set changes the compound grade. An LLM with web search is `(broad, trained)`. The same LLM with only file read is `(scoped, trained)`. The supermodular cross-term means this isn't a small change — it's a qualitative shift in characterization difficulty.
 

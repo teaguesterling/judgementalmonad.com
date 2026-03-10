@@ -8,7 +8,7 @@
 
 The framework yields a small number of rules. They're not new — practitioners already follow most of them. What's new is the unified explanation. Each rule falls out of the same structure: the grade lattice, the preorder, the coupled recurrence, the specified band.
 
-**1. Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better auditor. Model selection determines the quality of decisions within the constrained space. Tool selection determines the *size* of the space. Size matters more than quality for characterizability (post 2's supermodularity).
+**1. Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better reviewer. Model selection determines the quality of decisions within the constrained space. Tool selection determines the *size* of the space. Size matters more than quality for characterizability (post 2's supermodularity).
 
 **2. The most important configuration decision is the computation channel level.** Does any tool accept agent-generated text as executable specification? If yes, you're running a universal machine with self-amplifying dynamics. If no, you're running a bounded transducer with convergent dynamics. This is a qualitative difference (post 7). Swapping models changes the quality of decisions. Granting Bash changes what kind of system you're running.
 
@@ -18,7 +18,7 @@ The framework yields a small number of rules. They're not new — practitioners 
 
 **5. Project constraints into the actor's scope.** Every constraint the Inferencer can't see is a tax on system performance (post 8's SELinux coda). Tool descriptions, explicit permission modes, visible error messages with reasons — these let the model reason about its constraints instead of discovering them empirically. Minimize the gap between the policy and its projection.
 
-**6. Use co-domain funnels at every boundary.** High internal ma compressed through low interface ma (post 2). The auditor pattern (Opus + Approve/Reject), the sub-agent boundary (full conversation → summarized result), the tool-selection agent (inference-backed → finite kit). Deep reasoning, characterizable output. Every time you need high-quality decisions at a boundary, the funnel is the pattern.
+**6. Use co-domain funnels at every boundary.** High internal ma compressed through low interface ma (post 2). The reviewer pattern (Opus + Approve/Reject/RequestChanges), the explorer (broad reading → structured findings), the sub-agent boundary (full conversation → summarized result). Deep reasoning, characterizable output. Every time you need high-quality decisions at a boundary, the funnel is the pattern.
 
 ---
 
@@ -54,7 +54,7 @@ If you need agent-to-agent communication, route it through the Harness as mediat
 
 When designing a multi-agent system, the framework suggests asking these questions in order:
 
-**What computation channel level does each agent need?** This determines the dynamics. Start at the lowest level that achieves the task. A retrieval agent needs level 0 (structured queries). A code-writing agent needs level 3-4 (write + execute). A deployment agent might need level 5+ (environment modification). The level determines the regulatory burden.
+**What computation channel level does each agent need?** This determines the dynamics. Start at the lowest level that achieves the task. A retrieval agent needs level 1 (structured queries). A code-writing agent needs level 3-4 (write + execute). A deployment agent might need level 5+ (environment modification). The level determines the regulatory burden.
 
 **What sandbox configuration does each agent get?** This determines which phase transitions are reachable. Lock down what you can. Network isolation, filesystem bounds, resource limits. The sandbox is your primary dynamics controller.
 
@@ -62,7 +62,7 @@ When designing a multi-agent system, the framework suggests asking these questio
 
 **What does each agent see?** This is scope construction — the capture list. Include what the agent needs to do its work. Exclude everything else. Every token in the context window is world coupling that contributes to d_reachable.
 
-**What does the outer system see of each agent?** This is the co-domain funnel. The sub-agent's interface should be as narrow as possible. A tool-selection agent should output a finite kit, not a narrative explanation. A reviewer should output Approve/Reject, not a detailed commentary. The interface determines where the agent sits in the preorder and therefore who can reason about it.
+**What does the outer system see of each agent?** This is the co-domain funnel. The sub-agent's interface should be as narrow as possible. An explorer should output structured findings, not a raw dump of everything it read. A reviewer should output Approve/Reject/RequestChanges, not a detailed commentary. The interface determines where the agent sits in the preorder and therefore who can reason about it.
 
 **Is the Harness staying in the specified band?** If any regulatory decision requires trained judgment (LLM-backed evaluation, ML anomaly detection), redesign. Use capability publishing (require declarations, evaluate with specified rules). Use layered regulation (constrain, observe, apply policy). The Harness's characterizability is the foundation — everything else depends on it.
 

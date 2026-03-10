@@ -39,9 +39,9 @@ A user asks a primary agent to "review the auth module for security issues."
 
 1. **The primary agent** appends the task to the conversation log and delegates. In closure terms, it creates a new closure whose capture list includes the task description and the file paths, but not the primary agent's other ongoing work.
 
-2. **A tool-selection agent** receives that scoped view. It queries past sessions — "what tools were useful for security reviews?" — and assembles a kit: a static analysis tool, a dependency checker, the module's recent git history. It appends this kit to the log and hands off. In closure terms, it captured the task and tool history, produced new bindings (the kit), and passed a continuation.
+2. **An explorer agent** receives that scoped view. It reads the auth module's structure, checks recent git history for security-relevant changes, and identifies the areas that need attention. It appends its findings — a map of the module's attack surface — to the log and hands off. In closure terms, it captured the task and codebase access, produced new bindings (the findings), and passed a continuation.
 
-3. **The worker agent** receives a closure over the task, the kit, and the code — but not the selection rationale or the primary agent's broader context. It does the review, appends findings to the log, and returns.
+3. **The reviewer agent** receives a closure over the task, the explorer's findings, and the code — but not the exploration rationale or the primary agent's broader context. It does the security review, appends its assessment to the log, and returns.
 
 Each agent saw a different slice of the same growing log. The scoping was the architecture. In the grade lattice's terms: the capture list determines an agent's world coupling, and its internal logic determines its decision surface. A closure is an agent at a specific point on the lattice.
 
@@ -81,7 +81,7 @@ The structural pattern is close enough to be a design guide, and the places wher
 
 A real closure's capture list is fixed at creation. An agent's scope is not. A worker can request a new tool mid-task. A subagent can ask for broader context. The Harness can inject new information in response to what it observes.
 
-In PL terms, this is **scope extrusion** — a concept from the pi-calculus where a private name is communicated outside its original scope, widening what's visible at runtime. It's what happens when a tool-selection agent grants access to a tool the worker didn't start with, or when a permission gate widens in response to a Principal's approval.
+In PL terms, this is **scope extrusion** — a concept from the pi-calculus where a private name is communicated outside its original scope, widening what's visible at runtime. It's what happens when a planner configures a worker's tool set mid-task, or when a permission gate widens in response to a Principal's approval.
 
 Milner's pi-calculus (1999) formalizes this precisely: names (capabilities, channels) can be sent along channels, allowing scope to grow dynamically. Every permission grant in a multi-agent system is a scope extrusion event — a name that was private to one actor enters another actor's visibility.
 
@@ -105,7 +105,7 @@ In PL terms, these aren't pure functions. They're effectful computations — the
 
 The conversation log has a reflective property: it's simultaneously a record of what happened and an input that shapes what happens next.
 
-When a tool-selection agent reads past sessions to configure a new worker, the log is functioning as an input to a meta-level program. When the worker adds findings that future agents will read, execution traces are becoming future inputs. The conversation is simultaneously the record of past behavior and a source of future behavior.
+When a planner reads past sessions to scope a new task, the log is functioning as an input to a meta-level program. When the worker adds findings that future agents will read, execution traces are becoming future inputs. The conversation is simultaneously the record of past behavior and a source of future behavior.
 
 This isn't homoiconicity in the strict sense — the log isn't a syntactically transformable program in its own language. But it's a form of reflection: the system can inspect its own execution history and adapt. Named patterns — "find the most complex functions in recently changed files" — are encoded expert thinking, compressed into reusable forms that capture a *way of looking at code* rather than a static query.
 

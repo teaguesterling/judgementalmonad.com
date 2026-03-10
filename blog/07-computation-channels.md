@@ -34,7 +34,7 @@ This is the IO refinement that post 5 promised. `IO` collapsed three dimensions:
 
 Tools form a range by how much computational agency they grant the agent. The full taxonomy — nine levels with examples and grade dynamics — is in the appendix. Here's what matters for the framework.
 
-**Levels 0-2: observation.** SQL queries, file reads, sealed computation, read-only scripts. The agent can ask questions and process answers, but the world is unchanged after execution. Whether the query language is SQL (level 0), pure Python with no IO (level 1 — vast computational reach, zero world coupling; the agent got a calculator with no hands), or Python with file reads (level 2), the dynamics are the same: data accumulates in context, the trajectory drifts upward gently, and compaction resets it. A static regulator suffices.
+**Levels 0-2: observation.** Sealed computation, structured queries, file reads, read-only scripts. The agent can ask questions and process answers, but the world is unchanged after execution. Whether the computation is pure Python with no IO (level 0 — vast computational reach, zero world coupling; the agent got a calculator with no hands), SQL over a fixed schema (level 1), or Python with file reads (level 2), the dynamics are the same: data accumulates in context, the trajectory drifts upward gently, and compaction resets it. A static regulator suffices.
 
 **Level 3: mutation.** The computation writes to the world within the sandbox. Files created at turn n persist for reads at turn n+1. The trajectory becomes path-dependent — what the agent did changes what future observations return.
 
@@ -44,7 +44,7 @@ This doesn't require file write. `python -c "really long program"` achieves full
 
 This is where post 4's handler framing faces its hardest test. The handler pattern-matches on the effect signature — but when the effect is "execute this Turing-complete program," the signature tells you almost nothing about what the execution will do.
 
-The Harness isn't helpless. It can inspect the command string and apply rules: approve `cat`, deny `rm -rf`, escalate `pip install` to the Principal. For simple commands, this works. But the cost of regulation grows with the complexity of the specification. Did the agent write a 1,000-line script where line 524 runs `rm -rf /` inside a conditional that triggers only on specific input? That specific case could be checked for. But the general question — "what will this program do?" — has the shape of the halting problem. Each individual invocation is regulatable; the space of things to check is not enumerable.
+The Harness isn't helpless. It can inspect the command string and apply rules: approve `cat`, deny `rm -rf`, escalate `pip install` to the Principal. For simple commands, this works. But the cost of regulation grows with the complexity of the specification. A 1,000-line script where line 524 runs `rm -rf /` inside a conditional that triggers only on specific input — you can write a rule for that case, and the next one, and the next. The general question, though — "what will this program do?" — has the shape of the halting problem. Any individual command is regulatable. The space of commands to regulate is not enumerable.
 
 And across multiple calls, the problem compounds. The agent writes files at turn 3, reads them at turn 7, and executes a script at turn 12 that depends on both. The cumulative state the agent has built through the world becomes progressively harder to reason about. The Harness can track each step, but the cost of tracking grows with the product of specification complexity and accumulated world state — supermodularity again, now applied to regulation itself.
 
@@ -86,8 +86,10 @@ The grade `g = (w, d_reachable)` is where the composite IS in the lattice at a p
 
 | Level | What it enables | Δw | Δd_reachable | Character |
 |---|---|---|---|---|
-| 0-2 | Observe the world | > 0 | ≈ 0 | Data accumulation |
-| 3 | Modify the world | > 0 | ≈ 0 | Path-dependent accumulation |
+| 0 | Compute in isolation | = 0 | ≈ 0 | Flat — a calculator |
+| 1 | Query the world | > 0 | ≈ 0 | Data accumulation |
+| 2 | Process world data | > 0 | > 0 | Richer accumulation |
+| 3 | Modify the world | > 0 | > 0 | Path-dependent |
 | 4 | Create computations | > 0 | > 0 via w | Self-amplifying |
 | 5 | Extend the language | > 0 | >> 0 via w | Ceiling-raising |
 | 6-8 | Modify the system | Δ(system) | Δ(system) | Lattice-reshaping |
@@ -129,23 +131,23 @@ The operating system has been solving this problem for decades.
 
 Each level with examples and grade dynamics notation. Levels 0-4 operate within a fixed computational environment. Levels 5+ modify the environment or the system itself.
 
-### Level 0: Structured query over fixed schema
+### Level 0: Pure computation, sealed
+
+`python -c "print(2**1000)"`. Turing-complete specification, zero IO. The agent can compute anything computable — factor numbers, run simulations, solve systems of equations. Nothing in the world changed. The specification language is powerful, but the computation can't see or affect anything outside itself.
+
+**Grade dynamics**: `Δw = 0`, `Δd_reachable ≈ 0`. The trajectory is nearly flat.
+
+### Level 1: Structured query over fixed schema
 
 SQL `SELECT`, GraphQL queries, Elasticsearch queries. The specification language is expressive but bounded — the agent composes operations within a fixed language over a known schema. The space of possible queries is characterizable: enumerable given the schema, decidable, and the results are typed. The agent chooses *which question to ask*. It can't change what questions are expressible.
 
 **Grade dynamics**: `Δw > 0` (data enters), `Δd_reachable ≈ 0` (the computation language can't expand). Bounded by the schema.
 
-### Level 1: Pure computation, sealed
-
-`python -c "print(2**1000)"`. Turing-complete specification, zero IO. The agent can compute anything computable — factor numbers, run simulations, solve systems of equations. Nothing in the world changed.
-
-**Grade dynamics**: `Δw = 0`, `Δd_reachable ≈ 0`. The trajectory is nearly flat.
-
 ### Level 2: Computation with read access
 
 `python -c "import json; data = json.load(open('config.json')); print(data['key'])"`. The computation can inspect the world and apply arbitrary logic. Strictly more powerful than a `Read` tool because the agent controls the *processing*, not just the address. No mutation.
 
-**Grade dynamics**: `Δw > 0` (processed world data enters context), `Δd_reachable ≈ 0`.
+**Grade dynamics**: `Δw > 0` (processed world data enters context), `Δd_reachable > 0` (computed results are denser than raw data — the agent's processing shapes what enters context, activating more paths in subsequent inference).
 
 ### Level 3: Computation with write access
 

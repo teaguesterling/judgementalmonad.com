@@ -83,7 +83,7 @@ The most interesting thing about a multi-agent interaction is the information th
 
 Each actor operates in a different projection of the same underlying reality. The gaps between projections aren't limitations — they're the architecture. The model doesn't see the token budget because metacognition about budget is less valuable than reasoning about the task. The tool doesn't see the conversation because it doesn't need it. The Principal doesn't see the system prompt because it's not for them.
 
-The negative space — what each actor *can't* see — is what makes each actor's scope useful. The tool-selection agent doesn't see the worker's line-by-line analysis, and that's *why* it can think clearly about tool selection. The worker doesn't see the selection rationale, and that's *why* it can focus on the code.
+The negative space — what each actor *can't* see — is what makes each actor's scope useful. The planner doesn't see the worker's line-by-line analysis, and that's *why* it can think clearly about strategy. The worker doesn't see the planning rationale, and that's *why* it can focus on the code.
 
 This is the structural insight the series formalizes: the exclusions aren't incidental. They're load-bearing.
 

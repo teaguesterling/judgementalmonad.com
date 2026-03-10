@@ -148,15 +148,18 @@ The grade at the turn with the most tools granted and the longest context. This 
 
 ### What the Harness controls
 
-Every Harness decision is a move in the trajectory:
+Every Harness decision is a move in the trajectory. Crucially, the two axes are independently controllable — some operations move w without touching d_reachable, and vice versa:
 
-| Harness action | Effect on w | Effect on d_reachable | Trajectory effect |
+| Harness action | Effect on w | Effect on d_reachable | Axis moved |
 |---|---|---|---|
-| Grant tool | Increases (tool's world surface) | Indirect (tool results will grow context) | Moves grade up and right |
-| Revoke tool | Decreases (tool's world surface removed) | — | Moves grade left |
-| Compaction | Decreases (accumulated state compressed) | Decreases (shorter context, fewer interactions) | Moves grade down on both axes |
-| Scope restriction | — | Decreases (less context, fewer paths) | Moves grade down on d_reachable |
-| Tool result injection | Increases (new world state enters) | Increases (context grows) | Moves grade up on both axes |
+| Sandbox restriction | Decreases (world surface shrinks) | — | w only |
+| Scope restriction | — | Decreases (fewer tokens, fewer attention paths) | d_reachable only |
+| Grant tool | Increases (new world surface reachable) | — (until results arrive) | w only |
+| Revoke tool | Decreases (world surface removed) | — | w only |
+| Tool result injection | Increases (world state enters Conv_State) | Increases (context grows) | Both |
+| Compaction | Decreases (accumulated state compressed) | Decreases (shorter context, fewer interactions) | Both |
+
+The independence matters. The Harness can tighten the sandbox without losing context — reducing what world the agent can reach while preserving the reasoning built up so far. It can compact the context without changing the tool set — reducing d_reachable while leaving w_config intact. Only tool result injection inherently moves both axes, because it's the act of feeding world data into the context window.
 
 The Harness's control problem: keep the grade high enough for useful inference, low enough for regulation. Too aggressive with restriction and the Inferencer can't do useful work. Too permissive and the composite becomes uncharacterizable. Compaction is the reset button — it trades information for regulatory headroom.
 

@@ -50,13 +50,13 @@ The handler framing resolves several problems that arise when you try to describ
 
 A natural first attempt at formalizing the Harness is to describe two levels: an *object level* where agents read and write, and a *meta level* where the Harness manages state. Agents operate at the object level; the Harness operates at the meta level. Clean separation.
 
-But the separation doesn't exist. The Harness doesn't operate in a separate phase — it interleaves with the agents continuously. It handles a tool call (meta), then updates the log (meta), then re-extracts the Inferencer's view (meta), then waits for the Inferencer to respond (object). A tool-selection agent reads the log (object) but also configures the worker's tool set (meta). Promises start as proposals (object) and complete as injections (meta).
+But the separation doesn't exist. The Harness doesn't operate in a separate phase — it interleaves with the agents continuously. It handles a tool call (meta), then updates the log (meta), then re-extracts the Inferencer's view (meta), then waits for the Inferencer to respond (object). A planner reads the log (object) but also configures the worker's tool set (meta). Promises start as proposals (object) and complete as injections (meta).
 
 The handler framing dissolves this: there aren't two levels, there are two *roles*. Actors raise effects. The Harness handles them. Both happen in the same execution context, interleaved. The handler is itself effectful — it lives in IO (dispatching processes, reading files) while handling conversation effects (managing state, gating permissions). This is standard in algebraic effects: handlers can raise effects that outer handlers interpret.
 
 ### Delegation is natural
 
-A tool-selection agent that configures the worker's tools isn't "straddling levels." It's an actor with delegated handler privileges — the Harness has handed it a limited ability to handle certain effects (tool configuration) on behalf of the worker. In algebraic effects, this is handler composition: one handler delegates part of its interpretation to another. The delegation is scoped and revocable.
+A planner that configures the worker's tools isn't "straddling levels." It's an actor with delegated handler privileges — the Harness has handed it a limited ability to handle certain effects (tool configuration) on behalf of the worker. In algebraic effects, this is handler composition: one handler delegates part of its interpretation to another. The delegation is scoped and revocable.
 
 ### Scope extrusion is an effect
 

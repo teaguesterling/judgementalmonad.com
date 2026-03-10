@@ -129,12 +129,12 @@ A **co-domain funnel** is an actor whose internal effect type is rich but whose 
 
 | Funnel | Internal ma | Interface ma | What the compression buys |
 |---|---|---|---|
-| Security auditor (Opus + `{Approve, Reject}`) | Trained — deep reasoning over logs | Two possible outputs | Everyone can model the auditor's interface |
-| Tool-selection agent (inference-backed) | Trained — evaluates tool/task fit | Finite kit from finite registry | The worker receives a characterized tool set |
+| Reviewer (Opus + `{Approve, Reject, RequestChanges}`) | Trained — deep reasoning over code/logs | Three possible outputs | Everyone can model the reviewer's interface |
+| Explorer (reads broadly, reports findings) | Trained — navigates entire codebase | Structured summary | The planner receives a characterized view |
 | Sub-agent boundary | Full conversation loop | Summarized result | The outer conversation sees a bounded contribution |
 | The Executor itself | IO within sandbox | `Result \| Error` | The Harness handles a simple type |
 
-In preorder terms: the funnel creates an actor whose interface effect type is *lower* in the preorder than its internal effect type. The auditor's internal computation is at the Inferencer's level in the preorder (high — trained, opaque). Its interface is at the Executor's level (low — two values, trivially embeddable). The funnel IS the gap between internal and interface position.
+In preorder terms: the funnel creates an actor whose interface effect type is *lower* in the preorder than its internal effect type. The reviewer's internal computation is at the Inferencer's level in the preorder (high — trained, opaque). Its interface is at the Executor's level (low — three values, trivially embeddable). The funnel IS the gap between internal and interface position.
 
 This gives a design rule: **when you need high-quality decisions at a boundary, use a funnel — not a simple actor.** A specified function at the boundary gives you low interface ma but also low internal ma (shallow reasoning). A large model at the boundary gives you high internal ma but also high interface ma (hard to reason about from outside). A funnel gives you both: deep reasoning compressed through a narrow interface.
 
@@ -163,7 +163,7 @@ This is the chain that makes the framework actionable. A harness engineer isn't 
 
 The preorder, combined with the grade lattice and supermodularity, yields concrete principles:
 
-**Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better auditor — and the preorder explains why: its interface effect type is lower in the ordering, so more actors can model it.
+**Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better reviewer — and the preorder explains why: its interface effect type is lower in the ordering, so more actors can model it.
 
 **Funnels beat flat architectures.** A flat architecture where every agent has the same tools puts every agent at the same point in the preorder. A funnel architecture creates agents at different levels — some with restricted interfaces that others can reason about, some with rich internals that do the hard work. The preorder gives you the vocabulary to design the levels intentionally.
 
