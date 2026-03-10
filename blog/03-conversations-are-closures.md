@@ -91,7 +91,7 @@ Static closures are a special case: scope extrusion that happens to be empty. Ag
 
 A closure captures a fixed snapshot. The conversation log is append-only but monotonically growing — new entries arrive between when an agent starts and when it finishes. The agent's "capture" isn't a moment-in-time snapshot; it's a *view* over a living structure.
 
-This is closer to the Store comonad than to a simple closure. The Store comonad represents a data structure with a focus — you can look at the focused position, or shift the focus elsewhere, but the underlying structure is always there. The Harness's scope construction (post 1's "extract" step) is exactly this: choosing where to focus within the full conversation state.
+This is closer to the Store comonad than to a simple closure.^[The [formal companion](formal-companion.md) develops this as Def. 3.2, with the duality between monadic raising and comonadic handling in Props. 3.3–3.5.] The Store comonad represents a data structure with a focus — you can look at the focused position, or shift the focus elsewhere, but the underlying structure is always there. The Harness's scope construction (post 1's "extract" step) is exactly this: choosing where to focus within the full conversation state.
 
 ### Handoffs carry more than values
 
@@ -133,7 +133,7 @@ Not all of these fit the underspecification framing cleanly — `Writer` accumul
 
 A deterministic function is a trivial point on the spectrum. A temperature-controlled LLM is a probability context. A conversation is an `IO`-like context with an append-only log. A human in a conversation is a participant whose inputs include the entire physical world.
 
-The boundary between "programming" and "conversation" is not a boundary. It's a dial.
+The boundary between "programming" and "conversation" is not a boundary. It's a dial.^[This observation is an informal claim — the [formal companion](formal-companion.md) does not formalize the full spectrum, though the scope-graded monad (Def. 2.5) and the grade lattice (Def. 4.1) provide formal tools for specific points on it.]
 
 ---
 

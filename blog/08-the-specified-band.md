@@ -52,7 +52,7 @@ surface     trained     |              Inferencer|
             literal     | Executor               |
 ```
 
-Every actor in the specified band — regardless of world coupling — has a transparent decision surface. Its behavior can be understood by reading its rules. The OS at `(open, specified)` is as characterizable *in kind* as the Harness at `(scoped, specified)`. The OS is harder to audit (more rules over more state) but not harder to characterize (still transparent). Auditability is quantitative — how much specified logic do you need to read? Characterizability is qualitative — is the logic specified at all, or is it opaque? The difference is the whole point.
+Every actor in the specified band — regardless of world coupling — has a transparent decision surface. Its behavior can be understood by reading its rules.^[The [formal companion](formal-companion.md) develops this as Def. 10.1 and Props. 10.2–10.3. The supermodular cross-term (Prop. 4.7) doesn't activate in the specified band because `log P(specified)` is bounded by the log of the rule count.] The OS at `(open, specified)` is as characterizable *in kind* as the Harness at `(scoped, specified)`. The OS is harder to audit (more rules over more state) but not harder to characterize (still transparent). Auditability is quantitative — how much specified logic do you need to read? Characterizability is qualitative — is the logic specified at all, or is it opaque? The difference is the whole point.
 
 The threat to regulation is never world coupling growth. It's **decision surface growth** — replacing specified rules with trained models in the regulator.
 
@@ -92,7 +92,7 @@ SELinux. AppArmor. Firewall rules. Specified policy over observed state. The pol
 
 For the conversation architecture: the permission configuration (auto-allow Read, ask for Bash, auto-deny network). Compaction thresholds. Budget management. All specified. All auditable. Operating over growing conversation state.
 
-**Each layer stays in the specified band independently.** The constraint layer doesn't decide — it bounds. The observation layer doesn't decide — it reports. The policy layer decides, but with specified rules over observed state. None requires trained judgment. The composition of three specified layers is still specified.
+**Each layer stays in the specified band independently.** The constraint layer doesn't decide — it bounds. The observation layer doesn't decide — it reports. The policy layer decides, but with specified rules over observed state. None requires trained judgment. The composition of three specified layers is still specified.^[Def. 10.4 and Prop. 10.5 in the [formal companion](formal-companion.md).]
 
 The gap between Layer 2 (what the Harness observes) and Layer 1 (what the sandbox constrains) is the region of *unmediated but bounded* activity. Persistent processes, filesystem mutations between turns, background state accumulation — these happen in the gap. The Harness doesn't mediate them, but the sandbox constrains them.
 
@@ -153,7 +153,7 @@ Both are specified. Both are characterizable by the administrator. But they crea
 
 Opaque policies don't reduce the Inferencer's ma. They reduce the portion of its decision surface spent on proposals that could actually succeed, while keeping the total decision surface the same. The model churns against invisible constraints — exploring paths the policy will reject, re-deriving boundaries it could have respected from the start. The grade stays high but the effective work output drops. The worst combination: high regulatory cost with low regulatory benefit.
 
-The design principle: **minimize the gap between the full policy and its projection into the actor's scope.** Not all policies can be fully projected — some security constraints shouldn't be visible. But unnecessary opacity is a direct tax on system performance.
+The design principle: **minimize the gap between the full policy and its projection into the actor's scope.** Not all policies can be fully projected — some security constraints shouldn't be visible. But unnecessary opacity is a direct tax on system performance.^[Def. 10.7 and Prop. 10.8 in the [formal companion](formal-companion.md).]
 
 ---
 
@@ -173,7 +173,7 @@ The framework's counter-move, now fully stated:
 
 **The sandbox is the backstop.** Layer 1 bounds variety regardless of what the regulator can observe. The sandbox doesn't need variety — it's a constraint, not a controller. It works by limiting what's possible, not by matching what's happening.
 
-The full resolution: the Harness can regulate agents at any computation level by combining variety reduction (tool restriction, sandboxing), specified observation (monitoring within the specified band), declared capabilities (shifting evaluation from inference to verification), and hard constraints (the sandbox as backstop). At no point does the Harness need to leave the specified band. At no point does it need trained judgment. At no point does its decision surface need to grow.
+The full resolution: the Harness can regulate agents at any computation level by combining variety reduction (tool restriction, sandboxing), specified observation (monitoring within the specified band), declared capabilities (shifting evaluation from inference to verification), and hard constraints (the sandbox as backstop). At no point does the Harness need to leave the specified band. At no point does it need trained judgment. At no point does its decision surface need to grow.^[Prop. 10.6 in the [formal companion](formal-companion.md). The regulatory convergence criteria — when specified processing can keep pace with the system's evolution — are Prop. 8.13 and Cor. 8.15.]
 
 ---
 

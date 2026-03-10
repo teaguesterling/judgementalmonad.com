@@ -8,17 +8,17 @@
 
 The framework yields a small number of rules. They're not new — practitioners already follow most of them. What's new is the unified explanation. Each rule falls out of the same structure: the grade lattice, the preorder, the coupled recurrence, the specified band.
 
-**1. Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better reviewer. Model selection determines the quality of decisions within the constrained space. Tool selection determines the *size* of the space. Size matters more than quality for characterizability (post 2's supermodularity).
+**1. Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better reviewer. Model selection determines the quality of decisions within the constrained space. Tool selection determines the *size* of the space. Size matters more than quality for characterizability — supermodularity (Prop. 4.7) means reducing the tool set saves more when the decision surface is already large.
 
-**2. The most important configuration decision is the computation channel level.** Does any tool accept agent-generated text as executable specification? If yes, you're running a universal machine with self-amplifying dynamics. If no, you're running a bounded transducer with convergent dynamics. This is a qualitative difference (post 7). Swapping models changes the quality of decisions. Granting Bash changes what kind of system you're running.
+**2. The most important configuration decision is the computation channel level.** Does any tool accept agent-generated text as executable specification? If yes, you're running a universal machine with self-amplifying dynamics. If no, you're running a bounded transducer with convergent dynamics. This is the Chomsky boundary — CF to RE — and it determines whether the Harness's regulatory problem is decidable (Prop. 9.7). Swapping models changes the quality of decisions. Granting Bash changes what kind of system you're running.
 
-**3. Sandbox configuration > model configuration.** The sandbox is a dynamics controller (post 7). It determines which phase transitions are reachable. Restricting the sandbox of a computation-channel tool eliminates phase transitions — it changes the dynamics from self-amplifying to convergent. That's a qualitative shift, not a linear improvement.
+**3. Sandbox configuration > model configuration.** The sandbox is a dynamics controller (post 7). It determines which phase transitions are reachable. Restricting the sandbox of a computation-channel tool restores the configuration invariant — the guarantee that the agent's realized capabilities never exceed its configured allowance (Prop. 9.9). That's a qualitative shift, not a linear improvement.
 
 **4. Stay in the specified band.** Every decision the Harness makes should be traceable to a specified rule. The moment you replace specified rules with trained models in the regulatory loop — ML-based anomaly detection, LLM-backed policy evaluation — the Harness's characterizability erodes (post 8). Increase observation (world coupling) as needed. Never increase the decision surface beyond specified.
 
 **5. Project constraints into the actor's scope.** Every constraint the Inferencer can't see is a tax on system performance (post 8's SELinux coda). Tool descriptions, explicit permission modes, visible error messages with reasons — these let the model reason about its constraints instead of discovering them empirically. Minimize the gap between the policy and its projection.
 
-**6. Use co-domain funnels at every boundary.** High internal ma compressed through low interface ma (post 2). The reviewer pattern (Opus + Approve/Reject/RequestChanges), the explorer (broad reading → structured findings), the sub-agent boundary (full conversation → summarized result). Deep reasoning, characterizable output. Every time you need high-quality decisions at a boundary, the funnel is the pattern.
+**6. Use co-domain funnels at every boundary.** High internal ma compressed through low interface ma (Def. 4.11). The reviewer pattern (Opus + Approve/Reject/RequestChanges), the explorer (broad reading → structured findings), the sub-agent boundary (full conversation → summarized result). Deep reasoning, characterizable output. The funnel is a lossy monad morphism from implementation to interface (Prop. 4.12) — it's the formal content of "deep reasoning, characterizable output."
 
 ---
 
@@ -46,6 +46,10 @@ This is why the framework is recursive. The turn cycle (extract → process → 
 
 **Agent-to-agent communication.** The star topology says all communication passes through the Harness. In a multi-agent system, that means agents don't talk to each other — they talk to their Harness, which constructs the next agent's input. This is the capability-based security parallel from post 5: the Harness controls capability grants, and peer-to-peer delegation breaks the supermodularity argument because actors can increase each other's grade without the Harness's knowledge.
 
+The formal companion makes this precise: when agent A delegates to agent B through unstructured natural language, the delegation is itself a computation channel (Prop. 9.11). Two agents with data-channel-only tools compose into a system with an emergent computation channel at the delegation boundary. Characterization difficulty grows quadratically with the total token budget rather than linearly (Cor. 8.18) — the product of the two context windows, not the sum.
+
+The co-domain funnel prevents this. A structured schema at the A-B boundary replaces the quadratic term with a bounded constant (Cor. 8.19). Growth returns to linear. This is the formal content of why every sub-agent boundary should be a funnel: not just to compress output, but to prevent computation channel emergence at the delegation boundary.
+
 If you need agent-to-agent communication, route it through the Harness as mediated handoffs. The Harness can scope what flows between agents (capture list construction from post 3), gate what effects carry over (handler composition from post 4), and manage the compound grade of the receiving agent.
 
 ---
@@ -64,7 +68,7 @@ When designing a multi-agent system, the framework suggests asking these questio
 
 **What does the outer system see of each agent?** This is the co-domain funnel. The sub-agent's interface should be as narrow as possible. An explorer should output structured findings, not a raw dump of everything it read. A reviewer should output Approve/Reject/RequestChanges, not a detailed commentary. The interface determines where the agent sits in the preorder and therefore who can reason about it.
 
-**Is the Harness staying in the specified band?** If any regulatory decision requires trained judgment (LLM-backed evaluation, ML anomaly detection), redesign. Use capability publishing (require declarations, evaluate with specified rules). Use layered regulation (constrain, observe, apply policy). The Harness's characterizability is the foundation — everything else depends on it.
+**Is the Harness staying in the specified band?** If any regulatory decision requires trained judgment (LLM-backed evaluation, ML anomaly detection), redesign. Use capability publishing (require declarations, evaluate with specified rules). Use layered regulation (constrain, observe, apply policy). The Harness's characterizability is the foundation — everything else depends on it.^[The [formal companion](formal-companion.md) develops the Harness's protocol as a session type (Def. 11.1) — the branching structure of permission gates, tool dispatch, and escalation. The protocol itself is specified: every branch is determined by the permission configuration, not by trained judgment.]
 
 ---
 
@@ -80,7 +84,15 @@ A practitioner who follows the design rules above will build good systems withou
 
 The formalism isn't the theory. It's the skeleton that lets the theory be tested, communicated, and improved. The [formal companion](formal-companion.md) provides the definitions, propositions, and conjectures. The blog series provides the intuitions. Building with ma is where both meet practice.
 
-One implication deserves its own treatment. The specified band (post 8) isn't static — it expands over time. When a system captures what works and crystallizes it into specified tools, the effective grade drops without any change to the model. Bash commands that succeeded reliably become structured macros. Tool configurations that worked for common tasks become cached lookups. Each cycle converts trained *ma* into specified infrastructure. The system gets more trustworthy with use — not because the model improved, but because the configuration layer accumulated evidence. This is the [configuration ratchet](the-configuration-ratchet.md), and it's the dynamic complement to the static design rules above.
+One implication deserves its own treatment: the design rules above are static — they tell you where to set the dials. But the dials can move on their own.
+
+When a system captures what works and crystallizes it into specified tools, the effective grade drops without any change to the model. Bash commands that succeeded reliably become structured macros. Tool configurations that worked for common tasks become cached lookups. Each cycle converts trained *ma* into specified infrastructure — a behavior that was `(broad, trained)` as a Bash call becomes `(scoped, specified)` as a structured tool.
+
+This is the [configuration ratchet](the-configuration-ratchet.md): a self-sustaining loop where high-*ma* exploration produces artifacts that enable low-*ma* application. The loop has three components: an explorer with enough *ma* to navigate the problem space, a specified capture process (logs, metrics, analysis), and a promotion step that crystallizes the winning pattern into infrastructure.
+
+The ratchet only turns one way. Each promotion moves a behavior from high *ma* to low *ma*, and there's no mechanism that moves it back. The specified band expands monotonically (Conj. 12.1 in the [formal companion](formal-companion.md)). The system gets more trustworthy with use — not because the model improved, but because the configuration layer accumulated evidence. The learning itself is specified: SQL queries over logs, human-reviewed code changes, validated promotions. At no point does opacity enter the learning loop.
+
+This is the dynamic complement to the static design rules. The rules tell you how to configure a system. The ratchet tells you that a well-instrumented system will improve its own configuration over time — pushing the boundary between "requires inference" and "handled by specification" steadily toward the irreducible core. The design rules and the ratchet are the same framework applied to different timescales: one configures a conversation, the other configures the conversations to come.
 
 ---
 

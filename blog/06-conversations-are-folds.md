@@ -69,7 +69,7 @@ d_total     = const                    (the weights — fixed)
 d_reachable = f(d_total, |context|)    (monotone in context length)
 ```
 
-`d_total` is the decision surface — the full path space of the weights. It's the grade component, and it's constant. `d_reachable` is the portion of that path space that the current input can actually activate. It grows with context length, but it's bounded above by `d_total`.
+`d_total` is the decision surface — the full path space of the weights. It's the grade component, and it's constant. `d_reachable` is the portion of that path space that the current input can actually activate. It grows with context length, but it's bounded above by `d_total`.^[Def. 8.4 in the [formal companion](formal-companion.md). The token window provides a universal bound: `d_reachable(n) ≤ d_total` and `w(n) ≤ T` — all trajectories are finite (Prop. 8.11).]
 
 The distinction matters because the Harness controls context length. Scope construction, compaction, what to include in the token window — these determine `|context|`, which determines `d_reachable`. The Harness controls not just what the actor sees (world coupling) but how many paths through the weights are reachable (effective decision surface).
 
@@ -124,7 +124,7 @@ w(n+1)           = W(w(n), d_reachable(n), config(n))
 d_reachable(n+1) = D(w(n), d_reachable(n), config(n))
 ```
 
-This is a discrete dynamical system on the grade lattice, parameterized by Harness configuration.
+This is a discrete dynamical system on the grade lattice, parameterized by Harness configuration.^[Props. 8.6–8.7 in the [formal companion](formal-companion.md).]
 
 The Harness's role is now precisely that of a **controller** for this dynamical system. It observes `g(n)` (to the extent it can — it can characterize `w` but not fully characterize `d_reachable`), applies `config(n)` (tool grants, scope construction, compaction), and tries to keep the trajectory within regulatory bounds.
 
@@ -170,6 +170,8 @@ The Harness's control problem: keep the grade high enough for useful inference, 
 The fold model resolves the "conversation composition problem." It seemed like iterated, bidirectional exchanges needed a new composition operator. They don't. Each turn is one-shot composition: `g_turn = g_inferencer ∨ g_tools(config)`. The conversation is a sequence of one-shot compositions under varying configuration. No new algebra needed.
 
 What IS new — and what the static framework couldn't see — is the coupled recurrence. The grade trajectory is not a fixed property of the system. It evolves, and its evolution is self-referential: the decision surface's choices at turn n determine what world state enters, which determines what context the decision surface encounters at turn n+1. The feedback loop doesn't create a new kind of composition, but it does create a new kind of regulatory challenge.
+
+There's a subtlety here the Harness table doesn't capture. A tool call produces two distinct deltas: the tokens injected into context (what the Harness observes), and the changes to the world that affect future turns (which may be opaque). For data-channel tools like Read, these are approximately equal — the response IS the information. For computation-channel tools like Bash, they decouple: a program can modify a hundred files and return `exit code 0`. The context grows by three tokens. The world changes profoundly.^[The [formal companion](formal-companion.md) formalizes this as the δw_info/δw_effect decoupling (Def. 8.9, Cor. 8.14). The observed trajectory systematically underestimates the system's grade when computation channels are present — which is why the sandbox (constraining effects directly) is essential where observation alone is insufficient.]
 
 Specifically: does the trajectory converge, diverge, or cycle? If the Harness only adds tools and never compacts, the trajectory is monotonically non-decreasing — the composite becomes progressively harder to regulate. If the Harness compacts aggressively, it loses information the Inferencer needs. The trajectory's behavior depends critically on what the tools can *do* — not just whether they grant world coupling, but whether the computation they enable can itself specify further computation.
 

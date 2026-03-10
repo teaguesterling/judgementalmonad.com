@@ -156,7 +156,7 @@ The missing piece isn't in the grade algebra — it's in what the grade *costs t
 
 ### Characterization difficulty is supermodular
 
-Define a characterization difficulty function `χ : W × D → ℝ` — how hard is it to describe what the system might do?
+Define a characterization difficulty function `χ : W × D → ℝ` — how hard is it to describe what the system might do? Under an independence model, `χ(w, d) = I(w) · log P(d)` — the product of distinguishable inputs and log distinguishable paths.^[The [formal companion](formal-companion.md) proves this as Prop. 4.7.]
 
 This function is **supermodular**: the marginal effect of increasing one axis is greater when the other is already high.
 
@@ -197,7 +197,7 @@ This means:
 
 **Internal *ma* determines quality** — how good the actor's decisions are within its constrained output space. **Interface *ma* determines auditability** — how well other actors can reason about what it might produce.
 
-A good co-domain funnel has high internal *ma* and low interface *ma*. The reviewer (deep analysis → Approve/Reject/RequestChanges), the explorer (broad codebase reading → structured findings), the sub-agent boundary (full conversation loop → summarized result) — all instances of the same pattern. Rich processing compressed to a characterizable interface.
+A good co-domain funnel has high internal *ma* and low interface *ma*. The reviewer (deep analysis → Approve/Reject/RequestChanges), the explorer (broad codebase reading → structured findings), the sub-agent boundary (full conversation loop → summarized result) — all instances of the same pattern. Rich processing compressed to a characterizable interface. Formally, the funnel is a lossy, surjective monad morphism from implementation to interface.^[Def. 4.11 and Prop. 4.12 in the [formal companion](formal-companion.md).]
 
 ---
 

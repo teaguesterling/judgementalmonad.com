@@ -36,7 +36,7 @@ A monad morphism `η : M ~> N` is a structure-preserving map from one computatio
 
 Concretely: if the Inferencer's effect type can be embedded in the Harness's effect type, then the Harness can simulate any computation the Inferencer can perform. The morphism IS the simulation.
 
-The preorder: **M ≤ N** if and only if there exists a monad morphism from M to N. This means N is "at least as expressive" as M — it can represent everything M can do.
+The preorder: **M ≤ N** if and only if there exists a monad morphism from M to N. This means N is "at least as expressive" as M — it can represent everything M can do.^[Def. 6.2 in the [formal companion](formal-companion.md). The causal chain from configuration through grade to interface ma is Prop. 5.4.]
 
 ```
 Either E ≤ State S ≤ IO
@@ -70,7 +70,7 @@ This is why the star topology (post 1) works: the Harness sits at a low point in
 
 ## Three conditions for prediction
 
-The monad morphism is necessary but not sufficient for actual prediction. You need three things:
+The monad morphism is necessary but not sufficient for actual prediction. You need three things:^[Prop. 6.7 in the [formal companion](formal-companion.md).]
 
 **1. Structural embeddability** — the morphism η : M ~> N exists. N's effect type can represent M's effects. This is a property of the types, not the specific computation.
 

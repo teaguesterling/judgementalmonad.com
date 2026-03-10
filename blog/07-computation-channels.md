@@ -24,6 +24,8 @@ Computation channel: input is a program.      Bash("python -c '...'")
 
 A `Read` tool takes an address and returns data. The agent selects from the world. A `Bash` tool takes a program and executes it. The agent specifies a computation. The distinction is between selecting from a fixed menu and writing new entries.
 
+This distinction has a formal name: it's the boundary between context-free and recursively enumerable languages in the Chomsky hierarchy.^[The [formal companion](formal-companion.md) develops this as Def. 9.1–9.4 and Prop. 9.2.] Every tool that accepts input is implicitly an interpreter, and the input is a program for that interpreter (the LangSec insight — Bratus, Patterson, Sassaman 2011). A SQL query is a context-free language — expressive but decidable. A Bash command is a recursively enumerable language — Turing-complete and undecidable. The Chomsky level of the tool's input language determines whether the Harness can, even in principle, enumerate the space of possible inputs. Below CF: yes. At RE: no, by Rice's theorem. This is a qualitative shift in what kind of regulatory problem the Harness faces.
+
 Both contribute to world coupling. But computation channels do something data channels can't: they let the agent's trained decision surface reach *outside the weights* and do work in the world that feeds back into the next cycle. The agent writes a script, executes it, reads the result, and uses the result to write a better script. The composite's effective computational reach extends beyond what a single forward pass through the weights could achieve alone.
 
 This is the IO refinement that post 5 promised. `IO` collapsed three dimensions: what *enters* the computation (world coupling — post 2 handles this), what *exits* as output (interface restriction — co-domain funnels handle this), and what the computation can *do to the world*. The third dimension is what computation channels formalize: a spectrum from observation (read the world) through modification (change the world) to generation (create new computations that act on the world).
@@ -66,7 +68,9 @@ Before this boundary, the world is read-only. After it, the agent can modify wha
 
 Before this boundary, tool outputs are data — inert tokens processed by fixed weights. After it, the agent specifies computations for external execution. The composite's effective reach extends beyond the weights. The grade trajectory can self-amplify.
 
-This is the most architecturally consequential boundary. It's where the composite goes from "a function that reads data" to "a function that directs computation." Post 5 drew the line between bare and agentic Inferencers — no tools vs. tools. This taxonomy draws a finer line within the agentic case: an agentic Inferencer with only data-channel tools (levels 0-2) has convergent dynamics. An agentic Inferencer with computation-channel tools (level 4+) has potentially self-amplifying dynamics. The regulatory divide isn't about having tools — it's about what kind of tools.
+This is the most architecturally consequential boundary — and it has a formal grounding. It's the Chomsky boundary: CF to RE. Below it, the space of possible tool inputs is decidable. The Harness can enumerate valid queries, check them against rules, and bound the effects. Above it, the space is Turing-complete. Rice's theorem says non-trivial semantic properties of the input programs are undecidable. The Harness can still pattern-match on syntax, but it cannot in general determine what a program will do.^[The [formal companion](formal-companion.md) develops the consequences: Prop. 9.7 (the Chomsky level determines whether the configuration invariant holds) and Prop. 9.9 (sandboxing restores the invariant by restricting effects, not input language).]
+
+Post 5 drew the line between bare and agentic Inferencers — no tools vs. tools. This taxonomy draws a finer line within the agentic case: an agentic Inferencer with only data-channel tools (levels 0-2) has convergent dynamics. An agentic Inferencer with computation-channel tools (level 4+) has potentially self-amplifying dynamics. The regulatory divide isn't about having tools — it's about what kind of tools.
 
 ### Between 6 and 7: escape from the fold
 
@@ -114,11 +118,13 @@ For the Harness's regulation problem, the key question about any tool set isn't 
 
 This determines whether the composite is a bounded transducer or a universal machine — whether the agent can only look things up, or whether it can write and run arbitrary programs. The Harness is choosing which to instantiate. And the choice happens at the level of tool configuration, not model selection. Swapping Haiku for Opus changes the quality of the agent's decisions. Granting Bash changes what kind of system you're running.
 
+One implication deserves emphasis: **delegation between agents is itself a computation channel.** When agent A sends natural-language instructions to agent B, the delegation has the structure of a computation channel regardless of B's individual tool set — A sends a specification, B interprets and executes it. Two agents with data-channel-only tools can compose into a system with an emergent computation channel at the delegation boundary. The co-domain funnel from post 2 prevents this: constraining B's output to a structured schema projects the delegation channel from RE back to CF.^[Prop. 9.11 and Cor. 9.12 in the [formal companion](formal-companion.md).]
+
 ---
 
 But here's the uncomfortable fact. Most useful agentic systems operate at level 4 or above. Writing and running code. Installing dependencies. Creating test fixtures. These aren't edge cases — they're the core workflow. The regulatory challenges at these levels aren't hypothetical; they're what every coding agent faces every session.
 
-If the star topology breaks at level 7, and the cost of regulation grows toward undecidability at level 4, and the most productive configurations live in exactly this range — how can the Harness remain characterizable while mediating actors that can reshape the world?
+If the star topology breaks at level 7, and the cost of regulation grows toward undecidability at level 4, and the most productive configurations live in exactly this range — how can the Harness remain characterizable while mediating actors that can reshape the world?^[The gap between what the sandbox allows and what the agent actually does is the *trust surface* — the region where regulation relies on training rather than specification. The [formal companion](formal-companion.md) develops this as Def. 9.13–9.14.]
 
 The operating system has been solving this problem for decades.
 
@@ -141,7 +147,7 @@ Each level with examples and grade dynamics notation. Levels 0-4 operate within 
 
 ### Level 1: Structured query over fixed schema
 
-SQL `SELECT`, GraphQL queries, Elasticsearch queries. The specification language is expressive but bounded — the agent composes operations within a fixed language over a known schema. The space of possible queries is characterizable: enumerable given the schema, decidable, and the results are typed. The agent chooses *which question to ask*. It can't change what questions are expressible.
+SQL `SELECT`, GraphQL queries, Elasticsearch queries. The specification language is expressive but bounded — context-free in the Chomsky hierarchy. The agent composes operations within a fixed language over a known schema. The space of possible queries is characterizable: enumerable given the schema, decidable, and the results are typed. The agent chooses *which question to ask*. It can't change what questions are expressible.
 
 **Grade dynamics**: `Δw > 0` (data enters), `Δd_reachable ≈ 0` (the computation language can't expand). Bounded by the schema.
 
@@ -159,7 +165,7 @@ SQL `SELECT`, GraphQL queries, Elasticsearch queries. The specification language
 
 ### Level 4: Computation amplification
 
-The agent generates tokens interpreted as executable specification. The result feeds back. The agent's decision surface becomes a meta-decision-surface.
+The agent generates tokens interpreted as executable specification — recursively enumerable in the Chomsky hierarchy. The result feeds back. The agent's decision surface becomes a meta-decision-surface. This is the CF-to-RE boundary: below it, characterization is decidable; above it, Rice's theorem applies.
 
 **Grade dynamics**: `Δd_reachable > 0 via w`. The trajectory can self-amplify.
 
