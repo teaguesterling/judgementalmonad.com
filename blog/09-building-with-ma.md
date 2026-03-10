@@ -80,6 +80,8 @@ A practitioner who follows the design rules above will build good systems withou
 
 The formalism isn't the theory. It's the skeleton that lets the theory be tested, communicated, and improved. The [formal companion](formal-companion.md) provides the definitions, propositions, and conjectures. The blog series provides the intuitions. Building with ma is where both meet practice.
 
+One implication deserves its own treatment. The specified band (post 8) isn't static — it expands over time. When a system captures what works and crystallizes it into specified tools, the effective grade drops without any change to the model. Bash commands that succeeded reliably become structured macros. Tool configurations that worked for common tasks become cached lookups. Each cycle converts trained *ma* into specified infrastructure. The system gets more trustworthy with use — not because the model improved, but because the configuration layer accumulated evidence. This is the [configuration ratchet](the-configuration-ratchet.md), and it's the dynamic complement to the static design rules above.
+
 ---
 
 ## The space between

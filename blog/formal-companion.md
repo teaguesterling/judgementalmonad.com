@@ -1034,7 +1034,11 @@ Is lossy compaction a Galois connection between detailed and summarized conversa
 
 The log may need partial ordering rather than total ordering when promises inject asynchronously. Budget accounting for outstanding futures. The free monad connection (is the promise set a free monad with `inject` as interpreter?).
 
-### 12.9 Memory as cross-conversation state (lower priority)
+### 12.9 Ma reduction and the configuration ratchet (medium priority)
+
+The configuration ratchet (companion essay) describes a self-sustaining loop: high-ma exploration → capture → crystallization → low-ma application. Each cycle converts a behavior from `(broad, trained)` to `(scoped, specified)` or lower. **Conjecture 12.1 (Monotonic grade reduction):** For a system implementing the capture-crystallize loop over repeated task instances, the effective grade for previously-seen task types is monotonically non-increasing across conversations. The specified band expands as a function of accumulated evidence. **Remaining:** (a) Formalize the "promotion" operation as a grade-reducing map on the tool registry. (b) Characterize the convergence rate — how many observations of a pattern are needed before promotion is justified? (c) The ratchet's self-maintenance property (detecting when artifacts degrade) needs formal treatment — this is the feedback loop from evidence back to exploration.
+
+### 12.10 Memory as cross-conversation state (lower priority)
 
 The `Mem(A) = MemStore -> A x MemStore` monad outlives the conversation monad — an inverted transformer stack where the persistent outer monad has longer lifetime than the ephemeral inner monad. The interaction pattern may be a monad morphism between conversation and persistence monads.
 

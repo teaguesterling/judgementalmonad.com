@@ -266,6 +266,10 @@ chi composition additive; unstructured makes it multiplicative.
 
 ## Supporting material (linked, not in series)
 
+- `the-configuration-ratchet.md` — The Configuration Ratchet (merged from
+  `blog/the-ratchet.md` + `blog/ma-reduction.md`). How systems convert trained
+  ma into specified ma through a self-sustaining loop. The dynamic complement
+  to the specified band. Referenced from post 9.
 - `primer.md` — Mathematical Primer (from `blog/primer-kleisli-graded-pi.md`)
 - `self-critique.md` — Honest Accounting (from `blog/self-critique-formalisms.md`,
   updated for v2)
@@ -278,3 +282,6 @@ chi composition additive; unstructured makes it multiplicative.
 - `actor-taxonomy.md` — absorbed into post 1
 - `turn-anatomy.md` — absorbed into post 1
 - `ma-critique.md` — absorbed into post 2
+- `the-ratchet.md` — merged into `blog2/the-configuration-ratchet.md`
+- `ma-reduction.md` — merged into `blog2/the-configuration-ratchet.md`
+- `the-ratchet-addedum.md` — content absorbed into ma-reduction, then merged
