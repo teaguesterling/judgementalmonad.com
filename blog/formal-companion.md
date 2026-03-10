@@ -571,9 +571,69 @@ g_conv = V_t g_turn(t)
 
 This is what the Harness must regulate for.
 
-**Conjecture 8.9 (Convergence conditions).** Under what conditions does the trajectory converge? With data-channel-only tools (section 9), the trajectory drifts upward gently and compaction resets it — convergent. With computation channels (section 9), the trajectory can self-amplify. Characterizing the boundary between convergent and divergent trajectories as a function of the tool set and sandbox configuration is open.
+### 8.3a Characterization of F
 
-**Gap.** The recurrence `F` is stated but not given a type or constraints. The dynamical systems theory of grade trajectories — convergence, rate of inflation, stability — is the most important open problem in the framework.
+The recurrence `F` was stated (Prop. 8.6) without constraints. We can now characterize it using the tool grade (section 9) and the Chomsky hierarchy.
+
+**Definition 8.9 (Informational and effectual delta).** At each turn, a tool call produces two distinct changes:
+
+```
+delta_w_info(n)   -- tokens injected into context (observable by Harness)
+delta_w_effect(n) -- changes to the world that affect future turns (may be opaque)
+```
+
+For data-channel tools (`chomsky <= CF`): these are approximately equal. A Read call's response IS the information. A query's result IS what was found. The Harness sees what the tool did.
+
+For computation-channel tools (`chomsky = RE`): these decouple. An agent can execute a program that modifies 100 files, installs packages, or opens network connections, and receive a one-token response (`0`, `OK`, `True`). The context grows by a few tokens. The world changes profoundly. Every future Read call may return different content.
+
+```
+RE tool example:
+  delta_w_info   = |"exit code 0"| = 3 tokens
+  delta_w_effect = |modified filesystem| = unbounded
+```
+
+The Harness, observing only `delta_w_info`, sees a gentle trajectory. The actual trajectory — determined by `delta_w_effect` — may be explosive. This decoupling is the formal content of why observation (post 8, layer 2) is insufficient for RE tools: the Harness needs constraint (layer 1, the sandbox) because it cannot see the effects through the context alone.
+
+**Proposition 8.10 (Trajectory characterization).** The recurrence has the form:
+
+```
+w_actual(n+1) = min(w_actual(n) + delta_w_info(n), T)
+w_world(n+1) = w_world(n) + delta_w_effect(n)
+d_reachable(n+1) = f(d_total, |context(n+1)|)
+```
+
+The trajectory the Harness SEES is `(w_actual(n), d_reachable(n))`. The trajectory that MATTERS for future behavior is `(w_world(n), d_reachable(n))`, because `w_world` determines what future tool calls will return.
+
+**Proposition 8.11a (Universal boundedness).** The token window bounds the trajectory absolutely:
+
+- `w_actual(n) <= T` (context cannot exceed window)
+- `d_reachable(n) <= d_total` (cannot activate more paths than weights contain)
+- Number of turns `N <= T / c_min` (each turn costs at least `c_min` tokens)
+- The trajectory has finite length and a limit point `g* <= (T, d_total)`
+
+All trajectories converge. The framework's dynamic claims are about RATES within finite bounds, not about infinity.
+
+**Definition 8.12 (Regulatory convergence).** The system is *regulatorily convergent* if the Harness's per-turn regulatory cost `R(n)` is bounded for all n. It is *regulatorily divergent* if `R(n)` grows faster than the Harness can process — the system evolves faster than it can be characterized.
+
+**Proposition 8.13 (Regulatory convergence criteria).** The Chomsky level of the tool set determines regulatory convergence:
+
+| Tool class | `delta_w_info` | `delta_w_effect` | Decoupled? | R(n) | Convergence |
+|---|---|---|---|---|---|
+| CF (data channel) | O(C) | ~ delta_w_info | No | Decidable, O(1) | Regulatorily convergent |
+| RE (computation) | O(small) | O(unbounded) | **Yes** | Undecidable (Rice's) | Regulatorily divergent |
+| RE + sandbox | O(small) | O(bounded by sandbox) | Partially | Decidable within sandbox | Convergent if sandbox is tight |
+| Multi-agent, unstructured | O(T_B . log P(d_B)) | Coupled to B's effects | Yes | Undecidable (emergent RE) | Divergent without funnels |
+| Multi-agent, structured | O(log K) | Bounded by schema | No | Decidable | Convergent |
+
+**Corollary 8.14 (The decoupling is the danger).** The most dangerous configuration is a computation-channel tool with small responses and large effects — the trajectory LOOKS gentle (slow context growth, bounded `w_actual`) while the world changes rapidly (fast `w_world` growth). The Harness's regulatory model, based on observing context, systematically underestimates the system's grade. This is why the sandbox (which constrains `delta_w_effect` directly) is essential: it is the only mechanism that operates on the world trajectory rather than the context trajectory.
+
+**Corollary 8.15 (Restatement of the specified band for dynamics).** The Harness achieves regulatory convergence when:
+
+1. All tool input languages are decidable (`chomsky <= CF`), OR
+2. RE tools are sandboxed such that `delta_w_effect` is bounded, OR
+3. Inter-agent communication is structured such that delegation channels are CF, not RE
+
+Each condition ensures that the Harness's per-turn regulatory cost is bounded — that specified processing can keep pace with the system's evolution. This is Conj. 8.9 resolved: the convergence boundary is the Chomsky boundary (CF vs RE), modulated by the sandbox and communication structure.
 
 ### 8.4 Multi-agent coupling
 
@@ -934,9 +994,9 @@ Backgrounded tasks create `Pending` futures; the Harness decides when/whether/ho
 
 Prioritized by novelty and testability.
 
-### 12.1 Coupled recurrence convergence (high priority)
+### 12.1 Coupled recurrence: remaining questions (partially addressed)
 
-The grade trajectory `g(n+1) = F(g(n), config(n))` is stated (Prop. 8.6) but `F` is not characterized. Under what conditions does the trajectory converge, diverge, or cycle? How do computation channel levels (section 9) affect the stability boundary? What is the optimal compaction strategy for a given tool set? This is the most important open problem — it connects the static framework to operational predictions.
+The recurrence `F` is now characterized (section 8.3a): all trajectories converge absolutely (token window bound), and the regulatory convergence boundary is the Chomsky boundary (CF vs RE), modulated by sandbox and communication structure (Prop. 8.13, Cor. 8.15). **Remaining:** (a) The `delta_w_info` / `delta_w_effect` decoupling (Def. 8.9) needs empirical measurement — how large is the gap in practice for common tool sets? (b) Optimal compaction strategy: when and how aggressively to compact as a function of the trajectory's growth rate. (c) The regulatory cost function `R(n)` is stated qualitatively (decidable/undecidable); a quantitative model would enable concrete regulatory budgeting.
 
 ### 12.2 Computation channel formalization (partially addressed)
 
