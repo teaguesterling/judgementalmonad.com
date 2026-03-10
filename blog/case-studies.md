@@ -68,9 +68,9 @@ chi_two = (T_A / c_A) . (log P(d_A) + (T_B / c_B) . log P(d_B))
         = chi_A_solo + (T_A . T_B) / (c_A . c_B) . log P(d_B)
 ```
 
-The amplification term is proportional to the **product** of the two context windows (formal companion Prop. 8.11). A single agent with window `2T` has `chi ~ 2T . log P(d)`. Two agents with windows `T` each have `chi ~ T^2 . log P(d)`. The second agent changes the growth from linear to quadratic in total token budget.
+The amplification term is proportional to the **product** of the two context windows (formal companion Prop. 8.17). A single agent with window `2T` has `chi ~ 2T . log P(d)`. Two agents with windows `T` each have `chi ~ T^2 . log P(d)`. The second agent changes the growth from linear to quadratic in total token budget.
 
-Why? Because B-as-a-tool-for-A is a computation channel, even though B's individual tools are all data channels. B accepts a natural-language specification and returns the result of executing it over its full context window. From A's perspective, that's a level 4 tool — the input is a program, the output is the result of executing it. **The computation channel emerges from composition, not from any individual tool** (formal companion Prop. 9.7).
+Why? Because B-as-a-tool-for-A is a computation channel, even though B's individual tools are all data channels. B accepts a natural-language specification and returns the result of executing it over its full context window. From A's perspective, that's a level 4 tool — the input is a program, the output is the result of executing it. **The computation channel emerges from composition, not from any individual tool** (formal companion Prop. 9.11).
 
 For N agents in a pipeline, `chi ~ T_1 . T_2 . ... . T_N` — polynomial of degree N. Finite (token windows bound everything), but the degree grows with agent count.
 
@@ -80,7 +80,7 @@ For N agents in a pipeline, `chi ~ T_1 . T_2 . ... . T_N` — polynomial of degr
 (T_A . T_B) / (c_A . c_B) . log P(d_B)  -->  (T_A / c_A) . log K
 ```
 
-The funnel decouples A's `chi` from B's context window entirely. Growth returns to linear (formal companion Cor. 8.13). The funnel prevents the computation channel from emerging by projecting B's effective decision surface from `trained` to `specified`.
+The funnel decouples A's `chi` from B's context window entirely. Growth returns to linear (formal companion Cor. 8.19). The funnel prevents the computation channel from emerging by projecting B's effective decision surface from `trained` to `specified`.
 
 **What the second agent changes:**
 

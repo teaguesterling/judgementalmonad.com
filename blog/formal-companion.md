@@ -571,9 +571,9 @@ g_conv = V_t g_turn(t)
 
 This is what the Harness must regulate for.
 
-### 8.3a Characterization of F
+### 8.4 Characterization of F
 
-The recurrence `F` was stated (Prop. 8.6) without constraints. We can now characterize it using the tool grade (section 9) and the Chomsky hierarchy.
+The recurrence `F` was stated (Prop. 8.6) without constraints. We can now characterize it using the Chomsky hierarchy and the effect lattice. (The tool grade formalized in section 9 grounds these informally here; the key distinction — data channels accept addresses, computation channels accept programs — suffices for the claims below.)
 
 **Definition 8.9 (Informational and effectual delta).** At each turn, a tool call produces two distinct changes:
 
@@ -602,9 +602,11 @@ w_world(n+1) = w_world(n) + delta_w_effect(n)
 d_reachable(n+1) = f(d_total, |context(n+1)|)
 ```
 
-The trajectory the Harness SEES is `(w_actual(n), d_reachable(n))`. The trajectory that MATTERS for future behavior is `(w_world(n), d_reachable(n))`, because `w_world` determines what future tool calls will return.
+The Harness observes `(w_actual(n), d_reachable(n))`. But future behavior depends on `(w_world(n), d_reachable(n))`, because `w_world` determines what future tool calls will return.
 
-**Proposition 8.11a (Universal boundedness).** The token window bounds the trajectory absolutely:
+For data-channel tools, `w_world(n) ~ w_actual(n)` (the tool's response IS the effect). For sandboxed RE tools, `w_world(n) <= W_sandbox` (the sandbox bounds world changes regardless of what the agent executes). For unsandboxed RE tools, `w_world` is bounded only by `W_config` -- and can exceed it if the configuration invariant breaks (Prop. 9.7).
+
+**Proposition 8.11 (Universal boundedness).** The token window bounds the trajectory absolutely:
 
 - `w_actual(n) <= T` (context cannot exceed window)
 - `d_reachable(n) <= d_total` (cannot activate more paths than weights contain)
@@ -613,7 +615,7 @@ The trajectory the Harness SEES is `(w_actual(n), d_reachable(n))`. The trajecto
 
 All trajectories converge. The framework's dynamic claims are about RATES within finite bounds, not about infinity.
 
-**Definition 8.12 (Regulatory convergence).** The system is *regulatorily convergent* if the Harness's per-turn regulatory cost `R(n)` is bounded for all n. It is *regulatorily divergent* if `R(n)` grows faster than the Harness can process — the system evolves faster than it can be characterized.
+**Definition 8.12 (Regulatory convergence).** Let `R(n)` be the Harness's per-turn regulatory cost at turn n -- the computational effort required to evaluate all specified rules against the observed state `(w_actual(n), d_reachable(n))` and the proposed actions. The system is *regulatorily convergent* if `R(n)` is bounded for all n. It is *regulatorily divergent* if `R(n)` grows faster than the Harness can process -- the system evolves faster than it can be characterized.
 
 **Proposition 8.13 (Regulatory convergence criteria).** The Chomsky level of the tool set determines regulatory convergence:
 
@@ -625,7 +627,9 @@ All trajectories converge. The framework's dynamic claims are about RATES within
 | Multi-agent, unstructured | O(T_B . log P(d_B)) | Coupled to B's effects | Yes | Undecidable (emergent RE) | Divergent without funnels |
 | Multi-agent, structured | O(log K) | Bounded by schema | No | Decidable | Convergent |
 
-**Corollary 8.14 (The decoupling is the danger).** The most dangerous configuration is a computation-channel tool with small responses and large effects — the trajectory LOOKS gentle (slow context growth, bounded `w_actual`) while the world changes rapidly (fast `w_world` growth). The Harness's regulatory model, based on observing context, systematically underestimates the system's grade. This is why the sandbox (which constrains `delta_w_effect` directly) is essential: it is the only mechanism that operates on the world trajectory rather than the context trajectory.
+**Corollary 8.14 (The decoupling is the danger).** The most dangerous configuration is a computation-channel tool with small responses and large effects: the observed trajectory `(w_actual(n))` grows gently while the world trajectory `(w_world(n))` diverges. The Harness's regulatory model, based on context observation, systematically underestimates the system's grade. The sandbox is essential because it constrains `delta_w_effect` directly — the only mechanism operating on the world trajectory rather than the context trajectory.
+
+**Remark (Multi-agent info/effect decoupling).** The decoupling compounds in multi-agent systems. When agents A and B share a filesystem, B's computation-channel effects (writing files) become A's future data-channel inputs (reading files). B's `delta_w_effect` is invisible to A's Harness until A reads the modified files — at which point it appears as ordinary `delta_w_info`. The world trajectory diverges from what either Harness individually observes. This is the multi-agent analogue of Cor. 8.14: the danger is not in any single agent's trajectory but in the gap between agents' world models.
 
 **Corollary 8.15 (Restatement of the specified band for dynamics).** The Harness achieves regulatory convergence when:
 
@@ -633,18 +637,18 @@ All trajectories converge. The framework's dynamic claims are about RATES within
 2. RE tools are sandboxed such that `delta_w_effect` is bounded, OR
 3. Inter-agent communication is structured such that delegation channels are CF, not RE
 
-Each condition ensures that the Harness's per-turn regulatory cost is bounded — that specified processing can keep pace with the system's evolution. This is Conj. 8.9 resolved: the convergence boundary is the Chomsky boundary (CF vs RE), modulated by the sandbox and communication structure.
+Each condition ensures that the Harness's per-turn regulatory cost is bounded — that specified processing can keep pace with the system's evolution. The convergence boundary is the Chomsky boundary (CF vs RE), modulated by the sandbox and communication structure.
 
-### 8.4 Multi-agent coupling
+### 8.5 Multi-agent coupling
 
-**Definition 8.10 (Communication channel cardinality).** When agent A delegates to agent B through the Harness, the *communication channel cardinality* `kappa` is the number of distinguishable messages B can return per round:
+**Definition 8.16 (Communication channel cardinality).** When agent A delegates to agent B through the Harness, the *communication channel cardinality* `kappa` is the number of distinguishable messages B can return per round:
 
 - For a structured channel (schema with K configurations): `kappa = K`
 - For an unstructured channel (arbitrary text): `kappa = P(d_B)^(T_B / c_B)`, where `T_B` is B's context window size and `c_B` is B's average tokens per turn
 
 The unstructured cardinality reflects B's full computation capacity: B makes `T_B / c_B` decisions, each with `P(d_B)` distinguishable paths.
 
-**Proposition 8.11 (Multi-agent characterization difficulty).** For a single agent A working over `N = T_A / c` turns:
+**Proposition 8.17 (Multi-agent characterization difficulty).** For a single agent A working over `N = T_A / c` turns:
 
 ```
 chi_single = (T_A / c) . log P(d_A)
@@ -661,9 +665,11 @@ chi_two = (T_A / c_A) . (log P(d_A) + (T_B / c_B) . log P(d_B))
 
 The amplification term is proportional to the **product** of the two context windows.
 
-*Proof.* Over K rounds, A makes K decisions (each from `P(d_A)` paths). Each round, B makes M decisions internally (each from `P(d_B)` paths). The total distinguishable K-round histories is `(P(d_A) . P(d_B)^M)^K`. Taking logs: `K . (log P(d_A) + M . log P(d_B))`. Substituting `K = T_A / c_A` and `M = T_B / c_B` gives the result. QED
+*Proof.* Over K rounds, A makes K decisions (each from `P(d_A)` paths). Each round, B makes M decisions internally (each from `P(d_B)` paths). Under the independence model (Def. 4.6) -- each decision independently selects from the available paths -- the total distinguishable K-round histories is `(P(d_A) . P(d_B)^M)^K`. Taking logs: `K . (log P(d_A) + M . log P(d_B))`. Substituting `K = T_A / c_A` and `M = T_B / c_B` gives the result.
 
-**Corollary 8.12 (Quadratic growth).** A single agent with token window `2T` has `chi ~ 2T . log P(d)`. Two agents with windows `T` each have `chi ~ T^2 . log P(d)`. The second agent changes the growth rate from linear to quadratic in total token budget. For N agents in a pipeline:
+**Remark.** The independence assumption is stronger here than in the single-agent case: it assumes B's M per-round decisions are independent of A's steering across rounds. In practice, A's instructions constrain B's path space, so the bound is generous. But the qualitative result -- product-of-windows growth -- holds under weaker assumptions; correlation reduces the constant but not the polynomial degree. QED
+
+**Corollary 8.18 (Quadratic growth).** A single agent with token window `2T` has `chi ~ 2T . log P(d)`. Two agents with windows `T` each have `chi ~ T^2 . log P(d)`. The second agent changes the growth rate from linear to quadratic in total token budget. For N agents in a pipeline:
 
 ```
 chi_pipeline ~ (T_1 . T_2 . ... . T_N) / (c_1 . ... . c_N) . log P(d_last)
@@ -671,7 +677,7 @@ chi_pipeline ~ (T_1 . T_2 . ... . T_N) / (c_1 . ... . c_N) . log P(d_last)
 
 Polynomial of degree N in total budget. Still finite (token windows bound everything), but the degree grows with agent count.
 
-**Corollary 8.13 (Funnel decoupling).** A co-domain funnel with schema cardinality K at the A-B boundary replaces the amplification term:
+**Corollary 8.19 (Funnel decoupling).** A co-domain funnel with schema cardinality K at the A-B boundary replaces the amplification term:
 
 ```
 (T_A . T_B) / (c_A . c_B) . log P(d_B)  -->  (T_A / c_A) . log K
@@ -711,7 +717,7 @@ Regular (Type 3) < Context-free (Type 2) < Context-sensitive (Type 1) < RE (Type
 
 This is the D axis (decision surface) applied to tools -- grounded in LangSec (Bratus, Patterson, Sassaman 2011): every tool that accepts input is implicitly an interpreter, and the input IS a program for that interpreter. The computation level is the Chomsky level of the input language.
 
-**Proposition 9.2 (Tool grade IS the grade lattice).** The tool grade `(effects(t), chomsky(input_lang(t)))` is the grade lattice `(w, d) in W x D` (Def. 4.1) with formal content supplied:
+**Proposition 9.2 (Tool grade instantiates the grade lattice).** For tools, the grade lattice `(w, d) in W x D` (Def. 4.1) receives formal content from two well-studied hierarchies:
 
 | Grade axis | Tool instantiation | Formal foundation |
 |---|---|---|
@@ -719,6 +725,8 @@ This is the D axis (decision surface) applied to tools -- grounded in LangSec (B
 | D (decision surface) | Chomsky level of input language | LangSec (Bratus et al. 2011), Felleisen (1991) |
 
 The nine-level taxonomy from blog post 7 is a linearization of this product. The coarse lattice (post 2) and the fine taxonomy (post 7) are the same structure at different resolutions.
+
+**Remark (Scope of the instantiation).** This grounding applies to tools, where both axes have formal content. For actors in general, the D axis (decision surface) does not reduce to Chomsky level -- a trained neural network's decision surface is not a formal language class. The grade lattice (Def. 4.1) is the general structure; the Chomsky x Effects instantiation is the tool-specific refinement that enables the decidability results below.
 
 ### 9.2 Data channels vs computation channels
 
@@ -730,7 +738,7 @@ The data/computation channel distinction is the Chomsky boundary at CF vs RE. Th
 
 ### 9.3 The static/dynamic grade and the configuration invariant
 
-**Definition 9.5 (Static and dynamic grade).** The grade has both static and dynamic forms:
+**Definition 9.5 (Static and dynamic grade).** The grade has both static and dynamic forms, extending the `d_total` / `d_reachable` distinction (Def. 8.4) to both axes:
 
 ```
 grade_config    = (W_config, d_total)           -- determined by Harness configuration
@@ -759,7 +767,7 @@ Equivalently: `W_actual(n) <= W_config` and `d_reachable(n) <= d_total`. The age
 | Chomsky level | Invariant | Reason |
 |---|---|---|
 | Regular, CF | Holds | Each tool call accesses a bounded slice of W_config. Cannot create new resources. |
-| CS | Holds | Cross-referencing within existing resources. Cannot exceed configuration. |
+| CS | Holds | Input can cross-reference within existing resources (e.g., SQL with correlated subqueries) but cannot create new resources or expand the accessible world. |
 | RE | **Can break** | A single tool call can create files, install packages, open connections -- expanding W_reachable beyond W_config. |
 
 This is the formal content of the level 3-to-4 phase transition: below RE, the configuration bounds the system. At RE, the agent can expand its own reachable world.
@@ -846,7 +854,7 @@ The sandbox eliminates levels 4+ (no network, no environment modification). Trai
 
 A zero trust surface — `level_sandboxed = level_effective` — means the sandbox fully specifies the tool's behavior. This is achievable for data-channel tools (the tool's interface constrains it) but generally not for computation-channel tools (the sandbox constrains effects but not the computation itself).
 
-**Gap.** The trust surface is defined informally. Formalizing it requires a metric on computation levels (not just an ordering) and a way to measure what "the agent actually does" without relying on the training distribution — which is the very trained judgment the specified band says to avoid. This may be fundamentally circular for computation-channel tools, which would explain why the practical response is always to sandbox rather than to trust.
+**Gap.** The trust surface is defined informally. Formalizing it requires a metric on computation levels (not just an ordering) and a way to measure what "the agent actually does" without relying on the training distribution — which is the very trained judgment the specified band says to avoid. This circularity may be inherent for computation-channel tools, which would explain why the practical response is always to sandbox rather than to trust. A possible direction: define the trust surface not as a property of the agent but as a property of the *sandbox gap* — the difference between `level_sandboxed` and the minimum level required for the task. This shifts the question from "what does the agent do?" (undecidable) to "how much capability headroom does the sandbox allow?" (specified, measurable). The framework's recommendation — regulate based on `level_sandboxed`, not `level_effective` — is then a consequence: the trust surface is the engineering margin, not a prediction about behavior.
 
 ---
 
@@ -886,7 +894,7 @@ Every actor in this band — regardless of world coupling — has a transparent 
 
 The framework's resolution:
 
-1. **Co-domain funnels** (Def. 4.7) are variety attenuators — they reduce the agent's effective variety
+1. **Co-domain funnels** (Def. 4.11) are variety attenuators — they reduce the agent's effective variety
 2. **Observation growth** stays in the specified band — more world coupling, same decision surface
 3. **Capability publishing** shifts the variety burden to the regulated system — tools declare effect signatures, the Harness evaluates declarations with specified rules
 4. **The sandbox** bounds variety regardless of what the Harness observes — a constraint, not a controller
@@ -974,7 +982,7 @@ Private channels `(v r_i)` ensure tool independence. The barrier collects result
 
 **Conjecture 11.5 (Non-determinism without structural change).** Parallel execution adds a layer of non-determinism to the computation paths — the grade trajectory becomes a distribution over trajectories rather than a single path, depending on execution order and timing of concurrent tools. However, the framework's structure (grade lattice, preorder, fold model, coupled recurrence) does not change. The non-determinism is in the *realization* of each fold step, not in the fold structure itself.
 
-**Gap.** Full pi-calculus formalization is deferred. The key question: does non-deterministic tool execution change the convergence properties of the grade trajectory (Conj. 8.9), or only the variance around a trajectory that converges/diverges for structural reasons? If the latter, the synchronous formalism is a sufficient abstraction for regulation, and the pi-calculus treatment is an extension rather than a correction.
+**Gap.** Full pi-calculus formalization is deferred. The key question: does non-deterministic tool execution change the convergence properties of the grade trajectory (Prop. 8.13), or only the variance around a trajectory that converges/diverges for structural reasons? If the latter, the synchronous formalism is a sufficient abstraction for regulation, and the pi-calculus treatment is an extension rather than a correction.
 
 ### 11.4 Promises (sketch)
 
@@ -996,7 +1004,7 @@ Prioritized by novelty and testability.
 
 ### 12.1 Coupled recurrence: remaining questions (partially addressed)
 
-The recurrence `F` is now characterized (section 8.3a): all trajectories converge absolutely (token window bound), and the regulatory convergence boundary is the Chomsky boundary (CF vs RE), modulated by sandbox and communication structure (Prop. 8.13, Cor. 8.15). **Remaining:** (a) The `delta_w_info` / `delta_w_effect` decoupling (Def. 8.9) needs empirical measurement — how large is the gap in practice for common tool sets? (b) Optimal compaction strategy: when and how aggressively to compact as a function of the trajectory's growth rate. (c) The regulatory cost function `R(n)` is stated qualitatively (decidable/undecidable); a quantitative model would enable concrete regulatory budgeting.
+The recurrence `F` is now characterized (section 8.4): all trajectories converge absolutely (token window bound), and the regulatory convergence boundary is the Chomsky boundary (CF vs RE), modulated by sandbox and communication structure (Prop. 8.13, Cor. 8.15). **Remaining:** (a) The `delta_w_info` / `delta_w_effect` decoupling (Def. 8.9) needs empirical measurement — how large is the gap in practice for common tool sets? (b) Optimal compaction strategy: when and how aggressively to compact as a function of the trajectory's growth rate. (c) The regulatory cost function `R(n)` is stated qualitatively (decidable/undecidable); a quantitative model would enable concrete regulatory budgeting.
 
 ### 12.2 Computation channel formalization (partially addressed)
 
