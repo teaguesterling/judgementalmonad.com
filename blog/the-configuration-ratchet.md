@@ -28,7 +28,7 @@ The results were clear. The agent ran `grep -r` constantly. `find . -name` const
 
 Each of these was a Level 4 computation channel — an arbitrary string passed to a universal machine. The full weight manifold of a frontier LLM was engaged to produce... a grep call. Billions of pathways through the weights, and the destination was a specified operation on a bounded filesystem.
 
-So we promoted them. Each frequently successful, low-risk bash pattern became a Fledgling SQL macro: `search(pattern, path)`, `find_definitions(name)`, `read_lines(path)`. Structured queries with known input languages, known effect signatures, known grades. The command that was `(broad, RE, level 4)` as a bash call became `(scoped, CF, level 1)` as a Fledgling macro.
+So we promoted them. Each frequently successful, low-risk bash pattern became a Fledgling SQL macro: `search(pattern, path)`, `find_definitions(name)`, `read_lines(path)`. Structured queries with known input languages, known effect signatures, known grades. The command that was `(broad, computation channel, level 4)` as a bash call became `(scoped, data channel, level 1)` as a Fledgling macro.
 
 Same functionality. Categorically different grade.
 
@@ -192,6 +192,26 @@ This is not a new idea. Operations management has been doing it systematically f
 **Toyota's production system** makes the ratchet continuous. *Kaizen* is the ongoing crystallization of floor workers' judgment into standardized work procedures. Each *kaizen* event converts a high-*ma* observation into a specified process change. The *andon* cord is the escalation path — when the specified process encounters something it can't handle, production stops and the high-*ma* actors re-engage.
 
 What the *ma* framework adds to these established methodologies: **a formal measure of where you are in the reduction process.** Deming says "improve continuously." The grade lattice says "your process is currently at (broad, configured) — here's specifically what improvement means: reduce world coupling by standardizing inputs, reduce the decision surface by replacing judgment calls with lookup tables." The improvement has a direction and a metric, not just an aspiration. And the supermodularity of characterization difficulty tells you *where to invest*: restriction on either axis has larger returns when the other axis is high.
+
+---
+
+## The cognitive science lineage
+
+Operations management recognized the pattern in organizational processes. Cognitive science recognized it earlier, in individual cognition.
+
+**Knowledge compilation** (Anderson, 1983). ACT-R theory describes the conversion of slow, deliberative declarative knowledge into fast, automatic procedural knowledge through practice. Declarative → procedural is literally inference → lookup. The conversion is monotonic — procedural knowledge accumulates.
+
+**Chunking** (Laird, Newell & Rosenbloom, 1986). This is the most precise match. In Soar, the system hits an impasse (can't proceed with existing rules), deliberates through subgoals (high *ma*), and when deliberation succeeds, the result is *chunked* into a production rule. Future encounters fire the rule directly — no deliberation. The chunk set grows monotonically. Soar even has the escalation structure: chunks handle the routine, deliberation handles the novel, and the boundary shifts over time. Newell called chunking a "universal learning mechanism" (*Unified Theories of Cognition*, 1990).
+
+**Explanation-Based Learning** (Mitchell et al., 1986; DeJong & Mooney, 1986). Learning from a single example by explaining *why* it works and generalizing into a rule. The key insight: statistical mass isn't necessary if you can explain the mechanism. The DuckDB queries over logs are a simpler version — statistical identification rather than causal explanation, but the same destination: a specified rule that handles future instances.
+
+**Macro learning** (Fikes & Nilsson, 1971 — STRIPS). The planner learns "macro operators" — sequences of primitive actions that achieve a goal — from successful plans. Literally what happens when observed bash sequences become named macros.
+
+The umbrella term in classical AI is **speedup learning**: systems that learn to solve the same problems faster by compiling or caching solutions. In modern ML, the closest analogues are **policy distillation** (compressing a complex policy into a simpler one from behavior traces) and **behavioral cloning** (learning a policy from expert demonstrations).
+
+So: the learning mechanism is not novel. It's knowledge compilation — studied extensively since the 1980s. What the *ma* framework contributes is the combination of: (1) applying it to the *safety* problem — the compiled artifacts aren't just faster, they're lower grade, meaning easier to regulate; (2) the *auditability* property — classical chunking produces opaque production rules, while the ratchet produces specified artifacts with provenance; (3) the connection to the grade lattice — compilation as measurable movement within a formal structure; and (4) the *regulatory* framing — each compilation step improves the Harness's ability to regulate the system, connecting knowledge compilation to Ashby's law.
+
+The honest summary: the configuration ratchet is knowledge compilation applied to agent regulation, with the novel observation that the compiled artifacts are specified, auditable, and reduce the system's grade — making it not just faster but safer.
 
 ---
 
