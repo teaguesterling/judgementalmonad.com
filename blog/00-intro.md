@@ -22,7 +22,7 @@ The industry has strong intuitions about agent architecture. Restrict the tool s
 
 The practice works. The composition algebra works. What's missing is a *design theory* underneath both — one that explains why restriction helps, why determinism belongs at the hub specifically, and why these are the same insight.
 
-This series proposes one. It draws on programming language theory (closures, algebraic effects, monads), cybernetics (Ashby's variety, Conant-Ashby's Good Regulator Theorem), and capability-based security (Miller's object capabilities). The formalism isn't the theory — it's the part of the theory that can be tested, and therefore the part that can be improved.
+This series proposes one. It draws on programming language theory (closures, algebraic effects, monads), cybernetics (Ashby's variety, Beer's variety engineering, Conant-Ashby's Good Regulator Theorem), capability-based security (Miller's object capabilities), Actor-Network Theory (Callon's obligatory passage point), and stigmergy (Grassé, Heylighen). The formalism isn't the theory — it's the part of the theory that can be tested, and therefore the part that can be improved.
 
 ---
 

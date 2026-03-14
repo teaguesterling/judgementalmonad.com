@@ -22,6 +22,8 @@ LangChain tested the same model with a better orchestrator and went from 52.8% t
 
 The theory explains why with something called *supermodularity*: the cost of giving an agent broad access to the world is proportional to how complex the model is internally. A massive model with three tools (Read, Approve, Reject) is easy to reason about — it can only do three things. A tiny model with fifty tools is a nightmare — it can do fifty things badly. Restricting the tool set saves you more when the model is more powerful, not less.
 
+There's a physical version of this. The ancient throat-and-girth horse harness placed straps across the windpipe — the harder the horse pulled, the more it choked. A single horse with the later collar harness (force through the skeleton, not the throat) could pull what two horses with the old design couldn't. Same horse. Different connector. The tools aren't accessories — they're the thing that determines whether the model's power composes with the task or fights against it.
+
 **The practical version:** Before you upgrade from Sonnet to Opus, ask whether your current model is bottlenecked by its reasoning or by what you're giving it to work with. Nine times out of ten, it's the tools.
 
 ---
@@ -126,7 +128,7 @@ Now go build something.
 
 ---
 
-*This is the accessible companion to [The Ma of Multi-Agent Systems](blog/00-intro.md), a nine-post series with a formal companion developing a design theory for multi-agent architecture. The theory is built on programming language theory (closures, algebraic effects), cybernetics (Ashby's variety), and capability-based security (Miller's object capabilities). The blog post you just read is what falls out when you strip the math and keep the engineering.*
+*This is the accessible companion to [The Ma of Multi-Agent Systems](blog/00-intro.md), a nine-post series with a formal companion developing a design theory for multi-agent architecture. The theory draws on programming language theory (closures, algebraic effects, monads), cybernetics (Ashby's variety, Beer's variety engineering, the Ethical Regulator Theorem), capability-based security (Miller's object capabilities), Actor-Network Theory (Callon's obligatory passage point), and stigmergy (coordination through environmental modification). The blog post you just read is what falls out when you strip the math and keep the engineering.*
 
 ```{toctree}
 :hidden:
