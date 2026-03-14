@@ -179,6 +179,18 @@ The full resolution: the Harness can regulate agents at any computation level by
 
 ---
 
+## The pragmatic objection
+
+Many real-world agent systems use LLM-backed guardrails — an LLM evaluating whether a proposed tool call is safe, or routing messages based on inferred intent. The framework says this is wrong: trained judgment in the regulator activates the supermodular cross-term and the regulator becomes as opaque as the regulated system. But the practice is widespread. Is the framework too strict?
+
+The answer requires a distinction the series has been building toward but hasn't yet made explicit. What the Harness does at runtime is *coordination*: routing messages, applying protocols, gating permissions, constructing scope. These are Beer's System 2 functions — anti-oscillation, protocol enforcement, coherent operation. The specified band argument holds for coordination: it must be transparent and readable.
+
+But there's a different function — *control* — that asks whether the current approach is working, whether tools should be restricted or expanded, whether the task needs to pivot. In Beer's Viable System Model, this is System 3: operational control that dynamically monitors performance and reallocates resources. The framework as presented collapses coordination and control into the Harness. They may have different design requirements. Coordination must be specified. Control may legitimately require richer judgment, because "is this approach working?" is not always decidable by specified rules — especially at computation channel levels 4+, where the space of possible failures is too vast for enumerated rules.
+
+The prohibition on trained judgment holds for the coordination layer — the Harness's runtime protocol. Whether control decisions can safely use trained judgment, under what constraints, and how to keep them auditable is an open question that deserves its own treatment. A companion piece on the coordination/control distinction is forthcoming.
+
+---
+
 ## The loop closes
 
 Post 1 placed the Harness at the hub of the star topology because "you can describe what it will do." Post 2 measured why: the Harness has low ma — specified decision surface, characterizable actions. Posts 3 and 4 showed the structure: closures, effects, handlers. Post 5 formalized the ordering: the preorder determines who can reason about whom, and the Harness is low enough that everyone can model it. Post 6 revealed the dynamics: the grade trajectory evolves via a coupled recurrence. Post 7 showed where the trajectory can self-amplify: computation channels, phase transitions, the halting-problem shape of regulating Turing-complete specifications.

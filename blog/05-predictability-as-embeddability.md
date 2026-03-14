@@ -16,6 +16,8 @@ Post 4's regulation ≠ prediction distinction is another example. The intuition
 
 Conant and Ashby (1970) proved that every good regulator must be a model of the system it regulates. Harness engineering is building regulators. The question isn't "should we formalize?" — it's "what model does the regulator need?" The formalism is the specification for that model. Everything in this series either contributes to what the Harness needs to know or should be cut.
 
+A necessary scope note: this framework characterizes the *space* of possible behaviors, not the *quality* of behaviors within that space. Internal ma determines how many paths exist; it does not determine which path is good. The grade tells you what kind of system you're running. It doesn't tell you whether the system is running well. That's the difference between a theory of structure and a theory of intelligence — and this is a theory of structure.
+
 This post introduces the formal tool that makes the framework predictive rather than descriptive.
 
 ---
@@ -54,11 +56,15 @@ For our actors:
 | **Agentic Inferencer** | Text + tool proposals (effects on the world) | High — can raise effects that modify the world through tools |
 | **Principal** | Unbounded IO | Top — everything embeds in IO; IO embeds in nothing simpler |
 
+The ordering for the Executor and Harness is grounded in their actual effect types — you can verify the embeddings. For the Inferencer and Principal, we model the interface boundary as if it were a morphism — a convention (Convention 6.6 in the [formal companion](formal-companion.md)) that enables uniform reasoning at the cost of treating internals as a black box. The trust/opacity flow claims below inherit this convention's assumptions.
+
 The bare/agentic distinction matters. A bare Inferencer — no tools, sealed — is a three-actor system: Principal, Harness, Inferencer. The Principal controls all world interaction. An agentic Inferencer has tools, which means Executors, which means the Inferencer can reach the world through the Harness's mediation. That's the full four-actor system, and the regulation challenge is qualitatively different: the Harness must now manage not just what the Inferencer sees (scope) but what it can *do* (tool set). The grade shifts from (sealed, trained) to (sealed–broad, trained) — the tools grant world coupling that the model alone doesn't have.
 
 A note on `IO` at the top: this is more of a confession than a characterization. Assigning the Principal "unbounded IO" says "can do anything" — which is true but not informative. It characterizes by declining to characterize.
 
 And `IO` is doing too much work lower in the preorder, too. It collapses at least three things that matter for regulation: how much world can *enter* the computation (post 2's world coupling axis handles this), what the computation can *do to* the world (observe it? modify it? generate new computations that act on it?), and what shape exits as *output* (the interface restriction that funnels address). An Executor that reads a file and an Executor that executes arbitrary shell commands both "do IO," but they're qualitatively different on the second dimension — one observes, the other can reshape the world. Post 2 refined the first. The funnel pattern partially addresses the third. The second — what the computation can do to the world, from observation through modification to generation — is where the real regulatory challenge lives. A later post takes this up directly.
+
+The consequence: the preorder is most informative in the lower half — where it confirms that the Harness belongs at the hub and the Executor is universally modelable. For actors above the Harness, the ordering reflects modeling conventions rather than proven embeddings. The framework's strongest claims (the star topology, the specified band) rest on the lower half, which is also the half where the formal grounding is tightest.
 
 **Trust flows down the preorder.** If M ≤ N, then N can simulate M — so N can reason about what M might do. An agentic Inferencer (high) can model the Harness (low). The Harness can model the Executor. Everyone can model the Executor. Nobody can model the Principal without being the Principal.
 
@@ -94,6 +100,12 @@ The open-weights bare Inferencer is the critical case for understanding the thre
 The agentic Inferencer is the critical case for regulation. It's *harder* than the bare case because the model's proposals can trigger real-world effects through tools. The Harness can't predict which tool calls will be proposed (condition 3 still fails), but it can handle whatever arrives (post 4). The tool set determines which effects are *possible* — and that's what the Harness regulates. Granting `{Read}` creates a different regulatory challenge than granting `{Read, Write, Bash}`, even with the same model behind the proposals.
 
 This is the formal content of post 4's regulation ≠ prediction distinction. The Harness doesn't predict the Inferencer because prediction is intractable (condition 3 fails). It *regulates* by handling at the interface — which only requires knowing the effect signature (condition 1), not the parameters or the simulation cost.
+
+One more case deserves attention: the Principal. The preorder places it at the top — unbounded IO, evolved decision surface. But "unbounded" doesn't mean "unconstrained." The Principal has a finite attention span, limited domain knowledge, fatigue, competing demands on their time, organizational constraints on what they can authorize. These constraints are as real as the sandbox constraints on an Executor — but they're opaque to the agent. A Principal who stops responding may be thinking deeply, may have been interrupted, or may have lost interest. The Inferencer has no way to distinguish these.
+
+This opacity is the mirror of the framework's central insight. The agent's internal processing is opaque to the Harness; the Principal's constraints are opaque to the agent. The framework develops the first opacity extensively — that's what the grade, preorder, and specified band are about. The second opacity is equally real and follows the same transparency principle (post 8): error messages with reasons, explicit time constraints, stated preferences, and declared expertise are all projections of the Principal's constraints into the agent's scope. Scope construction matters upward as much as downward.
+
+A note on the preorder and configuration: the preorder ranks *configured* actors, not abstract actor categories. The same human with sudo access sits higher than the same human on a restricted account. The same Inferencer with Bash sits higher than the same Inferencer with only Read. The grade is always a property of actor-plus-configuration, not the actor alone.
 
 ---
 

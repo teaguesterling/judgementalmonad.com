@@ -10,7 +10,7 @@ From the inside, a conversation feels like a continuous, growing thing. Each tur
 
 It isn't.
 
-Every inference call is stateless. The model receives a token window — constructed fresh by the Harness — performs a single forward pass through fixed weights, and produces a response. It has no memory of the previous turn. It has no persistent state. The "memory" is tokens in the input that the Harness chose to include. The "continuity" is an artifact of the Harness copying previous outputs into the next input.
+Every inference call is stateless. The model receives a token window — constructed fresh by the Harness — performs a single forward pass through fixed weights, and produces a response. It has no memory of the previous turn. It has no persistent state. The "memory" is tokens in the input that the Harness chose to include. The "continuity" is a construction of the Harness copying previous outputs into the next input.
 
 Post 4 made this precise: the Harness simulates continuations through context reconstruction. Each "continuation" is a fresh call with an augmented input. The observable behavior matches a continuous computation with effects — effect raised, result provided, computation continues — but the mechanism is reconstruction, not resumption.
 
@@ -26,7 +26,7 @@ Each arrow through the Inferencer is a pure function of its input. The state liv
 
 Post 3 observed that each agent is a closure — a function bundled with the context it captured. The fold makes this temporal: each step creates a fresh closure over the updated `Conv_State`. The conversation is a sequence of closures, each capturing from the state the previous one left behind.
 
-The Harness IS the conversation. The Inferencer is the step function.
+The Harness IS the conversation. The Inferencer is the step function. These are claims about type signatures and computational architecture — they describe the structure of the composite entity. The framework does not determine whether the composite has experiences, and notes the structural correspondence between the conversation fold and biological state-threading (stateless processing units iterated over managed state, with continuity constructed by an external threading system). Whether this correspondence is merely structural or points to something deeper is a question the framework opens but does not answer.
 
 This structure has a name in coordination theory: *stigmergy* — indirect coordination through environmental modification (Grassé 1959, Heylighen 2016). A termite deposits a mud ball; the presence of that ball stimulates the next termite to deposit nearby. No direct communication, no central planning — coordination emerges from traces left in a shared medium. `Conv_State` is the shared medium. Each inference step leaves traces (tool results, generated text) that stimulate the next step. The Inferencer is stateless; all coordination lives in the environment, mediated by the Harness. Classical stigmergy uses a *passive* medium — the termite mound, the wiki page. The conversation fold is *controlled* stigmergy: the Harness actively manages the medium, compacting traces, restructuring scope, choosing which marks persist and which are summarized away.
 

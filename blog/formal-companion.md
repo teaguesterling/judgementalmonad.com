@@ -885,6 +885,36 @@ A zero trust surface — `level_sandboxed = level_effective` — means the sandb
 
 **Gap.** The trust surface is defined informally. Formalizing it requires a metric on computation levels (not just an ordering) and a way to measure what "the agent actually does" without relying on the training distribution — which is the very trained judgment the specified band says to avoid. This circularity may be inherent for computation-channel tools, which would explain why the practical response is always to sandbox rather than to trust. A possible direction: define the trust surface not as a property of the agent but as a property of the *sandbox gap* — the difference between `level_sandboxed` and the minimum level required for the task. This shifts the question from "what does the agent do?" (undecidable) to "how much capability headroom does the sandbox allow?" (specified, measurable). The framework's recommendation — regulate based on `level_sandboxed`, not `level_effective` — is then a consequence: the trust surface is the engineering margin, not a prediction about behavior.
 
+### 9.9 Connection to effect systems
+
+The computation channel taxonomy is, at its core, a type system proposal. The effect lattice from Def. 9.1:
+
+```
+Pure < FileRead < FileWrite < Network < ProcessSpawn < ArbitrarySyscalls
+```
+
+has direct counterparts in existing effect systems:
+
+**Koka (Leijen 2014, 2017).** Effect rows compose as labeled sets. A function `() -> <read,exn> string` reads and may throw but provably cannot write. The effect labels `read`, `write`, `exn`, `div`, `io` correspond to positions in our effect lattice. Koka's row polymorphism allows functions to be generic over unmentioned effects — a tool parameterized by its effect row would let the Harness reason about exactly which effects a computation can produce.
+
+**Haskell effect systems (fused-effects, polysemy, effectful).** These express constraints as `Members '[FileRead, Error] r => Eff r String` — a computation that can read files and fail, but provably cannot write, access network, or spawn processes. The type system enforces the constraint statically. The sandbox constraints the blog series describes at the design level are expressible at the type level in these systems.
+
+**Frank (Lindley, McBride, McLaughlin 2017).** Multihandler effects, where a single handler interprets multiple effect signatures. This maps to the Harness handling multiple actor types simultaneously — the Harness IS a multihandler over the effect signatures of all four actor roles.
+
+**The correspondence.** The phase transitions from blog post 7 correspond to the introduction of specific effect labels:
+
+| Phase transition | Effect label introduced | Consequence |
+|---|---|---|
+| 2→3 (mutation) | `FileWrite` | Trajectory becomes path-dependent |
+| 3→4 (amplification) | `Exec` | Rice's theorem applies; semantic opacity |
+| 6→7 (fold escape) | `ProcessSpawn` | Computation escapes Harness mediation |
+
+The specified band argument (section 10) becomes precise: the Harness's regulatory rules are decidable when the effect row is restricted to `{Pure, FileRead, FileWrite, ...}` — all data-channel effects. They become undecidable when `Exec` enters the row, because Rice's theorem applies specifically to the `Exec` effect. The undecidability is not a property of IO in general — it is a property of the `Exec` effect label specifically.
+
+**Proposition 9.16 (Effect-system characterization of the decidability boundary).** Let `row(t)` be the effect row of tool `t`. The configuration invariant (Def. 9.6) is decidable if and only if `Exec ∉ row(t)` for all tools `t` in the agent's tool set. If `Exec ∈ row(t)` for any `t`, Rice's theorem applies and the invariant is in general undecidable — the Harness falls back to syntactic approximation plus sandbox bounds (Prop. 9.9).
+
+**Open problem 9.17.** Can the computation channel taxonomy be embedded in a dependently typed effect system that gives the Harness *static* guarantees about tool behavior? The effect row would refine `IO` into the lattice above; the Harness's handler would be typed to accept only effect rows within its regulatory capacity. The sandbox configuration would be a type-level constraint on the effect row. This would turn the design-level claim "stay in the specified band" into a type-level invariant. Koka's effect rows and Frank's multihandlers are the closest existing systems, but neither captures the full product structure (effect signature × specification predicate) from Def. 9.1.
+
 ---
 
 ## 10. The Specified Band
