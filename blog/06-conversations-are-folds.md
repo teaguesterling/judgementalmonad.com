@@ -28,6 +28,8 @@ Post 3 observed that each agent is a closure — a function bundled with the con
 
 The Harness IS the conversation. The Inferencer is the step function.
 
+This structure has a name in coordination theory: *stigmergy* — indirect coordination through environmental modification (Grassé 1959, Heylighen 2016). A termite deposits a mud ball; the presence of that ball stimulates the next termite to deposit nearby. No direct communication, no central planning — coordination emerges from traces left in a shared medium. `Conv_State` is the shared medium. Each inference step leaves traces (tool results, generated text) that stimulate the next step. The Inferencer is stateless; all coordination lives in the environment, mediated by the Harness. Classical stigmergy uses a *passive* medium — the termite mound, the wiki page. The conversation fold is *controlled* stigmergy: the Harness actively manages the medium, compacting traces, restructuring scope, choosing which marks persist and which are summarized away.
+
 ---
 
 ## What this means for the grade

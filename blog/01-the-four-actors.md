@@ -56,6 +56,8 @@ What makes the Executor structurally distinct: its output space is trivially des
 
 The entity that connects the other three. In Claude Code, this is the client process — the thing running in your terminal. The name comes from the same place Fowler and OpenAI landed independently: a harness doesn't do the work (the horse does) and doesn't decide where to go (the driver does). It connects capability to direction. The language model is the horse; the Principal is the driver; the Harness is what makes the connection.
 
+The equestrian history is instructive. The ancient throat-and-girth harness placed straps across the horse's windpipe — the harder the horse pulled, the more it choked itself. The connector *degraded* the capability it was supposed to transmit. The collar harness, reaching Europe around the 10th century, routes force through the skeletal system instead: padded oval around the shoulders, traces attached at the sides, airway completely free. A single horse with a collar could pull what two horses with the old harness couldn't. Same animal, different connector, civilizational consequences. The lesson for agent architecture: a bad harness doesn't just reduce efficiency — it makes capability work against the task. The connector's design determines whether the system composes or fights itself.
+
 The Harness sees everything the others see and more. It sees the structured conversation state — what we'll call `Conv_State` — with compartment boundaries, token counts, budget, tool registry, permission tables, system prompt. It sees what each actor sees (because it *constructs* those views) plus metadata none of them have access to.
 
 What the Harness does:
@@ -106,6 +108,8 @@ The Inferencer never talks to an Executor. The Principal never talks to the Infe
 Why this topology? Because the hub must be the participant whose behavior everyone else can reason about. If you put the model at the hub — an LLM deciding which agents run, managing state, routing messages — the system's behavior becomes as hard to characterize as the model itself. If you put the Principal at the hub, every decision requires human attention. If you put an Executor at the hub, you get a static pipeline with no adaptation.
 
 The Harness works at the hub because you can describe what it will do. Its rules are readable. Its decisions are traceable. Other actors can reason about what mediation will do to their proposals. This isn't an accident — it's the central architectural principle that the rest of this series explains.
+
+There's independent theoretical support for this placement. Michel Callon (1986) formalized the concept of an *obligatory passage point* — the actor that makes itself indispensable by becoming the node through which all network interactions must flow. Latour's power paradox applies directly: "when an actor simply has power nothing happens and they are powerless; when an actor exerts power it is others who perform the action." The Harness is powerful not through its own capability but because everything must pass through it. Its power is architectural, not inferential.
 
 ---
 

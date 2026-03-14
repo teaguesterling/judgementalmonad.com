@@ -155,6 +155,8 @@ Opaque policies don't reduce the Inferencer's ma. They reduce the portion of its
 
 The design principle: **minimize the gap between the full policy and its projection into the actor's scope.** Not all policies can be fully projected — some security constraints shouldn't be visible. But unnecessary opacity is a direct tax on system performance.^[Def. 10.7 and Prop. 10.8 in the [formal companion](formal-companion.md).]
 
+Mick Ashby's Ethical Regulator Theorem (2020) validates this distinction independently. The theorem identifies nine requisites for effective and ethical regulation, and proves that transparency is formally separable from effectiveness: a regulator *can* be effective without transparency — SELinux regulates — but it cannot be ethical without it, because the governed actor can't adapt to constraints it can't see. The theorem also requires *integrity* — the regulator's actual behavior must match its declared rules — which is the specified band argument expressed differently. Specified means both readable and faithful. The nine requisites map surprisingly well onto the framework's own components: purpose (task configuration), truth (observation layer), variety (tool set), predictability (specified band), influence (tool dispatch), and transparency (constraint projection into the actor's scope).
+
 ---
 
 ## The Ashby resolution
