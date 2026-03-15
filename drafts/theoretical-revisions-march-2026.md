@@ -6,6 +6,8 @@
 
 **Status:** Key insights from this document have been published in the companion essay "The Residual Framework" (blog/the-residual-framework.md). This document serves as the full specification for a v2 revision of the main series posts, to be undertaken after the companion essays have been tested against scrutiny.
 
+**Update (late March 14):** The primary definition of ma was refined from "the residual between interface promise and actual behavior" to **"the capacity for informed judgment at a point in the system."** The residual framing is a consequence (what the capacity looks like at the boundary), not the primary definition. Section 3.4 has the full development. The published residual framework essay uses the boundary perspective and remains correct; v2 will use the capacity definition as primary.
+
 ---
 
 ## 1. The Preorder: From Embeddability to Interface Enumerability
@@ -201,9 +203,31 @@ The framework's contribution is decomposing this:
 
 ### 3.4 Relationship to ma
 
-Ma — the space between what an actor receives and what it produces — is the space where all three failure modes live. The grade measures the size of that space. The interface type determines how much is visible. The trust gap is the invisible remainder. The three failure modes describe how the invisible remainder manifests when trust fails.
+**Primary definition.** Ma is the capacity for informed judgment at a point in the system.
 
-**Restated core thesis:** Ma is the residual between what an interface type promises and what the actor behind it actually does. The framework decomposes that residual along three axes (infidelity, side effects, partiality) and provides tools for managing each component through the appropriate mechanism (specification for what's enumerable, sandboxing for what's constrainable, training for what's neither, trust for whatever remains).
+The two axes of the grade lattice are both present in this sentence:
+- **Decision surface** is the capacity for judgment — how many paths through the computation an input can take, how much steering ability the actor has. A lookup table has no capacity for judgment. A trained model has vast capacity. A human has a lifetime's worth.
+- **World coupling** is what makes the judgment informed — how much relevant state of affairs can enter the computation. A sealed model reasons in a vacuum. A model with tools can read the codebase, query the database, observe the world. Each channel of world coupling is information entering the space where judgment happens.
+
+Ma is the product of the two. Judgment without information is computation in isolation (a sealed LLM reasoning about nothing in particular). Information without judgment is data accumulation (a Read tool returning file contents with no processing). The capacity for *informed* judgment requires both — information entering a space where it can be processed through multiple paths to produce an output.
+
+**What this definition captures:**
+
+The supermodularity result (Prop. 4.7) now reads: informed judgment is more than the sum of information and judgment. Adding world coupling to a large decision surface increases the capacity for informed judgment more than adding the same coupling to a small decision surface — because more paths means more ways to *use* the information. And more information means more paths that lead somewhere meaningful.
+
+The co-domain funnel compresses high capacity for informed judgment (internal ma) through a narrow interface (low interface ma). The reviewer running Opus internally has vast capacity for informed judgment about the code. Its interface — Approve / Reject / RequestChanges — is a narrow projection of that judgment. The funnel doesn't reduce the judgment. It reduces the space in which the judgment's *consequences* propagate.
+
+The ratchet converts informed judgment into specified knowledge. Stage 1 uses high ma — broad information, many paths — to discover what works. Stage 2 crystallizes the discovery into a tool that needs neither the information nor the judgment because the answer is built in. Each turn of the ratchet moves a piece of the problem from "requires informed judgment" to "handled by specification."
+
+**What this definition does NOT claim:**
+
+Ma makes no claim about the quality or intent of the judgment. The same capacity can produce good judgment, bad judgment, malicious judgment, or no judgment at all (a random walk through the paths). `rm -rf /` is informed judgment — the actor had access to the filesystem (informed) and chose to delete it (judgment). The capacity was there. The quality of the traversal is a separate question that the framework deliberately sets aside.
+
+This is why the framework is a theory of architecture, not a theory of intelligence. It allocates capacity. It cannot guarantee quality. It can create conditions where quality is more likely — funnels create selection pressure, the specified band frees attention from navigating invisible constraints, constraint in the right places creates freedom in the right places. But the traversal through the space is the actor's business.
+
+**Relationship to the trust gap and failure modes.** The trust gap is the portion of the capacity for informed judgment where the traversal could go in a direction the trusting actor doesn't expect. The three failure modes (infidelity, side effects, partiality) describe how the capacity manifests when trust fails — when the informed judgment produces an output that doesn't correspond (infidelity), changes the world unexpectedly (side effects), or never arrives (partiality). The failure modes are consequences of having capacity for informed judgment, not the definition of ma itself.
+
+**Relationship to the residual framing.** The earlier formulation — "ma is the residual between what an interface type promises and what the actor actually does" — is a *consequence* of the capacity definition, not an alternative to it. The residual exists because the actor has capacity for informed judgment that the interface type can't fully capture. The wider the capacity, the larger the potential residual. The residual framing describes the *gap*. The capacity framing describes the *space* the gap exists within.
 
 ---
 
@@ -293,16 +317,21 @@ These are the same artifact viewed from different angles. Closing a computation 
 
 ### 5.1 Restated core
 
-Ma is the residual between what an interface type promises and what the actor behind it actually does. The framework:
-1. Measures the size of that residual (the grade lattice)
-2. Decomposes it into three failure modes (infidelity, side effects, partiality)
-3. Orders interface types by how much residual they leave (the enumerability preorder)
-4. Provides tools for managing each component (specification, sandboxing, training, trust)
-5. Describes a process for systematically reducing the residual over time (the two-stage ratchet)
+**Ma is the capacity for informed judgment at a point in the system.** Decision surface provides the capacity for judgment (how many paths). World coupling provides the information (what can enter the space). The product is the capacity for informed judgment. Ma makes no claim about the quality or intent of the judgment — only that the capacity exists.
+
+The framework:
+1. Measures the capacity at each point (the grade lattice — world coupling x decision surface)
+2. Decomposes how the capacity can fail (three failure modes: infidelity, side effects, partiality)
+3. Orders interface types by how much capacity they leave visible (the enumerability preorder)
+4. Measures the risk within the capacity (the trust gap: reachable minus expected paths)
+5. Provides tools for managing the capacity (specification for what's enumerable, sandboxing for what's constrainable, training for what's neither, trust for whatever remains)
+6. Describes a process for systematically converting high-capacity points into specified infrastructure (the two-stage ratchet: discovery then crystallization)
+
+The residual framing — "ma is the residual between what an interface promises and what the actor actually does" — is a consequence of the capacity definition, not the primary statement. The residual describes the gap. The capacity describes the space the gap exists within. The trust gap describes the risk within that space. The three failure modes describe how the risk manifests. Both framings are needed: "capacity" for the primary definition, "residual" for what the capacity looks like at the boundary.
 
 ### 5.2 Changes to existing posts
 
-**Post 2 (The Space Between):** The core definition of ma should be restated: "ma is the residual between what an interface promises and what the actor actually does." The three failure modes should be introduced here as the decomposition of that residual.
+**Post 2 (The Space Between):** The core definition of ma should be restated: "ma is the capacity for informed judgment at a point in the system." Decision surface is the capacity for judgment; world coupling is what makes it informed. The supermodularity result reads: informed judgment is more than the sum of information and judgment. The three failure modes should be introduced as what happens when the capacity is exercised and trust fails. The definition makes no claim about quality or intent — this is what makes the framework a theory of architecture, not intelligence.
 
 **Post 5 (Predictability as Embeddability):** Major revision. The preorder should be restated as interface enumerability ordering. The monad morphism should be presented as a stronger property that connects to PL theory but isn't required for the framework's claims. The terms simulate/predict/characterize/model should be distinguished explicitly. The trust ordering (expected/reachable/total) should be introduced here.
 
@@ -330,6 +359,7 @@ The Beer decomposition and these theoretical revisions are complementary:
 
 The following claims in this document have not been tested against adversarial counterexamples beyond those documented:
 
+- **"Ma is the capacity for informed judgment"** is a restatement of the core concept, not a new claim — but it should be checked against every use of ma in the series to ensure consistency. Does "capacity for informed judgment" capture what every post means when it uses the term? Specific risk: the definition centers on the actor's processing, but ma is also used to describe interfaces (interface ma). Interface ma as "capacity for informed judgment at the interface" may need refinement — the interface constrains the *expression* of judgment, not the judgment itself. The residual framing ("what the interface doesn't capture") may remain necessary for the boundary perspective.
 - The three failure modes are exhaustive (tested against five counterexamples, all collapsed — but exhaustiveness is a strong claim that could fail against examples we haven't considered)
 - The interface enumerability ordering produces the same architectural conclusions as the monad morphism preorder (checked for five major claims — but there may be claims in the formal companion that require the stronger property)
 - The trust ordering is sufficient to replace the preorder for inter-actor reasoning (this is a substitution claim that needs verification across every use of the preorder in the formal companion)
