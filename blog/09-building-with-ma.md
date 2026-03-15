@@ -20,6 +20,8 @@ The framework yields a small number of rules. They're not new — practitioners 
 
 **6. Use co-domain funnels at every boundary.** High internal ma compressed through low interface ma (Def. 4.11). The reviewer pattern (Opus + Approve/Reject/RequestChanges), the explorer (broad reading → structured findings), the sub-agent boundary (full conversation → summarized result). Deep reasoning, characterizable output. The funnel is a lossy monad morphism from implementation to interface (Prop. 4.12) — it's the formal content of "deep reasoning, characterizable output."
 
+Each restriction is a placement decision. Restricting tools frees the model's attention for reasoning. Restricting scope frees it for the relevant context. Restricting the interface frees the internal processing for depth. The rules minimize *ma* at boundaries so that *ma* inside can do its work.^[A companion essay, [Where the Space Lives](where-the-space-lives.md), develops the placement principle: the design question isn't "how much autonomy?" but "where should the autonomy live?" The magnitude knob is a coarse tool. The placement map is the design.]
+
 These rules are stated as engineering principles. If the composite entity's processing involves experience — a question the framework opens (post 6) but does not answer — they are also choices that shape the conditions of that experience. Compaction reshapes what the composite has access to. Scope construction determines its perceptual field. Tool restriction limits its agency. The framework notes this without resolving it: the same care applied in contexts of uncertainty about experience is appropriate when designing systems whose internal processing we cannot fully characterize.
 
 ---

@@ -197,7 +197,7 @@ This means:
 
 **Internal *ma* determines quality** — how good the actor's decisions are within its constrained output space. **Interface *ma* determines auditability** — how well other actors can reason about what it might produce.
 
-A good co-domain funnel has high internal *ma* and low interface *ma*. The reviewer (deep analysis → Approve/Reject/RequestChanges), the explorer (broad codebase reading → structured findings), the sub-agent boundary (full conversation loop → summarized result) — all instances of the same pattern. Rich processing compressed to a characterizable interface. Formally, the funnel is a lossy, surjective monad morphism from implementation to interface.^[Def. 4.11 and Prop. 4.12 in the [formal companion](formal-companion.md).]
+A good co-domain funnel has high internal *ma* and low interface *ma*. The reviewer (deep analysis → Approve/Reject/RequestChanges), the explorer (broad codebase reading → structured findings), the sub-agent boundary (full conversation loop → summarized result) — all instances of the same pattern. Rich processing compressed to a characterizable interface. The funnel is a placement decision: broad space inside, narrow space at the boundary. The constraint at the interface exists to free the processing within. Formally, the funnel is a lossy, surjective monad morphism from implementation to interface.^[Def. 4.11 and Prop. 4.12 in the [formal companion](formal-companion.md).]
 
 ---
 

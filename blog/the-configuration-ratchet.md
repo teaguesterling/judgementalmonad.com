@@ -88,7 +88,7 @@ The transformation: `(high-ma explorer) → (specified artifact) → (low-ma app
 
 ## Why this is a ratchet
 
-The ratchet only turns one way. Each promotion moves a behavior from high *ma* to low *ma*, and there's no mechanism that moves it back. The macro, once written, doesn't spontaneously become a bash call again. The cache, once populated, doesn't empty itself. The specified band expands monotonically.
+The ratchet only turns one way. Each promotion moves a behavior from high *ma* to low *ma*, and there's no mechanism that moves it back. The macro, once written, doesn't spontaneously become a bash call again. The cache, once populated, doesn't empty itself. The specified band expands monotonically. Each turn of the ratchet is a placement operation — it moves a piece of the problem from "requires judgment" to "handled by specification," which moves the remaining space to the frontier where judgment is most needed.
 
 The loop is self-sustaining:
 
