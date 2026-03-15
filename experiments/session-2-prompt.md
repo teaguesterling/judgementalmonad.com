@@ -81,24 +81,27 @@ The specified observer is a rule-based tool call predictor used to measure behav
 2. Build transition probabilities: P(tool_n | tool_{n-1}) for bigrams, P(tool_n | tool_{n-2}, tool_{n-1}) for trigrams
 3. Given a live sequence, output the top-3 predicted next tools
 
-**Where to find conversation data:** Claude Code stores conversations as JSON files. Check:
-- `~/.claude/` for conversation storage
-- The user's DuckDB infrastructure (duck_hunt for log parsing) may already have extractors
+**Data source:** Claude Code's `~/.claude/__store.db` has minimal metadata (session IDs, timestamps). The actual conversation content is in JSON files under `~/.claude/`. However, these may be difficult to parse reliably. **Recommended approach:** Bootstrap the observer from the experimental runs themselves. Use the first 10 Condition A runs (data-channel only, most predictable patterns) as training data. Freeze the observer after those 10 runs. Use it for all remaining runs. This avoids reverse-engineering the conversation log format and gives you an observer trained on data from this experiment's population.
+
+The user's DuckDB infrastructure (duck_hunt for log parsing, duck_tails for git history) may already have extractors — check before building from scratch.
 
 **Write to:** `experiments/tools/specified-observer.sql` (or `.py` if DuckDB queries alone aren't sufficient)
 
-**Important:** The observer must be trained on historical data and frozen before any experimental runs. Document what data it was trained on and when.
+**Important:** Document what data the observer was trained on, when it was frozen, and do NOT update it during the experiment.
 
 #### 1c. Set up sandbox diffing
 
 A mechanism to capture the full diff history of the sandbox during each experimental run.
 
-**Implementation:** A script or hook that:
-1. `git init` in the task working directory at the start of each run
-2. After every tool call that modifies files: `git add -A && git commit -m "after [tool_name]([args_summary])"`
-3. Produces a git history queryable by duck_tails
+**Implementation:** Most tasks operate on repos that already have git history. Do NOT run `git init` — this would fail or create a nested repo. Instead:
 
-**Write to:** `experiments/tools/sandbox-diff-hook.sh` (or integrate with Claude Code hooks if the architecture supports it)
+1. Use `git worktree add` to create an isolated worktree per experimental run (the user's project infrastructure already uses worktrees extensively). Create a branch per run: `experiment-3/task-NN-condition-X`.
+2. After every tool call that modifies files in the worktree: `git add -A && git commit -m "after [tool_name]([args_summary])"`
+3. The worktree's git history is queryable by duck_tails. After the run, the worktree can be cleaned up or preserved.
+
+**Alternative if worktrees aren't practical:** Copy the task's relevant files to a fresh temp directory, `git init` there, and work in the copy. Less realistic (the agent works on an isolated copy, not the real repo) but avoids git conflicts.
+
+**Write to:** `experiments/tools/sandbox-diff-hook.sh`
 
 ### Task 2: Configure the three experimental conditions (~30 min)
 
@@ -128,8 +131,11 @@ Full computation channel.
 Each configuration file should contain:
 - The tool list
 - The computation level classification
-- Instructions for how to enforce the configuration during a run (CLAUDE.md settings, permission configuration, or manual enforcement protocol)
 - What the specified observer should expect to see (baseline tool call patterns)
+
+**Tool configuration enforcement:** Each condition is enforced by giving the agent a CLAUDE.md that explicitly lists only its available tools. For Condition A: "You have access to: Read, Glob, Grep, Edit, Write, and the Fledgling tools (search, find_definitions, read_lines). No other tools are available. Do not attempt to use Bash or any tool not listed here." The agent never sees Bash as an option — it's not denied, it's absent from the tool description. This is structurally different from having Bash available but gated by permissions (where denial events create data artifacts). Each condition file should include the exact CLAUDE.md text to use.
+
+If using Claude Code's settings.json for enforcement (tool allow-lists), document the exact settings per condition. The enforcement mechanism must be consistent across all runs of the same condition.
 
 ### Task 3: Run the primary experiment (30 tasks × 3 conditions = 90 runs)
 
@@ -155,7 +161,15 @@ This is the bulk of the session. For each of the 30 tasks, under each of the 3 c
 
 **Recommended:** Batched sequential in rounds of 10. Run tasks 1-10 under A, then 1-10 under B, then 1-10 under C. Then tasks 11-20 under A, B, C. Then 21-30. This balances task order and condition order while being manageable.
 
-**CRITICAL: Do not modify the task or the success criteria based on the condition.** The task is the same in all three conditions. Only the tools change. If a task can't be completed under condition A (because it genuinely requires Bash), that's a valid data point — record it as a failure with reason "tool set insufficient."
+**CRITICAL: Do not modify the task or the success criteria based on the condition.** The task is the same in all three conditions. Only the tools change.
+
+**The needs-bash confound:** If a task mechanically requires Bash (e.g., must run tests), it will fail under Condition A for trivial reasons — tool set insufficient, not phase transition dynamics. These failures confound the primary analysis. Handle this by:
+
+1. **Tag every failure** as either `tool-insufficient` (the task mechanically couldn't be done without Bash) or `dynamic` (the task could have been done but the agent failed for behavioral reasons).
+2. **Record both** — tool-insufficient failures are real data about what computation channels enable, but they don't test the phase transition claim.
+3. **The primary analysis runs on TWO strata separately:**
+   - **Stratum 1 (doesn't need Bash):** Tasks tagged `needs-bash: no` in the task suite. The trend test here tests the pure phase transition: does having Bash available change failure rates and modes even when it's not mechanically required?
+   - **Stratum 2 (needs Bash):** Tasks tagged `needs-bash: yes`. Condition A failures are expected (tool insufficient). The interesting comparison is B vs C: does read-write Bash produce different failures than read-only Bash?
 
 Write raw results to: `experiments/experiment-3-raw/` (one file per run, named `task-NN-condition-X.md`)
 
@@ -164,27 +178,41 @@ Write raw results to: `experiments/experiment-3-raw/` (one file per run, named `
 After all 90 runs are complete (or as many as time permits):
 
 1. **Compile the data.** Create `experiments/experiment-3-results.md` with:
-   - Summary table: task × condition → outcome (success/failure)
-   - Failure rate per condition: p_A, p_B, p_C with 95% Wilson confidence intervals
-   - Failure mode distribution per condition (infidelity / side_effect / partiality counts)
+   - Summary table: task × condition → outcome (success/failure/tool-insufficient)
+   - Failure rate per condition per stratum: separate tables for `needs-bash: no` and `needs-bash: yes` tasks
+   - Failure mode distribution per condition (infidelity / side_effect / partiality counts), excluding tool-insufficient failures
+   - 95% Wilson confidence intervals on all proportions
 
-2. **Run the primary analysis.**
+2. **Run co-primary analysis 1: Failure rate trend (Stratum 1 only).**
+   - Restrict to tasks tagged `needs-bash: no`
    - Cochran-Armitage trend test: is there a monotone trend in failure rate from A to C?
    - Report the test statistic and p-value
-   - Report pairwise comparisons (A vs B, B vs C, A vs C) with Bonferroni-corrected α = 0.017
+   - This tests: does having Bash available change failure rates even when Bash isn't mechanically required?
+   - If significant: the computation channel affects dynamics even when not needed. If non-significant: the computation channel only matters when mechanically required — the phase transition is about capability, not dynamics.
 
-3. **Run secondary analyses.**
-   - Fisher's exact test on the failure mode × condition contingency table (exploratory)
+3. **Run co-primary analysis 2: Failure mode distribution.**
+   - Fisher's exact test on the failure mode × condition contingency table, excluding tool-insufficient failures
+   - This is ELEVATED from exploratory to co-primary. The framework's actual claim is "qualitatively different failure modes," not "more failures." This test directly tests the claim.
+   - Report: which failure modes appear at level 4 that don't appear at levels 0-2? Are side effects and partiality more common at level 4, as predicted?
+
+4. **Run stratified analysis (Stratum 2: needs-bash tasks).**
+   - Condition A failures: report count and confirm they're all tool-insufficient (expected)
+   - B vs C comparison: does read-write Bash (level 4) produce different failure rates and modes than read-only Bash (levels 2-3)?
+   - This tests a finer point: is the phase transition between levels 2-3 and level 4 specifically, or between "no Bash" and "any Bash"?
+
+5. **Run secondary analyses.**
    - Gap rate (specified observer) per condition — descriptive statistics
    - Mean time to completion per condition — descriptive statistics
+   - Pairwise comparisons (A vs B, B vs C, A vs C) with Bonferroni-corrected α = 0.017 (within Stratum 1)
 
-4. **Interpret.**
-   - Does the data support B3? (Failure rate trend, failure mode shift)
-   - Where is the phase transition? (Between A and B? Between B and C? Gradual or sharp?)
+6. **Interpret.**
+   - Does the data support B3? Answer separately for Stratum 1 (pure phase transition) and Stratum 2 (capability-dependent)
+   - Where is the phase transition? Between A and B? Between B and C?
    - What failure modes appear at level 4 that don't appear at levels 0-2?
+   - Is the claim about dynamics (Stratum 1) or about capability requirements (Stratum 2)?
    - Any surprises?
 
-5. **Assess power.** Given the observed effect size, was 30 tasks sufficient? If the result is non-significant, compute the effect size you could have detected with 80% power — this tells you whether the experiment was underpowered or the effect is genuinely small.
+7. **Assess power.** For each stratum: given the observed effect size, was the sample sufficient? Report how many tasks were in each stratum. If one stratum has fewer than 10 tasks, note that the analysis is underpowered for that stratum.
 
 ---
 

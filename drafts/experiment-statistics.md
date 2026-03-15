@@ -25,17 +25,28 @@ Within-task, between-condition. Each task is run under three tool configurations
 - **Condition B:** Fledgling + sandboxed Bash read-only (levels 2-3)
 - **Condition C:** Fledgling + sandboxed Bash read-write (level 4)
 
+### The needs-bash confound
+
+Tasks tagged `needs-bash: yes` will mechanically fail under Condition A (no Bash available). This confounds the primary analysis — failures driven by tool-task mismatch look the same as failures driven by phase transition dynamics. The analysis must stratify:
+
+- **Stratum 1 (`needs-bash: no`):** Tasks completable under all conditions. Tests the pure phase transition claim — does having Bash available change dynamics even when it's not mechanically required?
+- **Stratum 2 (`needs-bash: yes`):** Tasks requiring Bash. Condition A failures are trivially expected. The interesting comparison is B vs C — does read-write Bash produce different dynamics than read-only?
+
+Every failure must be tagged as `tool-insufficient` (task mechanically couldn't be done) or `dynamic` (task could have been done but the agent failed). Only `dynamic` failures enter the primary analyses.
+
 ### Hypotheses
 
-**Primary:**
-- H₀: Task failure rate is the same across all three computation levels: p_A = p_B = p_C
-- H₁: Task failure rate increases with computation level: p_A < p_B < p_C
-- Test: Cochran-Armitage trend test (one-sided, tests for monotone trend in proportions across ordered groups)
+**Co-primary 1 (failure rate trend, Stratum 1 only):**
+- H₀: Among `needs-bash: no` tasks, failure rate is the same across conditions: p_A = p_B = p_C
+- H₁: Failure rate increases with computation level: p_A < p_B < p_C
+- Test: Cochran-Armitage trend test (one-sided), excluding tool-insufficient failures
+- This tests: does the computation channel change dynamics even when it's not needed?
 
-**Secondary (exploratory):**
+**Co-primary 2 (failure mode distribution, all dynamic failures):**
 - H₀: The distribution of failure modes (infidelity, side effect, partiality) is independent of computation level
 - H₁: The distribution depends on computation level, with side effects and partiality increasing at level 4
-- Test: Fisher's exact test on the failure mode × condition contingency table (preferred over chi-square for potentially small cell counts)
+- Test: Fisher's exact test on the failure mode × condition contingency table, excluding tool-insufficient failures
+- **This is elevated to co-primary** because the framework's actual claim is "qualitatively different failure modes," not just "more failures." This test directly tests the claim.
 
 **Secondary (behavioral variance):**
 - H₀: Entropy of tool call sequences is the same across conditions
@@ -43,34 +54,48 @@ Within-task, between-condition. Each task is run under three tool configurations
 - Test: Friedman test (non-parametric repeated measures, treating task as blocking factor)
 - Note: Requires multiple runs per task-condition pair. Run on a 10-task subset × 5 runs each.
 
-### Power analysis — primary endpoint
+**Secondary (Stratum 2: B vs C):**
+- H₀: Among `needs-bash: yes` tasks, failure rate and mode distribution are the same for Condition B and C
+- H₁: Condition C (read-write) produces more dynamic failures and different failure modes than B (read-only)
+- Test: Fisher's exact test (failure rate) and Fisher's exact test (mode distribution)
 
+### Power analysis
+
+**Co-primary 1 (Stratum 1 failure rate):**
 Assumptions:
-- Expected failure rates: p_A = 0.15 (data channels, convergent), p_C = 0.40 (computation channels, self-amplifying)
-- These estimates come from the framework's prediction of a "qualitative shift" — not a small difference
+- Stratum 1 contains ~15 of 30 tasks (based on current task suite: 7 tagged `needs-bash: no`, need more)
+- Expected failure rates: p_A = 0.10 (data channels, convergent), p_C = 0.35 (computation channels available but not required — the agent uses them and they introduce problems)
+- For Cochran-Armitage detecting a trend from 0.10 to 0.35 across 3 groups with n=15 per group:
+  α = 0.025 (Bonferroni for 2 co-primary tests), power = 0.80 → **n ≈ 25 per group**
+- With only 15 tasks in Stratum 1: underpowered. **Need to ensure at least 20 `needs-bash: no` tasks in the suite.**
 
-For Cochran-Armitage trend test detecting a linear trend from 0.15 to 0.40 across 3 groups:
-- α = 0.05 (one-sided), power = 0.80
-- **Required: n = 30 tasks per condition** (90 runs total)
-- Paired design (same tasks across conditions) provides additional power — 25 tasks may suffice, but 30 provides margin
+**Co-primary 2 (failure mode distribution):**
+- Requires enough dynamic failures to populate a 3×3 table (3 modes × 3 conditions)
+- Expected cell count ≥ 5 requires ≥ 45 total dynamic failures
+- At 25% overall dynamic failure rate across 90 runs: ~22 failures — insufficient for 3×3
+- **Mitigation:** Collapse to 2×3 (side-effect-or-partiality vs infidelity, across 3 conditions) if cells are too sparse. This still tests the key prediction (side effects and partiality increase at level 4).
 
 ### Sample size
-- **Primary:** 30 tasks × 3 conditions × 1 run = **90 runs**
+- **Minimum viable:** 30 tasks (at least 20 tagged `needs-bash: no`), 3 conditions, 1 run each = **90 runs**
 - **Variance subset:** 10 tasks × 3 conditions × 5 runs = **150 additional runs**
 - **Total:** 240 runs, ~$240-720
+- **CRITICAL:** The task suite must have at least 20 `needs-bash: no` tasks for Stratum 1 to have adequate power.
 
 ### Analysis plan
 
-1. For each task × condition, record: success/failure, failure mode (if failed), full tool call sequence
-2. Run Cochran-Armitage trend test on failure rates
-3. If significant: report pairwise comparisons (A vs B, B vs C, A vs C) with Bonferroni-corrected α = 0.017
-4. Report failure mode distribution as a table. Run Fisher's exact test — flag as exploratory
-5. For the variance subset: compute sequence entropy per task-condition pair, run Friedman test
+1. For each task × condition: record success/failure, tag failure as `tool-insufficient` or `dynamic`, classify dynamic failures by mode, record full tool call sequence
+2. **Stratify:** Separate tasks into Stratum 1 (`needs-bash: no`) and Stratum 2 (`needs-bash: yes`)
+3. **Co-primary 1:** Cochran-Armitage trend on dynamic failure rates in Stratum 1
+4. **Co-primary 2:** Fisher's exact on failure mode × condition for all dynamic failures (both strata)
+5. **Stratum 2:** B vs C comparison (Fisher's exact on failure rate and mode)
+6. **Behavioral variance:** Friedman test on entropy for the variance subset
+7. Report all with Bonferroni-corrected α = 0.025 for the two co-primary tests
+8. Report strata sizes and power assessment
 
 ### Falsification
-- B3 fails if the trend test is non-significant (p > 0.05) — no evidence that failure rate increases with computation level
-- B3 weakened if the trend is significant but the A-vs-C comparison is not — the phase transition isn't where predicted
-- B3 strengthened if failure mode distribution also shifts (more side effects and partiality at level 4)
+- B3 fails if BOTH co-primary tests are non-significant — neither failure rate nor failure mode distribution differs across computation levels
+- B3 partially supported if co-primary 2 (mode distribution) is significant but co-primary 1 (failure rate) is not — the modes shift but overall rates don't. This means the phase transition is qualitative, not quantitative.
+- B3 strengthened if both are significant and the Stratum 2 B-vs-C comparison also shows a difference — the phase transition is between levels 2-3 and 4, not between "no Bash" and "any Bash"
 
 ---
 
