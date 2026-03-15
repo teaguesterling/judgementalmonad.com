@@ -36,7 +36,7 @@ This distinction is the crux. Getting it wrong leads to the wrong formalization.
 
 **Not stochasticity.** A temperature-0 LLM is technically deterministic for any given input. But the space between its input and output is vast — different inputs activate different paths through the weights, and for a deep network, the number of distinguishable paths grows exponentially with depth. High *ma*. A random number generator has maximal stochasticity but trivial characterization difficulty. Stochasticity affects how you *verify* (replay vs. statistical audit), not how hard the space is to *describe*.
 
-*Ma* is the space of paths between input and output — how many distinguishable routes through the computation an input could take. The more paths, the harder to characterize, the higher the *ma*.
+*Ma* is the space of paths between input and output — how many distinguishable routes through the computation an input could take. The more paths, the harder to characterize, the higher the *ma*.^[A companion essay, [The Residual Framework](the-residual-framework.md), sharpens this: ma is the residual between what an interface type promises and what the actor behind it actually does. The residual decomposes into three independently manageable components — dishonesty, side effects, and partiality — each addressed by a different tool from this series. The grade lattice measures the residual's size; the computation level taxonomy determines which components dominate.]
 
 ---
 

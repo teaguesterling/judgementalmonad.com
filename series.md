@@ -25,6 +25,8 @@ blog/09-building-with-ma
 :caption: Supplementary Materials
 
 blog/formal-companion
+blog/the-residual-framework
 blog/the-configuration-ratchet
+blog/reference-tables
 blog/case-studies
 ```

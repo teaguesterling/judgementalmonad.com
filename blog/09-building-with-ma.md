@@ -6,7 +6,7 @@
 
 ## The design rules
 
-The framework yields a small number of rules. They're not new — practitioners already follow most of them. What's new is the unified explanation. Each rule falls out of the same structure: the grade lattice, the preorder, the coupled recurrence, the specified band.
+The framework yields a small number of rules. They're not new — practitioners already follow most of them. What's new is the unified explanation. Each rule falls out of the same structure: the grade lattice, the preorder, the coupled recurrence, the specified band.^[[The Residual Framework](the-residual-framework.md) restates each rule in terms of the specific residual component it manages — dishonesty, side effects, or partiality — clarifying which mechanism addresses which failure mode.]
 
 **1. Restrict tools, not models.** An Opus model with `{Read, Approve, Reject}` has high internal ma (good reasoning) and low interface ma (three possible effects). A Haiku model with 50 tools has low internal ma and high interface ma. The first is the better reviewer. Model selection determines the quality of decisions within the constrained space. Tool selection determines the *size* of the space. Size matters more than quality for characterizability — supermodularity (Prop. 4.7) means reducing the tool set saves more when the decision surface is already large.
 
