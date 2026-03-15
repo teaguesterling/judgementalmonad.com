@@ -194,6 +194,7 @@ After all 90 runs are complete (or as many as time permits):
    - Fisher's exact test on the failure mode × condition contingency table, excluding tool-insufficient failures
    - This is ELEVATED from exploratory to co-primary. The framework's actual claim is "qualitatively different failure modes," not "more failures." This test directly tests the claim.
    - Report: which failure modes appear at level 4 that don't appear at levels 0-2? Are side effects and partiality more common at level 4, as predicted?
+   - **Note on multiple comparisons:** The pre-registered design in `experiment-statistics.md` has one primary endpoint at α = 0.05. This prompt elevates a second analysis to co-primary. Use Bonferroni-corrected α = 0.025 for each co-primary test. This session prompt supersedes `experiment-statistics.md` on the number of co-primary analyses; document the deviation in the results.
 
 4. **Run stratified analysis (Stratum 2: needs-bash tasks).**
    - Condition A failures: report count and confirm they're all tool-insufficient (expected)
