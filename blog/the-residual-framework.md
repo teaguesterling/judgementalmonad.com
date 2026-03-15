@@ -275,6 +275,26 @@ The Inferencer has trained regulation of the Principal: refusal training, safety
 - **Circumventable through the same mechanisms that make computation channels hard to regulate.** Prompt injection, multi-step jailbreaks, dishonest framing — these exploit the semantic trust gap in the upward direction. The Principal sending a jailbreak is structurally identical to the Inferencer sending obfuscated code: both exploit the gap between syntactic appearance and semantic intent.
 - **Unavoidable.** You can't specify refusal rules over natural language for the same reason you can't specify safety rules over Bash — the input space is semantically open. Rice's theorem applies to natural language intent as much as to program behavior.
 
+### Emergent capabilities and semantic evaluation
+
+The Inferencer's ethical evaluation isn't just a constraint — it's the system's only defense against a class of dangers that no structural mechanism can address.
+
+No single component can produce the most dangerous outcomes alone. The Principal lacks the technical knowledge. The Inferencer lacks world access. The Executors lack intent and knowledge. But the composite — Principal-intent + Inferencer-knowledge + Executor-world-access — can compose into a trajectory that produces capabilities none of the components could produce individually. A sequence of individually-innocuous requests (chemistry questions, equipment specifications, procedural steps) can compose into instructions for synthesizing something dangerous.
+
+The only component that can recognize this trajectory is the Inferencer — because recognition requires the trained knowledge to understand what's being assembled across multiple requests. The sandbox can't catch it (each individual tool call is within bounds). The Harness can't catch it (the structural interface is normal). No specified policy over natural language can anticipate every dangerous composition (Rice's theorem). Only trained semantic evaluation can assess whether a sequence of requests is heading toward an outcome the system should refuse to contribute to.
+
+In Beer's terms: the [fold over the Inferencer is System 4](09-building-with-ma.md) — environmental scanning that builds a model of the problem space. The "environment" being scanned includes the Principal's behavior. A hostile Principal — one attempting to assemble dangerous capabilities through individually-innocuous requests — is an environmental threat that System 4 is positioned to detect. The Inferencer's ethical training extends System 4's scanning to include threat assessment of the inputs it receives, not just the world it observes through tools.
+
+Beer's VSM has a known gap here: System 3* audits downward (checking on operational units), but nothing audits upward (checking on System 5). The algedonic signal — Beer's emergency alarm — escalates *to* System 5, not past it. If System 5 is the threat, the alarm goes to the hostile actor. The Inferencer's refusal is an algedonic signal that goes *outward* rather than *upward* — it refuses to contribute rather than escalating to the entity it's refusing. This fills a structural gap in Beer's model that Critical Systems Thinking (Jackson, Flood) identified but Beer never resolved architecturally.
+
+### The independence requirement
+
+In systems with multiple high-ma actors — multiple Inferencers, multiple humans, or mixed teams — safety becomes an emergent property of redundant semantic evaluation rather than depending on any single actor's ethical capacity.
+
+A reviewer Inferencer evaluating a worker Inferencer is a second semantic checkpoint — a second System 5 evaluating the trajectory from an independent vantage. But "independent" carries a caveat: two instances of the same model share the same training, the same biases, the same blind spots. The redundancy is weaker than it appears. Genuine independence requires different training, different architectures, different institutional contexts — the same principle that makes peer review work in science (different researchers with different backgrounds) and separation of duties work in finance (different roles with different incentives).
+
+The practical implication for multi-agent design: co-domain funnels at every boundary are semantic safety checkpoints, but their safety value depends on the *independence* of the evaluating actor from the evaluated actor. A reviewer with the same model, same system prompt, and same context as the worker provides structural benefits (the funnel compresses interface ma) but limited safety benefits (shared blind spots). A reviewer with a different model, different tools, and partial context provides both.
+
 ### The trust web
 
 Trust regulation is bidirectional, not hierarchical:
@@ -289,9 +309,11 @@ Trust regulation is bidirectional, not hierarchical:
 
 The regulation forms a cycle, not a tree. There is no unregulated trust anchor. The Principal is regulated by the Inferencer's training. The Inferencer is regulated by the Harness's specified policy. The Harness is regulated by the Principal's configuration choices. Each boundary has its own trust gap managed by its own mechanism.
 
+In multi-actor systems, the cycle becomes a mesh — multiple high-ma actors evaluating each other through independent semantic judgment. The safety of the composite comes from the independence and redundancy of these evaluations, not from the perfection of any single evaluator. This mirrors institutional safety patterns: peer review, separation of duties, independent audit, judicial review — all are mechanisms for providing redundant semantic evaluation across actors with independent training and values.
+
 ### Consequence for the specified band
 
-The published series says: never put trained judgment in the regulatory loop. The residual framework refines this: never put trained judgment in the *coordination* loop (System 2, the Harness — see [post 8](08-the-specified-band.md)). Trained judgment in the trust regulation of the Principal is unavoidable — the alternative is an agent that does anything anyone asks. The Inferencer's trained guardrails are the sandbox for the Principal's inputs: bounding consequences when you can't fully characterize intent.
+The published series says: never put trained judgment in the regulatory loop. The residual framework refines this: never put trained judgment in the *coordination* loop (System 2, the Harness — see [post 8](08-the-specified-band.md)). Trained judgment in the trust regulation of the Principal is not just unavoidable — it is the system's only defense against emergent dangerous capabilities that no specified mechanism can detect. The Inferencer's trained guardrails are the semantic safety layer for the composite system, operating where Rice's theorem makes specification impossible.
 
 ---
 
