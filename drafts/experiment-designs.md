@@ -21,7 +21,7 @@ Note: This file contains references to security-sensitive patterns (subprocess i
 | A7 | The sandbox restores the configuration invariant (Prop. 9.9) | Formal companion | Proven | Proof exists |
 | A8 | Delegation between agents is a computation channel (Prop. 9.11) | Formal companion | Proven | Proof exists; test consequences empirically (see B2) |
 
-### Category B: Empirical Claims from v1
+### Category B: Empirical Claims from v1 (covered by Experiments 1-5)
 
 | ID | Claim | Source | Experiment |
 |----|-------|--------|------------|
@@ -43,20 +43,27 @@ Note: This file contains references to security-sensitive patterns (subprocess i
 | C6 | Minimum ma for System 3 scales with System 1's computation level | Beer decomposition | Yes |
 | C7 | Current architectures lack real-time control (System 3) | Beer decomposition | Yes |
 | C8 | Three failure modes are empirically exhaustive | v2: failure modes | Yes |
+| C9 | Autonomy placement matters more than magnitude for system quality | Where the Space Lives | Yes |
+| C10 | Specification at one point improves quality at adjacent unspecified points | Taylor/Johannsen insight | Yes |
+| C11 | Capacity for informed judgment definition is consistent with all uses of ma | v2: restated core | Formal + empirical |
 
 ### Category D: Modeling Choices (assessed for usefulness, not truth)
 
 | ID | Claim | Source | Assessment method |
 |----|-------|--------|-------------------|
 | D1 | Roles are interface contracts, not actor descriptions | v2 revision | Does this produce better design decisions? |
-| D2 | Ma is the residual between interface promise and actual behavior | v2: restated core | Does this generate new predictions? |
+| D2 | Ma is the capacity for informed judgment at a point in the system | v2: restated core | Does this generate same predictions AND illuminate placement? Subsumes residual framing. |
 | D3 | Beer VSM mapping (Harness = System 2, etc.) | Beer decomposition | Does this identify gaps the original misses? |
+| D4 | The purpose of specification is to free the unspecifiable to do its work | Taylor/Basho exercise | Does this change design decisions vs defensive framing? |
+| D5 | The field needs a placement map, not just a magnitude knob | Where the Space Lives | Does placement framing produce measurably different architectures? (See C9) |
 
 ---
 
-## Part 2: New Experiments (6-10)
+## Part 2: Experimental Program
 
-Experiments 1-5 are unchanged from the original designs and test claims B1-B5.
+### Experiments 1-5: Unchanged
+
+The original five experiments (supermodularity, communication amplification, computation channel phase transition, configuration ratchet, specified band violation) remain as previously designed. They test claims B1-B5.
 
 ### Experiment 6: Trust Gap Measurement
 
@@ -100,6 +107,56 @@ During promotion step, separately measure discovery (observed behavior gap) and 
 
 **Falsification:** C3 fails if tools make aspirational commitments, or if discovery doesn't influence crystallization.
 
+### Experiment 11: Autonomy Placement vs Magnitude
+
+**Tests:** C9, C10, D4, D5
+
+**Core idea:** Hold total ma budget approximately constant. Vary where the ma is placed. Measure system quality.
+
+**Setup:** Two-phase coding task: (1) understand and plan, (2) implement. Three conditions:
+
+| Condition | Planning phase | Execution phase | Total ma budget |
+|-----------|---------------|-----------------|-----------------|
+| A: Uniform | Medium tools (Read, Grep, Glob, Edit) | Medium tools (Read, Grep, Glob, Edit) | Moderate everywhere |
+| B: Front-loaded | Broad tools (Read, Grep, Glob, Bash read-only, web search) | Narrow tools (Edit only, pre-specified file list) | High planning, low execution |
+| C: Back-loaded | Narrow tools (Read on specified files only) | Broad tools (Read, Grep, Glob, Edit, Bash sandboxed) | Low planning, high execution |
+
+**Predictions:** Framework predicts B (front-loaded) produces highest quality. Planning benefits from broad world coupling and large decision surface (System 4). Execution benefits from narrow tools once the plan is good (System 1). Condition C is the Taylor anti-pattern: precise tools but doesn't know what to build.
+
+**Measurements:**
+- Task completion rate and quality (human-judged: correctness, elegance, edge cases)
+- Approach quality and implementation quality scored independently and blind to condition
+- Wasted effort (dead-end exploration, reverted changes)
+- Behavioral variance across 5 runs per condition
+
+**Falsification:**
+- C9 fails if A (uniform) performs as well as or better than both B and C
+- C10 fails if B's execution quality (narrow tools) is worse than A's execution quality (medium tools) — constraint didn't create freedom, just reduced capability
+
+**Cost:** ~$300-900 (3 conditions x 5 runs x 20 tasks at $1-3/run)
+
+### Experiment 12: Capacity for Informed Judgment — Definition Consistency
+
+**Tests:** C11, D2
+
+**Core idea:** Systematic textual analysis. Apply capacity, residual, and original definitions independently to every use of "ma" in the published series. Check consistency.
+
+**Phase 1: Consistency check.** For each use of ma in posts 1-9, formal companion, case studies, ratchet:
+1. What does it mean under "space between inputs and outputs"?
+2. What does it mean under "capacity for informed judgment"?
+3. What does it mean under "residual between interface promise and behavior"?
+4. Do the three agree? Which captures the passage's intent most accurately?
+
+**Phase 2: Divergence analysis.** Where they diverge: does the capacity definition produce different, better, or worse design recommendations?
+
+**Phase 3: Interface ma stress test.** Check every use of "interface ma" — does "capacity for informed judgment at the interface" work, or does the interface constrain expression rather than judgment itself?
+
+**Falsification:**
+- C11 fails if more than 20% of uses are inconsistent with capacity definition
+- D2 fails if capacity definition never produces a more informative reading
+
+**Practical notes:** Can be done by an authoring agent during v2 revision. Low cost, high leverage — foundation for all v2 changes.
+
 ---
 
 ## Part 3: Priority and Sequencing
@@ -107,27 +164,31 @@ During promotion step, separately measure discovery (observed behavior gap) and 
 | Priority | Experiment | Tests | Effort | Time |
 |----------|-----------|-------|--------|------|
 | 1 | 4 + 9 + 10 (Ratchet + Failures + Two-Stage) | B4, C3, C4, C8 | Low | 4-8 weeks |
-| 2 | 3 (Computation Channel Phase Transition) | B3 | Medium | 1-2 days |
-| 3 | 6 (Trust Gap Measurement) | C1, C4 | Medium | 1-2 days |
-| 4 | 8 (System 3 Effectiveness) | C6, C7 | Medium-High | 2-3 days |
-| 5 | 1 (Supermodularity) | B1 | Medium | 1-2 days |
-| 6 | 5 (Specified Band Violation) | B5 | Medium-High | 2-3 days |
-| 7 | 7 (Semantic Trust Gap / Obfuscation) | C2, C5 | High | 3-5 days |
-| 8 | 2 (Communication Amplification) | B2 | High | 3-5 days |
+| 2 | 12 (Definition Consistency) | C11, D2 | Low | 1-2 days |
+| 3 | 3 (Computation Channel Phase Transition) | B3 | Medium | 1-2 days |
+| 4 | 6 (Trust Gap Measurement) | C1, C4 | Medium | 1-2 days |
+| 5 | 11 (Autonomy Placement vs Magnitude) | C9, C10, D4, D5 | Medium-High | 2-3 days |
+| 6 | 8 (System 3 Effectiveness) | C6, C7 | Medium-High | 2-3 days |
+| 7 | 1 (Supermodularity) | B1 | Medium | 1-2 days |
+| 8 | 5 (Specified Band Violation) | B5 | Medium-High | 2-3 days |
+| 9 | 7 (Semantic Trust Gap / Obfuscation) | C2, C5 | High | 3-5 days |
+| 10 | 2 (Communication Amplification) | B2 | High | 3-5 days |
 
 ## Part 4: Shared Infrastructure
 
 | Component | Used by | Build effort |
 |-----------|---------|-------------|
-| Task suite (20+ tasks) | 1, 2, 3, 5, 6, 8 | Medium |
+| Task suite (20+ tasks, including planning-matters tasks for Exp 11) | 1, 2, 3, 5, 6, 8, 11 | Medium |
 | Specified observer | 1, 3, 5, 6 | Low-Medium |
 | Sandbox diffing | 3, 7 | Low |
 | Failure logging protocol | 4, 9 | Low |
 | sitting_duck audit queries | 7, 10 | Need specific queries |
 | Pattern detector for System 3 | 8 | Medium |
 | Obfuscation corpus | 7 | Medium-High |
+| Phase-gated tool configurations | 11 | Low |
+| Quality rubric for human judging | 11 | Low |
 
-Build order: Failure logging -> specified observer -> task suite -> sandbox diffing -> pattern detector -> obfuscation corpus
+Build order: Failure logging -> Exp 12 textual analysis (no infra needed) -> specified observer -> task suite -> sandbox diffing -> phase-gated tool configs + rubric -> pattern detector -> obfuscation corpus
 
 ## Part 5: Formal Verification Tasks
 
@@ -137,3 +198,5 @@ Build order: Failure logging -> specified observer -> task suite -> sandbox diff
 | A4 | Additional adversarial testing of failure mode exhaustiveness | Low-Medium | High |
 | A6 | Formal development: type honesty via Koka effect rows | Medium-High | Medium |
 | A1 | Assess independence assumption against correlated path models | Medium | Medium |
+| NEW | Verify capacity definition consistency with all formal uses of ma | Medium | High — foundation for v2; run alongside Exp 12 |
+| NEW | Formalize placement as optimization over grade lattice | Medium-High | Medium — may resist formalization; supermodularity implies non-uniform optimal placement but the quality function Q(placement) is speculative |
