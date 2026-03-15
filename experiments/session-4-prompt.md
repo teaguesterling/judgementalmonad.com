@@ -12,6 +12,7 @@ From prior sessions:
 - `experiments/tools/sandbox-diff-hook.sh` — Sandbox diffing
 - `experiments/experiment-3-results.md` — Phase transition results
 - `experiments/experiment-6-results.md` — Trust gap results
+- `experiments/failure-log.md` — Ongoing failure log (continue logging)
 
 Read:
 1. `drafts/note-for-agents.md`
@@ -19,6 +20,25 @@ Read:
 3. Blog post 2 (The Space Between) — supermodularity section
 4. Formal companion Prop. 4.7 and Cors. 4.8-4.9
 5. Memory files
+
+## Context from prior sessions
+
+**Experiment 3 (phase transition):** Established whether failure rates differ across computation levels. If Experiment 3 found NO phase transition (failure rates constant across levels), that weakens but doesn't eliminate the supermodularity claim — supermodularity is about the *interaction* between axes, not about main effects. Review Experiment 3 results and note whether the D-axis main effect (computation channels vs data channels) was significant. This experiment tests the *interaction* with the W axis.
+
+**Experiment 6 (trust gap):** Established whether crystallization reduces the trust gap. If it did, the trust gap is a valid operationalization of "regulation difficulty." Use gap rate as a secondary measure alongside quality scores. If Experiment 6 found no trust gap reduction, gap rate may not be a useful measure for this experiment — rely on quality scores as primary.
+
+**Key question from prior results:** Did Experiments 3 and 6 produce any surprising results that should change how you run this experiment? If Experiment 3 found that data-channel-only conditions (level 0-2) actually had HIGHER failure rates than computation-channel conditions (because agents couldn't do the task without Bash), that changes the interpretation of the Low D conditions here. Review and assess before running.
+
+## Pre-experiment review
+
+Before running trials:
+- Review Experiment 3 results. Does the D-axis main effect exist? This is a prerequisite for the interaction making sense.
+- Review the task suite. Each task needs a 3-5 file list for the Low W conditions. If these don't exist yet, creating them is Task 1 prep work.
+- If any prior experiment produced results that contradict the framework's predictions, note this and flag whether it affects the design of this experiment. The design is pre-registered and shouldn't change, but the decision to RUN it might.
+
+## Longitudinal study reminder
+
+Follow the failure logging protocol throughout. Failures in the HH condition (broad info + computation channels) are predicted to be the most complex and the most informative for the failure mode taxonomy. Log them carefully.
 
 ---
 
@@ -82,7 +102,9 @@ experiments/conditions/exp1-HH-highW-highD.md
 
 Write file lists to `experiments/conditions/exp1-file-lists/task-NN.txt`
 
-### Task 2: Run the experiment (30 tasks × 4 conditions = 120 runs) (~4-6 hours)
+### Task 2: Run the experiment (30 tasks × 4 conditions = 120 runs)
+
+**Time estimate:** 120 runs at ~20-30 minutes each is ~40-60 agent-hours. With parallel dispatch of 3-5 agents, 8-20 wall-clock hours across multiple sub-sessions. This is a large experiment — plan for 2-3 days of intermittent running.
 
 For each task, under each of the four conditions:
 

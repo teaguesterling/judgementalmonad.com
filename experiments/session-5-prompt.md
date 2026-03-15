@@ -7,16 +7,40 @@
 ## Prerequisites
 
 From prior sessions:
-- `experiments/task-suite.md` — Task suite (30+ tasks, need tasks where planning quality matters)
+- `experiments/task-suite.md` — Task suite (30+ tasks, need tasks tagged `planning-matters: high`)
 - `experiments/tools/specified-observer.sql` — Specified observer
 - `experiments/tools/sandbox-diff-hook.sh` — Sandbox diffing
-- Results from Experiments 3, 6, 1 (read for context and to inform interpretation)
+- `experiments/experiment-3-results.md` — Phase transition results
+- `experiments/experiment-6-results.md` — Trust gap results
+- `experiments/experiment-1-results.md` — Supermodularity results
+- `experiments/failure-log.md` — Ongoing failure log (continue logging)
 
 Read:
 1. `drafts/note-for-agents.md`
 2. `drafts/experiment-statistics.md` — Section "Experiment 11: Autonomy Placement vs Magnitude"
 3. `blog/where-the-space-lives.md` — The essay this experiment tests
 4. Memory files
+
+## Context from prior sessions
+
+**Experiment 12 (definition consistency):** The "capacity for informed judgment" definition uniquely enables the placement framing — "where should judgment live?" This experiment tests whether that framing produces testable, correct predictions. If placement doesn't matter (uniform = front-loaded), the definition's distinctive advantage over the original is weakened.
+
+**Experiment 3 (phase transition):** Established whether computation level affects failure modes. Relevant here because Condition B's execution phase has low computation level (Edit only) while Condition C's has high. If Experiment 3 found data-channel tools are sufficient for most execution tasks, that supports the front-loaded design. If it found they're insufficient (agents can't complete tasks without Bash), Condition B may systematically fail at execution — which would test the Taylor/Johannsen question: does constraint at execution actually help or just cripple?
+
+**Experiment 1 (supermodularity):** If the 2×2 interaction was significant, it validates that restriction has superlinear returns — which supports Condition B (restrict execution, free planning). If the interaction was non-significant or HH was best, this experiment's prediction (B > A) is weaker because the theoretical basis for it has failed.
+
+**Key question:** Do the results of Experiments 1 and 3 change whether this experiment's predictions are credible? If Experiment 1 found no supermodularity and Experiment 3 found no phase transition, the theoretical basis for the placement principle is undermined. This experiment would still be worth running (it tests an independent claim) but the prior probability of finding an effect is lower. Note this honestly in the results.
+
+## Pre-experiment review
+
+Before running trials:
+- From the task suite, select 30 tasks tagged `planning-matters: high` with two natural phases. If fewer than 30 qualify, you'll need to instantiate templates or create additional tasks.
+- Review Experiment 1 results. If the supermodularity interaction was significant and in the predicted direction, proceed with confidence. If it failed, note this and proceed anyway — the placement claim is related but not identical to the supermodularity claim.
+- Review whether any prior experiment contradicts the framework in ways that affect this design.
+
+## Longitudinal study reminder
+
+Follow the failure logging protocol throughout. Condition C failures (broad execution, narrow planning) are predicted to be the "Taylor anti-pattern" — powerful tools building the wrong thing. These are particularly valuable for the failure mode taxonomy. Log them in detail.
 
 ---
 
@@ -78,7 +102,9 @@ Exclude tasks tagged `planning-matters: low` — they won't differentiate the co
 
 Write the selected task list to `experiments/conditions/exp11-task-selection.md`
 
-### Task 2: Run the experiment (30 tasks × 3 conditions = 90 runs) (~4-6 hours)
+### Task 2: Run the experiment (30 tasks × 3 conditions = 90 runs)
+
+**Time estimate:** 90 runs, each with two phases (planning + execution). Planning phase: ~10-15 minutes. Execution phase: ~15-20 minutes. Total per run: ~25-35 minutes. Total: ~37-52 agent-hours. With parallel dispatch, 8-17 wall-clock hours across multiple sub-sessions.
 
 Each run has two phases:
 

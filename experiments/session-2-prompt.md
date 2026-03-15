@@ -7,9 +7,10 @@
 ## Prerequisites
 
 Before starting this session, the following must exist from Session 1:
-- `experiments/experiment-12-results.md` — Definition consistency analysis (read for context, don't modify)
-- `experiments/task-suite.md` — Task suite with 15-25 tasks (you'll extend this if needed)
-- `~/.claude/projects/.../memory/protocol_failure_logging.md` — Failure logging protocol (follow it during this session)
+- `experiments/experiment-12-results.md` — Definition consistency analysis
+- `experiments/task-suite.md` — Task suite (Session 1 produced 15 concrete tasks + 10 templates; you need to extend to 30)
+- `experiments/failure-log.md` — Failure log (continue logging throughout)
+- `~/.claude/projects/.../memory/protocol_failure_logging.md` — Failure logging protocol
 
 Also read:
 1. `drafts/note-for-agents.md` — Guidance from a prior instance
@@ -18,6 +19,23 @@ Also read:
 4. Memory files at `~/.claude/projects/-mnt-aux-data-teague-Projects-judgementalmonad-com/memory/`
 
 Read the blog series if you haven't already — at minimum posts 7 (Computation Channels) and 8 (The Specified Band). The experiment tests claims from these posts.
+
+## Context from prior sessions
+
+**Experiment 12 (definition consistency):** Confirmed that "capacity for informed judgment" is a valid v2 primary definition (89.7% consistency across 87 uses). Key finding for this session: the framework's formal claims (grade lattice, supermodularity, computation channels) are definition-independent — the proofs operate on the lattice, not on the interpretation. Your experiment tests the lattice's predictions, so the definition question doesn't affect your work. One thing to note when writing results: use "interface ma" to mean "capacity for informed judgment visible through the interface" — the qualifier matters.
+
+**Task suite:** Session 1 explored sitting_duck, duck_tails, duck_hunt, pajama_man, and plinking_duck. To reach 30 tasks, expand into repos NOT yet explored: Fledgling (source-sextant), blq, duckdb-mcp, webbed, lq, grit. Also instantiate 5-10 of the templates from Part 2 of the task suite against already-explored repos.
+
+## Pre-experiment review
+
+Before running any trials, review the experimental design against what you know:
+- Does anything from Experiment 12's results suggest the design should change? (It shouldn't — the design tests formal claims, not definitions. But check.)
+- Does the task suite have the right distribution for this experiment? (Need tasks where computation channel availability plausibly matters.)
+- If anything looks wrong, flag it to the Principal before running. Don't silently proceed with a design you think is flawed.
+
+## Longitudinal study reminder
+
+Every failure you observe during this session is data for Experiments 4, 9, and 10. Follow the failure logging protocol in `protocol_failure_logging.md`. Log failures even if they seem minor. Log repeated bash patterns as ratchet candidates.
 
 ---
 
@@ -113,7 +131,9 @@ Each configuration file should contain:
 - Instructions for how to enforce the configuration during a run (CLAUDE.md settings, permission configuration, or manual enforcement protocol)
 - What the specified observer should expect to see (baseline tool call patterns)
 
-### Task 3: Run the primary experiment (30 tasks × 3 conditions = 90 runs) (~4-6 hours)
+### Task 3: Run the primary experiment (30 tasks × 3 conditions = 90 runs)
+
+**Time estimate:** 90 runs at ~20-30 minutes each is ~30-45 agent-hours total. With parallel dispatch of 3-5 agents, this is 6-15 wall-clock hours across multiple sub-sessions. Plan accordingly — this task will likely span multiple sittings. Partial data is valuable; see the "If you run out of time" section.
 
 This is the bulk of the session. For each of the 30 tasks, under each of the 3 conditions:
 

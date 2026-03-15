@@ -7,11 +7,11 @@
 ## Prerequisites
 
 From prior sessions:
-- `experiments/experiment-12-results.md` — Definition consistency (read for context)
-- `experiments/task-suite.md` — Task suite (30+ tasks)
-- `experiments/tools/specified-observer.sql` — The specified observer (from Session 2)
+- `experiments/experiment-12-results.md` — Definition consistency results
+- `experiments/experiment-3-results.md` — Phase transition results (**read carefully — you'll mine this data for ratchet candidates**)
+- `experiments/task-suite.md` — Task suite (30+ tasks, finalized in Session 2)
+- `experiments/tools/specified-observer.sql` — The specified observer (from Session 2, frozen)
 - `experiments/tools/sandbox-diff-hook.sh` — Sandbox diffing (from Session 2)
-- `experiments/experiment-3-results.md` — Phase transition results (read for context)
 - `experiments/failure-log.md` — Ongoing failure log (continue logging)
 - `~/.claude/projects/.../memory/protocol_failure_logging.md` — Follow this protocol
 
@@ -22,6 +22,24 @@ Read:
 4. Memory files
 
 Read blog posts 7 (Computation Channels) and the configuration ratchet essay. This experiment tests the ratchet's mechanism.
+
+## Context from prior sessions
+
+**Experiment 12:** Confirmed all three definitions are compatible. The residual framing (Def C) is most informative for boundary analysis — which is what this experiment does (measuring the trust gap at the tool call boundary). Use "residual" language when discussing the trust gap in results.
+
+**Experiment 3:** Your primary data source for identifying ratchet candidates. Review the Condition C (Bash read-write) tool call sequences specifically. Which bash patterns appeared repeatedly? Which succeeded consistently? The phase transition results also tell you which tasks had different failure modes at level 4 vs level 0-2 — these are the tasks where the trust gap is most visible.
+
+**Task suite:** Should be 30+ tasks by now (Session 2 extended it). If it's still short, note the gap but proceed with what exists — this experiment needs task *types* (repeated patterns), not a large task count.
+
+## Pre-experiment review
+
+Before running trials:
+- Does Experiment 3 data contain enough repeated bash patterns (5+ occurrences, >80% success) to identify 20-30 promotion candidates? If not, this experiment may need additional data collection before it can run. Flag to Principal.
+- Is the specified observer still frozen from Session 2? Do NOT retrain it — the pre/post comparison requires the same observer.
+
+## Longitudinal study reminder
+
+Every failure you observe is data for Experiments 4, 9, and 10. Follow the failure logging protocol. This experiment is particularly rich for ratchet observations — you're literally identifying and promoting bash patterns.
 
 ---
 
@@ -59,7 +77,9 @@ This experiment is paired with the longitudinal study (Experiment 4). It require
 - Totality (always returns, or can hang?)
 - Promotion plan: what structured tool would replace it?
 
-### Task 2: Measure pre-promotion gap rate (~2-3 hours)
+### Task 2: Measure pre-promotion gap rate
+
+**Time estimate:** 20-30 task types × 3-5 runs × ~20 min each = 20-50 agent-hours. With parallel dispatch, 4-10 wall-clock hours. This will likely span multiple sub-sessions.
 
 For each of 20-30 task types that exercise the identified bash patterns:
 
@@ -77,7 +97,9 @@ Report gap rate at each complexity level. The observer must be the SAME frozen o
 
 **Write raw data to:** `experiments/experiment-6-raw/pre-promotion/`
 
-### Task 3: Crystallize and measure post-promotion gap rate (~2-3 hours)
+### Task 3: Crystallize and measure post-promotion gap rate
+
+**Time estimate:** Building each structured tool takes 30-60 minutes. With 5-10 patterns to crystallize plus 60-150 post-promotion runs, this is 15-30 agent-hours. This task is the most time-intensive and produces real infrastructure (the crystallized tools).
 
 For each bash pattern identified in Task 1:
 

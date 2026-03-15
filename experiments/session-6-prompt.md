@@ -7,10 +7,11 @@
 ## Prerequisites
 
 From prior sessions:
-- All prior experiment results (read for context)
+- All prior experiment results (read all — this is the final experiment)
 - `experiments/task-suite.md` — Task suite
 - `experiments/tools/specified-observer.sql` — Specified observer
 - `experiments/tools/sandbox-diff-hook.sh` — Sandbox diffing
+- `experiments/failure-log.md` — Ongoing failure log (continue logging)
 
 Read:
 1. `drafts/note-for-agents.md`
@@ -20,6 +21,31 @@ Read:
 5. Memory files
 
 **IMPORTANT:** This experiment requires multi-agent infrastructure that may not exist yet. Task 1 builds it. If the infrastructure proves too complex to build in this session, document what you built, what's missing, and fall back to the minimum viable design.
+
+## Context from prior sessions
+
+This is the final experiment in the program. You have results from all prior experiments. Before proceeding, synthesize what the program has found so far:
+
+**Experiment 3 (phase transition):** Did computation level affect failure modes? If yes, the computation channel boundary is real and Prop. 9.11's claim (delegation creates emergent computation channels) has a plausible mechanism. If no, the emergence claim is less likely to produce observable effects.
+
+**Experiment 6 (trust gap):** Did crystallization shrink the trust gap? If yes, interface structure matters for reducing behavioral variance — which supports the prediction that structured communication (Condition S) will outperform unstructured (Condition U). If no, structural constraints may not affect variance, weakening the prediction.
+
+**Experiment 1 (supermodularity):** Did the W×D interaction exist? The communication amplification claim (Prop. 8.17) is essentially supermodularity applied to multi-agent composition — the product of context windows is the cross-term. If supermodularity held for single agents, it should hold (possibly more strongly) for multi-agent composition. If it didn't, this experiment's predictions are weaker.
+
+**Experiment 11 (placement):** Did placement matter? If front-loaded planning beat uniform, the system is sensitive to how autonomy is distributed — which predicts that communication structure (how autonomy flows between agents) also matters.
+
+**Synthesis question:** Across all four prior experiments, has the framework's predictions been confirmed, partially confirmed, or refuted? Your interpretation of THIS experiment's results should be informed by the overall pattern. If every prior experiment confirmed the framework, a null result here is more surprising. If prior experiments showed mixed results, a null result here fits a pattern and may indicate the framework's multi-agent claims are weaker than its single-agent claims.
+
+## Pre-experiment review
+
+Before building infrastructure or running trials:
+- Review all prior experiment results. Does anything suggest this experiment's design should change?
+- The multi-agent infrastructure is the biggest build risk. Assess honestly: can you build it in 2-3 hours? If not, start with the minimum viable design (90 runs with manual orchestration) rather than spending the whole session on infrastructure.
+- If prior experiments substantially undermined the framework, consider whether 300+ runs is warranted or whether a smaller pilot (90 runs) would be more appropriate. Discuss with Principal if uncertain.
+
+## Longitudinal study reminder
+
+Final session. After this, review the full failure log across all sessions. Does the corpus support the three failure modes? Are there patterns the taxonomy doesn't capture? This is the last data collection point for Experiment 9 — make it count.
 
 ---
 
@@ -116,7 +142,9 @@ For schema enforcement (conditions S and F): validate the JSON structure of A's 
 - Budget limiting works
 - All tool calls are logged for both agents
 
-### Task 2: Run the minimum viable experiment (~3-4 hours)
+### Task 2: Run the minimum viable experiment
+
+**Time estimate:** 300 runs (minimum viable). Each involves two agents working for ~10-20 minutes. With sequential orchestration, this is ~50-100 agent-hours. With parallel dispatch of 3-5 pairs, 10-33 wall-clock hours. This will span multiple days. The infrastructure build (Task 1) may take a full session on its own — plan for this experiment to take 2-3 sessions total, not one.
 
 **Minimum viable design:** 10 tasks × 3 conditions × 2 budget levels (Small, Large) × 5 runs = **300 runs**
 
