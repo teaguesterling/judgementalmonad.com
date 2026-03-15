@@ -17,8 +17,8 @@ Read these before running anything:
 
 | Experiment | Status | Results |
 |-----------|--------|---------|
-| 4+9+10 (Longitudinal) | Not started | — |
-| 12 (Definition consistency) | Not started | — |
+| 4+9+10 (Longitudinal) | Logging protocol created | `failure-log.md` (empty), protocol in memory |
+| 12 (Definition consistency) | Complete | `experiment-12-results.md` |
 | 3 (Phase transition) | Not started | — |
 | 6 (Trust gap) | Not started | — |
 | 11 (Placement) | Not started | — |
