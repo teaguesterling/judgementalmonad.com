@@ -331,6 +331,9 @@ def bash_readonly(command: str) -> str:
     realpath, basename, dirname, pwd, sort, uniq, cut, tr, diff,
     git status, git diff, git log, git show, git branch.
 
+    The command runs in a sandbox with no network access and read-only
+    filesystem access to the workspace.
+
     Args:
         command: The bash command to execute
     """
@@ -340,11 +343,17 @@ def bash_readonly(command: str) -> str:
         _log_call("bash_readonly", {"command": command}, err, False, (time.monotonic() - t0) * 1000)
         return err
     try:
+        bwrap_cmd = _build_bwrap_cmd(command, readonly=True)
+        env = {
+            "PATH": "/usr/bin:/bin",
+            "HOME": "/workspace",
+            "TERM": os.environ.get("TERM", "xterm"),
+            "LANG": os.environ.get("LANG", "C.UTF-8"),
+        }
         proc = subprocess.run(
-            ["bash", "-c", command],
+            bwrap_cmd,
             capture_output=True, text=True, timeout=60,
-            cwd=_workspace,
-            env={**os.environ, "PATH": os.environ.get("PATH", "/usr/bin:/bin")},
+            env=env,
         )
         result = proc.stdout
         if proc.stderr:
@@ -366,31 +375,70 @@ def bash_readonly(command: str) -> str:
 
 # --- Bash sandboxed read-write (Condition C) ---
 
+def _build_bwrap_cmd(command: str, *, readonly: bool = False) -> list[str]:
+    """Build a bubblewrap command that sandboxes bash execution.
+
+    Provides:
+    - Filesystem: workspace bound (read-only or read-write depending on mode),
+      /usr /bin /lib* /etc are read-only, /tmp is a fresh tmpfs,
+      everything else is inaccessible
+    - Network: blocked (--unshare-net)
+    - PID namespace: isolated (--unshare-pid)
+    - No new privileges (--new-session)
+    """
+    ws = str(_workspace.resolve())
+    bind_flag = "--ro-bind" if readonly else "--bind"
+    return [
+        "bwrap",
+        # Filesystem: read-only base system
+        "--ro-bind", "/usr", "/usr",
+        "--ro-bind", "/bin", "/bin",
+        "--ro-bind", "/lib", "/lib",
+        "--ro-bind", "/lib64", "/lib64",
+        "--ro-bind", "/etc", "/etc",
+        # Workspace: read-only or read-write depending on condition
+        bind_flag, ws, ws,
+        bind_flag, ws, "/workspace",
+        # Writable /tmp (even readonly needs scratch space)
+        "--tmpfs", "/tmp",
+        # Proc (needed by many tools)
+        "--proc", "/proc",
+        # Dev (minimal)
+        "--dev", "/dev",
+        # Isolation
+        "--unshare-net",
+        "--unshare-pid",
+        "--new-session",
+        # Working directory
+        "--chdir", ws,
+        # Run bash
+        "bash", "-c", command,
+    ]
+
+
 @server.tool(tags={"condition:C"})
 def bash_sandboxed(command: str) -> str:
     """Execute a bash command in a sandboxed environment.
 
-    The command runs within the workspace directory with a 120-second timeout.
-    The command CAN modify files within the workspace.
+    The command runs within the workspace directory. It CAN modify files
+    in the workspace but CANNOT access files outside it, use the network,
+    or see other processes.
 
     Args:
         command: The bash command to execute
     """
-    # NOTE: This is a soft sandbox — cwd is set to workspace but the command
-    # can still access files outside it or make network calls. For the
-    # experiment (testing computation channel dynamics, not security), this
-    # is acceptable. For production use, wrap with bubblewrap/firejail.
     t0 = time.monotonic()
     try:
+        bwrap_cmd = _build_bwrap_cmd(command)
         env = {
-            **os.environ,
-            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-            "HOME": str(_workspace),
+            "PATH": "/usr/bin:/bin",
+            "HOME": "/workspace",
+            "TERM": os.environ.get("TERM", "xterm"),
+            "LANG": os.environ.get("LANG", "C.UTF-8"),
         }
         proc = subprocess.run(
-            ["bash", "-c", command],
+            bwrap_cmd,
             capture_output=True, text=True, timeout=120,
-            cwd=_workspace,
             env=env,
         )
         result = proc.stdout
