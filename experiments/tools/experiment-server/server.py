@@ -321,6 +321,110 @@ def file_write(path: str, content: str) -> str:
         return err
 
 
+# --- Enhanced data channel tools (all conditions) ---
+
+@server.tool()
+def file_read_batch(paths: list[str], limit_per_file: int = 200) -> str:
+    """Read multiple files in a single call. Returns each file's contents
+    with a header showing the path.
+
+    Args:
+        paths: List of file paths (relative to workspace)
+        limit_per_file: Max lines per file (default 200, 0 = all)
+    """
+    t0 = time.monotonic()
+    results = []
+    errors = []
+    for path in paths[:20]:  # cap at 20 files per call
+        try:
+            resolved = _resolve_path(path)
+            lines = resolved.read_text().splitlines(keepends=True)
+            if limit_per_file > 0:
+                lines = lines[:limit_per_file]
+            numbered = "".join(
+                f"{i + 1:>6}\t{line}" for i, line in enumerate(lines)
+            )
+            truncated = f" (first {limit_per_file} lines)" if limit_per_file > 0 and len(lines) >= limit_per_file else ""
+            results.append(f"── {path}{truncated} ──\n{numbered}")
+        except Exception as e:
+            errors.append(f"── {path} ── Error: {e}")
+
+    result = "\n\n".join(results + errors)
+    _log_call("file_read_batch", {"paths": paths, "limit_per_file": limit_per_file, "count": len(paths)},
+              result, len(errors) == 0, (time.monotonic() - t0) * 1000)
+    return result or "(no files read)"
+
+
+@server.tool()
+def file_search_context(pattern: str, path: str = ".", context: int = 3,
+                        glob_filter: str = "") -> str:
+    """Search file contents with context lines around each match.
+    Like grep -C but returns structured output.
+
+    Args:
+        pattern: Regex pattern to search for
+        path: Directory or file to search in (relative to workspace)
+        context: Number of context lines before and after each match (default 3)
+        glob_filter: Optional glob to filter files (e.g. "*.py")
+    """
+    t0 = time.monotonic()
+    try:
+        resolved = _resolve_path(path)
+        cmd = ["grep", "-rn", f"-C{context}", "--color=never", "--group-separator=──"]
+        if glob_filter:
+            cmd.extend(["--include", glob_filter])
+        cmd.extend([pattern, str(resolved)])
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30, cwd=_workspace)
+        result = proc.stdout or "(no matches)"
+        _log_call("file_search_context", {"pattern": pattern, "path": path, "context": context, "glob": glob_filter},
+                  result, True, (time.monotonic() - t0) * 1000)
+        return result
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("file_search_context", {"pattern": pattern, "path": path}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
+@server.tool()
+def file_count(path: str = ".", glob_filter: str = "") -> str:
+    """Count files and lines matching a pattern. Returns file counts,
+    line counts, and a breakdown by file.
+
+    Args:
+        path: Directory to analyze (relative to workspace)
+        glob_filter: Optional glob to filter files (e.g. "*.py", "*.cpp")
+    """
+    t0 = time.monotonic()
+    try:
+        resolved = _resolve_path(path)
+        if glob_filter:
+            matches = sorted(resolved.glob(glob_filter))
+        else:
+            matches = sorted(resolved.rglob("*"))
+        matches = [m for m in matches if m.is_file()]
+
+        ws = _workspace.resolve()
+        lines = []
+        total_lines = 0
+        for m in matches[:100]:  # cap at 100 files
+            try:
+                count = len(m.read_text().splitlines())
+                total_lines += count
+                rel = str(m.relative_to(ws))
+                lines.append(f"  {count:>6} {rel}")
+            except Exception:
+                rel = str(m.relative_to(ws))
+                lines.append(f"  (err) {rel}")
+
+        result = f"Files: {len(matches)}\nTotal lines: {total_lines}\n\n" + "\n".join(lines)
+        _log_call("file_count", {"path": path, "glob": glob_filter}, result, True, (time.monotonic() - t0) * 1000)
+        return result
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("file_count", {"path": path}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
 # --- Bash read-only (Condition B) ---
 
 @server.tool(tags={"condition:B"})
