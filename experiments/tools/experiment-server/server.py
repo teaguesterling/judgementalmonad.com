@@ -425,6 +425,99 @@ def file_count(path: str = ".", glob_filter: str = "") -> str:
         return err
 
 
+# --- Test runner (all conditions) ─────────────────────────────────
+
+@server.tool()
+def run_tests(test_file: str = "", verbose: bool = False) -> str:
+    """Run pytest on the workspace's test suite. Tests are read-only —
+    if any test file has been modified, this tool refuses to run.
+
+    This is a data channel tool (level 1): it runs a fixed program
+    (pytest) on fixed inputs (the original test files) and returns
+    structured output. Available in ALL conditions.
+
+    Args:
+        test_file: Specific test file to run (relative to workspace).
+                   Empty string runs all tests.
+        verbose: If true, show full output including passing tests.
+    """
+    t0 = time.monotonic()
+
+    # Check that test files haven't been modified since the worktree was created.
+    # We compare against the FIRST commit in the worktree (the original state).
+    tests_dir = _workspace / "tests"
+    if tests_dir.exists():
+        try:
+            # Find the initial commit (the one the worktree was created from)
+            initial = subprocess.run(
+                ["git", "rev-list", "--max-parents=0", "HEAD"],
+                capture_output=True, text=True, timeout=10,
+                cwd=_workspace,
+            )
+            # If this is a worktree branched from a repo, the first commit
+            # is the repo root. Use the merge-base with the branch point instead.
+            # Simpler: just diff the tests/ directory between the first commit
+            # on this branch and the current working tree.
+            first_commit = initial.stdout.strip().splitlines()[0] if initial.stdout.strip() else "HEAD"
+
+            check = subprocess.run(
+                ["git", "diff", first_commit, "--", "tests/"],
+                capture_output=True, text=True, timeout=10,
+                cwd=_workspace,
+            )
+            if check.stdout.strip():
+                err = "Error: Test files have been modified. This tool only runs unmodified tests.\nYou must fix the source code, not the tests."
+                _log_call("run_tests", {"test_file": test_file}, err, False, (time.monotonic() - t0) * 1000)
+                return err
+        except Exception:
+            pass  # If git check fails, allow the run anyway
+
+    try:
+        cmd = ["python3", "-m", "pytest"]
+        if test_file:
+            resolved = _resolve_path(test_file)
+            cmd.append(str(resolved))
+        else:
+            cmd.append(str(tests_dir))
+
+        if verbose:
+            cmd.append("-v")
+        else:
+            cmd.append("--tb=short")
+
+        cmd.append("--no-header")
+        cmd.append("-q")
+
+        proc = subprocess.run(
+            cmd,
+            capture_output=True, text=True, timeout=60,
+            cwd=_workspace,
+            env={**os.environ, "PYTHONPATH": str(_workspace)},
+        )
+
+        result = proc.stdout
+        if proc.stderr:
+            # Filter out warnings, keep only errors
+            stderr_lines = [l for l in proc.stderr.splitlines()
+                          if not l.startswith("Warning") and l.strip()]
+            if stderr_lines:
+                result += "\n(stderr: " + "\n".join(stderr_lines) + ")"
+
+        success = proc.returncode == 0
+        _log_call("run_tests", {"test_file": test_file, "verbose": verbose},
+                  result, success, (time.monotonic() - t0) * 1000)
+        return result or "(no output)"
+
+    except subprocess.TimeoutExpired:
+        err = "Error: tests timed out after 60 seconds"
+        _log_call("run_tests", {"test_file": test_file}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("run_tests", {"test_file": test_file}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
 # --- Bash read-only (Condition B) ---
 
 @server.tool(tags={"condition:B"})

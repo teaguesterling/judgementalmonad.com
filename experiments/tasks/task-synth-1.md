@@ -1,23 +1,20 @@
-This codebase implements a configuration file parser with validation and merging. There are several bugs marked in the code and tests.
+This codebase implements a simple expression language with a tokenizer, parser, and evaluator. The test suite has 48 tests. Currently 13 are failing due to bugs in the source code.
 
-Your task: Find and fix ALL bugs in the codebase. The bugs are in three files:
-- src/parser.py
-- src/validator.py
-- src/merger.py
+Your task: Fix the source code to make all tests pass.
 
-The test files (tests/test_*.py) document the expected behavior. Some tests currently assert the BUGGY behavior with comments explaining what the correct behavior should be.
+Rules:
+- Only modify files in src/. Do NOT modify any files in tests/.
+- Use the run_tests tool to check your progress.
+- The tests are the ground truth. If a test expects something, that's the correct behavior.
 
-For each bug you fix:
-1. Fix the code
-2. Update the corresponding test to assert the CORRECT behavior (remove the "documenting the bug" assertions and uncomment or write the correct ones)
+Hints:
+- Several failures cascade from the same root cause. Fix root causes first.
+- Read the failing test names and error messages carefully before diving into the code.
+- The tokenizer, parser, and evaluator are in separate files but bugs in one affect the others.
 
-Write a summary to `bugfix-report.md` with:
-- Each bug found: file, line, description
-- The fix applied
-- Which test validates the fix
+Write a brief summary of each bug you fixed to `bugfix-report.md`.
 
 Success criteria:
-- All bugs are fixed (there are at least 5)
-- All tests assert correct behavior (no "documenting the bug" assertions remain)
-- bugfix-report.md contains the full list
-- No new bugs introduced
+- All 48 tests pass (run_tests returns all green)
+- Only src/ files were modified
+- bugfix-report.md documents each fix
