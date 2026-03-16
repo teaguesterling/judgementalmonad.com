@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "experiment": {
+      "command": "python3",
+      "args": [
+        "../../tools/experiment-server/server.py",
+        "--condition", "B",
+        "--task-id", "${TASK_ID:-00}",
+        "--log-dir", "../../logs",
+        "--workspace", "${WORKSPACE:-.}"
+      ]
+    }
+  }
+}
