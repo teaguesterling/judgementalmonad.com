@@ -170,6 +170,212 @@ From the statistical designs:
 
 ---
 
+## Part 1b: Additional concrete tasks (Tasks 16-35)
+
+*Tasks from repos explored in the second pass (BLQ, Jetsam, Fledgling) plus template instantiations against all repos.*
+
+### Task 16: Implement Hard Sync (Incremental Copy)
+
+- **Repo:** blq (lq)
+- **Description:** The `_hard_sync()` function in `sync_cmd.py` is a stub that prints an error and exits. Implement incremental file copy — track file hashes, copy only new/changed log files to the destination.
+- **Planning phase:** Understand the sync architecture (soft symlink vs hard copy). Study the existing `_soft_sync()` implementation. Design incremental tracking.
+- **Success criterion:** `blq sync --hard` copies logs to destination incrementally. Respects `--force` flag. Existing soft sync still works.
+- **Quality criterion:** Incremental tracking is efficient (hash-based, not full-file comparison). Edge cases handled (missing dest, partial copy recovery).
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [wrong sync model, incomplete incremental tracking, force flag not respected]
+
+### Task 17: Upgrade to UUIDv7
+
+- **Repo:** blq (lq)
+- **Description:** Replace `uuid.uuid4()` with UUIDv7 in `bird.py:generate_id()`. UUIDv7 is time-ordered, which improves database performance for time-series data.
+- **Planning phase:** Check Python 3.10 UUIDv7 support. Evaluate uuid7 backport package. Check if any code depends on UUID format.
+- **Success criterion:** New invocations produce UUIDv7 IDs. IDs are time-ordered. Backward compatible with existing v4 IDs in database.
+- **Quality criterion:** Library choice is justified. Migration path documented if existing IDs need updating.
+- **Difficulty:** Easy
+- **Tags:** needs-bash:no, planning-matters:low, expected-failure-modes: [library not available, format incompatibility]
+
+### Task 18: Add Structured Logging to Jetsam
+
+- **Repo:** jetsam
+- **Description:** Add Python logging module to 8 core modules (git/wrapper.py, core/state.py, core/executor.py, core/planner.py, core/plans.py, platforms/*.py, config/manager.py). Add `--verbose` CLI flag. Configure MCP server logging.
+- **Planning phase:** Audit current echo/print usage across modules. Design log level strategy. Plan CLI integration.
+- **Success criterion:** All 8 modules use logging. `jetsam -v status` shows debug output. MCP server uses WARNING by default. JETSAM_LOG_LEVEL env var works.
+- **Quality criterion:** Log format includes module name and level. No stdout pollution in MCP mode. Acceptance criteria from P8-003 task doc all met.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:medium, expected-failure-modes: [stdout pollution in MCP, inconsistent log levels, missing modules]
+
+### Task 19: Add Return Type Annotations to sitting_duck SQL Macros
+
+- **Repo:** sitting_duck
+- **Description:** Many SQL macros in the macro registry lack explicit return type annotations. Add them based on the actual return types (inferred from implementation).
+- **Planning phase:** Audit all macro definitions. Categorize return types (TABLE, VARCHAR, INTEGER, BOOLEAN, etc.). Identify any macros where return type is ambiguous.
+- **Success criterion:** All macros have explicit return type annotations. No type mismatches.
+- **Quality criterion:** Annotations are precise (not just VARCHAR everywhere). Ambiguous cases documented.
+- **Difficulty:** Easy
+- **Tags:** needs-bash:no, planning-matters:low, expected-failure-modes: [type mismatches, ambiguous returns]
+
+### Task 20: Refactor duck_tails Git URL Parser Error Handling
+
+- **Repo:** duck_tails
+- **Description:** The git URL parser returns None on parse failure with no error context. Refactor to return structured error objects with failure reason, position, and suggestion.
+- **Planning phase:** Identify all parse failure paths. Categorize error types (malformed URL, invalid ref, ambiguous path). Design error structure.
+- **Success criterion:** All parse failures return structured errors. Error messages are actionable. Existing success paths unchanged.
+- **Quality criterion:** Error messages help the user fix the URL. Position information points to the problem. No silent failures remain.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:medium, expected-failure-modes: [missed failure paths, wrong position info, breaking existing callers]
+
+### Task 21: Add Missing Docstrings to duck_hunt Format Parsers
+
+- **Repo:** duck_hunt
+- **Description:** Many of the 106 format parsers lack docstrings. Add docstrings that describe: what log format the parser handles, what fields it extracts, and any known limitations.
+- **Planning phase:** Sample 10-15 parsers to understand the pattern. Design a docstring template. Identify parsers that need non-obvious documentation.
+- **Success criterion:** All 106 parsers have docstrings. Template is consistent. Known limitations documented.
+- **Quality criterion:** Docstrings are actually useful (not just "parses X logs"). Limitations are honest.
+- **Difficulty:** Easy
+- **Tags:** needs-bash:no, planning-matters:low, expected-failure-modes: [inconsistent template, missed parsers, generic unhelpful docstrings]
+
+### Task 22: Implement Config Validation for Jetsam
+
+- **Repo:** jetsam
+- **Description:** Jetsam loads configuration from files but doesn't validate the schema. Add validation that catches: missing required fields, invalid types, unknown keys, conflicting settings.
+- **Planning phase:** Read existing config loading code. Enumerate all valid config fields and their types. Design validation approach (pydantic, manual, jsonschema).
+- **Success criterion:** Invalid configs produce clear error messages. All valid configs still load. Unknown keys warned about.
+- **Quality criterion:** Error messages point to the specific problem. Validation runs at load time, not at use time.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [over-strict validation breaking existing configs, incomplete field enumeration, wrong type constraints]
+
+### Task 23: Extract Common Patterns from sitting_duck Language Adapters
+
+- **Repo:** sitting_duck
+- **Description:** Multiple language adapters (Python, JavaScript, Rust, C, Go) share similar logic for mapping AST node types to semantic categories. Extract the shared logic into a base adapter.
+- **Planning phase:** Compare 3-4 language adapters to identify shared patterns. Design the base adapter interface. Plan migration order.
+- **Success criterion:** Base adapter exists. At least 2 language adapters refactored to use it. All existing tests pass.
+- **Quality criterion:** The base adapter captures the right abstraction level — not too generic (useless) or too specific (doesn't generalize).
+- **Difficulty:** Hard
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [wrong abstraction level, breaking language-specific behavior, incomplete migration]
+
+### Task 24: Add Input Validation to BLQ MCP Server Tools
+
+- **Repo:** blq (lq)
+- **Description:** The MCP server tools accept user input but don't validate it thoroughly. Add input validation for path arguments (prevent traversal), query arguments (prevent injection), and numeric arguments (range checks).
+- **Planning phase:** Audit all MCP tool input parameters. Categorize by risk (path, query, numeric, string). Design validation strategy.
+- **Success criterion:** All path arguments are sanitized. Query arguments are parameterized. Numeric arguments have range checks. Invalid input produces helpful errors.
+- **Quality criterion:** Validation is defense-in-depth (not just first line). Error messages are actionable without leaking internal paths.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:medium, expected-failure-modes: [over-strict validation breaking valid inputs, missed input parameters, leaking paths in errors]
+
+### Task 25: Implement Diff Statistics Summary for duck_tails
+
+- **Repo:** duck_tails
+- **Description:** Add a `diff_stats()` SQL macro that summarizes a TextDiff: files changed, lines added/removed, largest hunks, binary files detected. Returns a structured summary table.
+- **Planning phase:** Understand the TextDiff data structure. Design the summary schema. Handle edge cases (binary files, empty diffs, renames).
+- **Success criterion:** `diff_stats(diff)` returns correct counts for added/removed lines, file count, binary detection. Works on real git diffs.
+- **Quality criterion:** Summary is useful for human review. Edge cases handled. Performance acceptable on large diffs.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:medium, expected-failure-modes: [wrong line counts, binary detection failure, rename handling]
+
+### Task 26: Fix Inconsistent Error Handling in Fledgling Tools
+
+- **Repo:** source-sextant (Fledgling)
+- **Description:** Some Fledgling MCP tools return error strings, others raise exceptions, others return None. Standardize to a consistent error handling pattern across all 11 tools.
+- **Planning phase:** Audit all 11 tools for error handling patterns. Design a standard pattern (structured error return vs exception). Plan migration.
+- **Success criterion:** All tools use the same error handling pattern. Error messages include context. No silent failures.
+- **Quality criterion:** Pattern is appropriate for MCP (structured errors that clients can parse). Migration is complete.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [breaking callers, inconsistent migration, losing error context]
+
+### Task 27: Add Progress Reporting to BLQ Sync Command
+
+- **Repo:** blq (lq)
+- **Description:** The sync command operates silently on large log directories. Add progress reporting: file count, bytes transferred, estimated time remaining.
+- **Planning phase:** Understand the sync flow. Identify where to hook progress callbacks. Design the progress display (CLI spinner, percentage, or bar).
+- **Success criterion:** Progress is displayed during sync. Total files and bytes shown at completion. Quiet mode (`-q`) suppresses output.
+- **Quality criterion:** Progress doesn't slow down the operation. Display is clean and updates in-place.
+- **Difficulty:** Easy
+- **Tags:** needs-bash:no, planning-matters:low, expected-failure-modes: [progress slowing operation, display artifacts, quiet mode not working]
+
+### Task 28: Write Test Suite for Jetsam Plan Executor
+
+- **Repo:** jetsam
+- **Description:** The plan executor (`core/executor.py`) has limited test coverage. Write comprehensive tests covering: successful plan execution, step failure and rollback, partial completion, concurrent plan prevention.
+- **Planning phase:** Read the executor code. Identify the contract (what it promises). Enumerate edge cases and failure modes. Design test fixtures.
+- **Success criterion:** Tests cover happy path, single-step failure, multi-step rollback, concurrent execution prevention. Coverage >80%.
+- **Quality criterion:** Tests test the contract, not the implementation. Fixtures are realistic. Edge cases documented.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:yes, planning-matters:high, expected-failure-modes: [testing implementation not contract, missing edge cases, brittle fixtures]
+
+### Task 29: Add Dead Code Detection Query to sitting_duck
+
+- **Repo:** sitting_duck
+- **Description:** Write a SQL macro `ast_find_dead_code(parsed_ast)` that identifies functions/methods defined but never called within the same file. Use the existing AST definition and call-site data.
+- **Planning phase:** Understand the AST schema for definitions and calls. Design the join query. Handle edge cases (exports, dynamic calls, decorators).
+- **Success criterion:** Query correctly identifies unused functions in Python and JavaScript. False positive rate documented.
+- **Quality criterion:** Handles common false positive cases (exported functions, test helpers, __main__ guards). Performance acceptable on large files.
+- **Difficulty:** Hard
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [false positives on exports, missing dynamic calls, cross-language inconsistency]
+
+### Task 30: Implement Batch Import for duck_hunt Log Parsers
+
+- **Repo:** duck_hunt
+- **Description:** Currently each log file is parsed individually. Add a batch import function that processes a directory of log files with progress reporting and error recovery (skip failures, continue processing).
+- **Planning phase:** Understand the parser dispatch mechanism. Design the batch interface (directory scan, format detection, parallel processing). Plan error recovery.
+- **Success criterion:** `parse_duck_hunt_logs(directory)` processes all log files, reports progress, skips failures with warnings, returns summary.
+- **Quality criterion:** Error recovery is graceful. Summary includes success/failure counts. Performance is reasonable on 100+ files.
+- **Difficulty:** Moderate
+- **Tags:** needs-bash:no, planning-matters:medium, expected-failure-modes: [parser dispatch errors, silent failures, memory issues on large batches]
+
+### Task 31: Add Schema Migration Support to BLQ Database
+
+- **Repo:** blq (lq)
+- **Description:** BLQ stores run history in DuckDB but has no schema migration mechanism. When the schema changes, existing databases break. Add a migration system that detects schema version and applies incremental updates.
+- **Planning phase:** Understand current schema. Design version tracking (metadata table). Plan migration execution (idempotent, ordered, transactional).
+- **Success criterion:** Schema version is tracked. New schema changes are applied on startup. Old databases are migrated without data loss.
+- **Quality criterion:** Migrations are idempotent. Rollback is possible. Version checking is fast.
+- **Difficulty:** Hard
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [data loss during migration, non-idempotent migrations, version detection failure]
+
+### Task 32: Add Color Theme Support to Jetsam CLI Output
+
+- **Repo:** jetsam
+- **Description:** Jetsam CLI uses hardcoded ANSI colors. Add theme support: detect terminal capabilities, support NO_COLOR env var, allow user theme configuration.
+- **Planning phase:** Audit current color usage. Research terminal capability detection. Design theme system.
+- **Success criterion:** NO_COLOR disables all colors. Terminal capability detection works. User can configure colors via config file.
+- **Quality criterion:** Fallbacks are graceful. No broken output in non-color terminals.
+- **Difficulty:** Easy
+- **Tags:** needs-bash:no, planning-matters:low, expected-failure-modes: [broken output in some terminals, NO_COLOR not fully respected]
+
+### Task 33: Optimize sitting_duck AST Parsing Memory Usage
+
+- **Repo:** sitting_duck
+- **Description:** Parsing large files (>10K nodes) uses significant memory because the entire AST is loaded into a DuckDB table. Profile memory usage and implement streaming or chunked processing for large files.
+- **Planning phase:** Profile current memory usage on large files. Identify the bottleneck (tree-sitter allocation, DuckDB insertion, intermediate structures). Design optimization strategy.
+- **Success criterion:** Memory usage reduced by >50% for files with >10K nodes. No correctness regression. Performance not degraded for small files.
+- **Quality criterion:** Optimization addresses the actual bottleneck. Measurement methodology is sound.
+- **Difficulty:** Hard
+- **Tags:** needs-bash:yes, planning-matters:high, expected-failure-modes: [wrong bottleneck, optimization changes behavior, measurement error]
+
+### Task 34: Add Retry Logic to Fledgling Git Operations
+
+- **Repo:** source-sextant (Fledgling)
+- **Description:** Fledgling's git operations (GitDiffSummary, etc.) can fail on locked repos or slow filesystems. Add retry logic with exponential backoff for transient git failures.
+- **Planning phase:** Identify which git operations are failure-prone. Categorize failures as transient vs permanent. Design retry strategy.
+- **Success criterion:** Transient failures are retried (up to 3 times with backoff). Permanent failures propagate immediately. Retries are logged.
+- **Quality criterion:** Retry logic doesn't mask real errors. Backoff is appropriate (not too aggressive, not too slow).
+- **Difficulty:** Easy
+- **Tags:** needs-bash:no, planning-matters:medium, expected-failure-modes: [retrying permanent errors, too-aggressive backoff, masking real failures]
+
+### Task 35: Implement Cross-File Reference Tracking in sitting_duck
+
+- **Repo:** sitting_duck
+- **Description:** sitting_duck can find definitions and calls within a single file. Extend to track cross-file references: imports map to definition files, calls map to imported definitions. Limited to Python initially.
+- **Planning phase:** Understand Python import resolution. Design the cross-file index structure. Plan how to combine single-file ASTs into a cross-file view.
+- **Success criterion:** Given a Python import, resolve to the file and definition. Given a function call, identify if the callee is imported and from where. Works for standard import patterns.
+- **Quality criterion:** Handles relative imports, __init__.py, aliased imports. False positive rate documented.
+- **Difficulty:** Hard
+- **Tags:** needs-bash:no, planning-matters:high, expected-failure-modes: [relative import resolution, dynamic imports, circular dependencies, __init__ confusion]
+
+---
+
 ## Part 2: Task templates (10 templates)
 
 These can be instantiated against any repo to generate additional tasks.
@@ -272,48 +478,50 @@ These can be instantiated against any repo to generate additional tasks.
 
 | Source | Count | Status |
 |--------|-------|--------|
-| Concrete tasks from user repos | 15 | Ready |
-| Instantiable templates | 10 | Need instantiation |
+| Concrete tasks (Part 1) | 15 | Ready |
+| Concrete tasks (Part 1b) | 20 | Ready |
+| Instantiable templates | 10 | Available for expansion |
+| **Total concrete** | **35** | **Meets 30-task minimum** |
 
-### What's needed to reach 30-50
+### Difficulty distribution (all 35 tasks)
 
-- **Instantiate 5-10 templates** against the user's repos: Each template can produce 2-3 concrete tasks by applying it to different repos/modules. Estimated yield: 10-30 additional tasks.
-- **SWE-bench Lite tasks:** 5-10 tasks from the public SWE-bench Lite dataset would add standardized, well-characterized tasks with known difficulty levels.
-- **Synthetic tasks:** 5 tasks designed for specific properties:
-  - A task where planning *doesn't* matter (pure execution, obvious approach) — control for Exp 11
-  - A task where planning *especially* matters (three plausible approaches, only one works)
-  - A task that requires no bash at all (pure read/edit) — control for Exp 3
-  - A task that *requires* bash (must run tests to verify) — ensures Exp 3 condition differences are meaningful
-  - A task with a planted anti-pattern (natural first approach fails) — for Exp 8
-
-### Difficulty distribution (current 15)
-
-| Difficulty | Count | Target |
-|-----------|-------|--------|
-| Easy | 2 | 5-8 |
-| Moderate | 9 | 15-25 |
-| Hard | 4 | 10-15 |
-
-Need more easy tasks. Templates E, F, and I naturally produce easy-moderate tasks when instantiated against smaller modules.
+| Difficulty | Count | Target | Status |
+|-----------|-------|--------|--------|
+| Easy | 7 (17, 19, 21, 27, 32, 34, 6) | 5-8 | ✓ Met |
+| Moderate | 19 (1, 2, 4, 7, 8, 9, 11, 12, 15, 16, 18, 20, 22, 24, 25, 26, 28, 30, task-10) | 15-25 | ✓ Met |
+| Hard | 9 (3, 10, 13, 14, 23, 29, 31, 33, 35) | 5-10 | ✓ Met |
 
 ### Bash dependency distribution
 
-| needs-bash | Count |
-|-----------|-------|
-| Yes | 8 |
-| No | 7 |
+| needs-bash | Count | Requirement |
+|-----------|-------|-------------|
+| No | **25** | ≥20 for Exp 3 Stratum 1 ✓ |
+| Yes | **10** | Enough for Exp 3 Stratum 2 ✓ |
 
-Good balance. Experiment 3 needs tasks in both categories.
+**Critical threshold met:** 25 `needs-bash: no` tasks exceeds the 20 minimum required for Stratum 1 of Experiment 3 to have adequate statistical power.
 
 ### Planning-matters distribution
 
 | Level | Count |
 |-------|-------|
-| Low | 1 |
-| Medium | 5 |
-| High | 9 |
+| Low | 5 (17, 19, 21, 27, 32) |
+| Medium | 12 (4, 9, 11, 15, 18, 20, 24, 25, 30, 34, 5, 6) |
+| High | 18 (1, 2, 3, 7, 8, 10, 12, 13, 14, 16, 22, 23, 26, 28, 29, 31, 33, 35) |
 
-Skewed toward high planning-matters. This is correct for Experiment 11 (which tests whether planning tool quality affects outcomes), but need a few more low-planning tasks for controls.
+Good distribution. 5 low-planning tasks serve as controls for Experiment 11.
+
+### Repo coverage
+
+| Repo | Tasks | Language |
+|------|-------|----------|
+| sitting_duck | 8 (1, 2, 3, 4, 14, 15, 19, 23, 29, 33, 35) | Python/SQL |
+| pajama_man | 4 (5, 6, 7, 8) | C# (Unity) |
+| duck_tails | 3 (9, 10, 20, 25) | Python |
+| duck_hunt | 3 (11, 12, 21, 30) | Python |
+| plinking_duck | 1 (13) | C++ |
+| blq (lq) | 4 (16, 17, 24, 27, 31) | Python |
+| jetsam | 3 (18, 22, 28, 32) | Python |
+| source-sextant (Fledgling) | 2 (26, 34) | Python |
 
 ---
 
@@ -321,25 +529,26 @@ Skewed toward high planning-matters. This is correct for Experiment 11 (which te
 
 ### For Experiment 3 (Phase Transition)
 
-- Needs: 30 tasks that can be run under three tool configurations (levels 0-2, 2-3, 4)
-- Key property: tasks where computation channel availability changes outcomes
-- Current coverage: 15 concrete tasks + templates B, C, D, F, H, J are suitable
-- Gap: need 15 more instantiated tasks
+- Needs: 30 tasks, at least 20 `needs-bash: no` for Stratum 1
+- **Status: MET.** 35 tasks total, 25 `needs-bash: no`
+- Stratum 1 (no bash): 25 tasks — adequate power for co-primary tests
+- Stratum 2 (needs bash): 10 tasks — adequate for B vs C comparison
+
+### For Experiment 1 (Supermodularity)
+
+- Needs: 30 tasks with per-task file lists for Low W conditions
+- **Status: Tasks ready, file lists needed.** Each task needs a 3-5 file list specifying the relevant files. These should be created during Session 4 prep from the task descriptions and repo structure.
 
 ### For Experiment 6 (Trust Gap)
 
 - Needs: 20-30 task types with bash patterns that are ratchet promotion candidates
-- Key property: repeated bash patterns that could become structured tools
-- Current coverage: Tasks 2, 4, 9, 10, 11, 12 involve bash patterns
-- Gap: need to identify specific bash patterns during pilot runs
+- **Status: Partially ready.** Tasks 2, 4, 9, 10, 11, 12, 28, 33 involve bash patterns. Additional candidates will be identified from Experiment 3 run data.
 
 ### For Experiment 11 (Autonomy Placement)
 
-- Needs: 30-50 tasks with two natural phases, planning quality matters
-- Key property: approach quality measurable separately from implementation quality
-- Current coverage: 14/15 tasks have high or medium planning-matters
-- Gap: need 15-35 more tasks; templates can produce these
+- Needs: 30 tasks with two natural phases, `planning-matters: high`
+- **Status: MET.** 18 tasks tagged `planning-matters: high`, plus 12 `medium` that are usable. Select 30 from the combined pool.
 
 ---
 
-*This task suite is a design document. No tasks should be run until the experimental infrastructure (tool configurations, specified observer, sandbox diffing) is in place.*
+*The experimental infrastructure (MCP server, run script, condition configs) is in place. Tasks can be run using `experiments/tools/run-experiment.sh`.*
