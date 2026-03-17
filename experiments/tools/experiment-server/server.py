@@ -461,7 +461,8 @@ def run_tests(test_file: str = "", verbose: bool = False) -> str:
             first_commit = initial.stdout.strip().splitlines()[0] if initial.stdout.strip() else "HEAD"
 
             check = subprocess.run(
-                ["git", "diff", first_commit, "--", "tests/"],
+                ["git", "diff", first_commit, "--", "tests/",
+                 ":(exclude)tests/__pycache__", ":(exclude)**/__pycache__"],
                 capture_output=True, text=True, timeout=10,
                 cwd=_workspace,
             )
