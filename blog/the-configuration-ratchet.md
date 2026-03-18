@@ -90,6 +90,8 @@ The transformation: `(high-ma explorer) → (specified artifact) → (low-ma app
 
 The ratchet only turns one way. Each promotion moves a behavior from high *ma* to low *ma*, and there's no mechanism that moves it back. The macro, once written, doesn't spontaneously become a bash call again. The cache, once populated, doesn't empty itself. The specified band expands monotonically. Each turn of the ratchet is a placement operation — it moves a piece of the problem from "requires judgment" to "handled by specification," which moves the remaining space to the frontier where judgment is most needed.
 
+The ratchet is powered by friction. Every repeated failure at a boundary — a permission denial, a tool call that times out, a pattern the agent keeps trying that keeps not working — is a data point about where the system's configuration doesn't match the task's requirements. The crystallization eliminates the friction, either by opening the boundary (promote the access — the agent genuinely needs this capability) or by making the constraint visible (the agent is wasting decision surface probing something that should never open). Either way, the expensive middle state — knowledge without access, repeated probing, wasted inference — is eliminated.^[The companion essay [Coordination Is Not Control](coordination-is-not-control.md) develops this as the failure-driven controller: System 3 in Beer's Viable System Model, monitoring the failure stream and crystallizing patterns into configuration changes.]
+
 The loop is self-sustaining:
 
 ```

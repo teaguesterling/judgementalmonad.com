@@ -187,7 +187,7 @@ The answer requires a distinction the series has been building toward but hasn't
 
 But there's a different function — *control* — that asks whether the current approach is working, whether tools should be restricted or expanded, whether the task needs to pivot. In Beer's Viable System Model, this is System 3: operational control that dynamically monitors performance and reallocates resources. The framework as presented collapses coordination and control into the Harness. They may have different design requirements. Coordination must be specified. Control may legitimately require richer judgment, because "is this approach working?" is not always decidable by specified rules — especially at computation channel levels 4+, where the space of possible failures is too vast for enumerated rules.
 
-The prohibition on trained judgment holds for the coordination layer — the Harness's runtime protocol. Whether control decisions can safely use trained judgment, under what constraints, and how to keep them auditable is an open question that deserves its own treatment. A companion piece on the coordination/control distinction is forthcoming.
+The prohibition on trained judgment holds for the coordination layer — the Harness's runtime protocol. The companion essay [Coordination Is Not Control](coordination-is-not-control.md) develops the specified alternative: the failure-driven controller that monitors the failure stream, triggers mode transitions at specified thresholds, and audits for state divergence — without trained judgment in the control loop.
 
 ---
 

@@ -50,4 +50,6 @@ This series proposes one. It draws on programming language theory (closures, alg
 
 **[Formal Companion](formal-companion.md)** — Definitions, propositions, conjectures, and open problems. The tight version.
 
+**[Coordination Is Not Control](coordination-is-not-control.md)** — The Harness coordinates. Something else has to control. Beer's System 3, world decoupling, modes, and the failure-driven ratchet.
+
 **[The Configuration Ratchet](the-configuration-ratchet.md)** — How systems convert trained ma into specified ma. The dynamic complement to the specified band.

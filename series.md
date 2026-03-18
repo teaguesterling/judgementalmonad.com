@@ -27,6 +27,7 @@ blog/09-building-with-ma
 blog/formal-companion
 blog/the-residual-framework
 blog/where-the-space-lives
+blog/coordination-is-not-control
 blog/the-configuration-ratchet
 blog/reference-tables
 blog/case-studies
