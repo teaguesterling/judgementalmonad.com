@@ -18,7 +18,7 @@ source_suffix = {
 }
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", ".git", ".venv", "README.md"]
+exclude_patterns = ["_build", ".git", ".venv", "README.md", "drafts", "experiments", "docs"]
 
 # -- Furo theme ---------------------------------------------------------------
 
@@ -53,4 +53,5 @@ html_title = "The Judgemental Monad"
 html_show_sourcelink = False
 
 # Suppress "document isn't included in any toctree" warnings for linked pages
-suppress_warnings = ["myst.xref_missing"]
+# Temporarily show all warnings during restructure verification
+# suppress_warnings = ["myst.xref_missing"]
