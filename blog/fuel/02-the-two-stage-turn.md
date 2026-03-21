@@ -72,6 +72,16 @@ Now consider `CurrentTime()` — a structured tool that calls the system clock d
 
 This is what the crystallization stage actually does. You don't just rename `Bash("grep -r pattern path")` to `Search(pattern, path)`. You build a *new implementation* whose type commitments are backed by its internals. The Fledgling `search()` macro doesn't shell out to grep — it runs a SQL query against an indexed codebase. The interface promise (takes a pattern and path, returns matching lines) is backed by machinery that can keep that promise.
 
+The commitments can stack. Consider git workflows. The bash version is `Bash("git add . && git commit -m 'fix' && git push && gh pr create ...")` — honestly `IO String`. The push might be rejected. The PR creation might fail halfway. You get a string back and hope.
+
+[JetSam](https://github.com/teaguesterling/jetsam) crystallizes this into three layers, each with its own type commitments:
+
+- **Planning**: `save(message="fix")` takes a `RepoState` snapshot and returns a `Plan` — a structured, inspectable list of steps with a TTL and a state hash. The plan knows what repo state it was computed against. No shell involved in planning.
+- **Execution**: `confirm(plan_id)` executes the plan and returns an `ExecutionResult` with per-step `ok: bool`, not a string to parse. Each step maps to a specific git operation. The result tells you what completed and what didn't.
+- **Recovery**: if push fails with "rejected," the recovery suggestion is `sync`. If rebase hits conflicts, it tells you what to do. The error-to-recovery mapping is specified, not hopeful.
+
+Three crystallization layers, each backed by implementation. The plan generation doesn't touch git. The executor doesn't guess about failures. The recovery classifier doesn't require judgment. Each layer's type commitments are structural — narrower than `IO String` because the implementation behind each layer can actually keep the promises its interface makes.
+
 We call this **type honesty**: the tool's interface contract is backed by its implementation. The narrower type isn't aspirational — it's structural. And that's what makes the *ma* reduction real rather than cosmetic.
 
 ---
@@ -255,6 +265,10 @@ The two-stage turn has a floor. Some problems are constitutively high-*ma* — t
 The two-stage turn doesn't claim everything is reducible. It claims that the *boundary* between "requires inference" and "handled by configuration" can be pushed — incrementally, practically, measurably — and that pushing it is almost always worth doing.
 
 The irreducible core is where humans belong. The reducible periphery is where specified systems belong. And the boundary between them shifts toward the core with every turn of the ratchet.
+
+That's the two-stage turn. Discovery finds the boundary. Crystallization moves it. The system doesn't get smarter — it gets more honest about what requires judgment and what doesn't. The judgment retreats to where it's needed. The specified base handles the rest.
+
+Every tool you've ever built did this. The two-stage turn just names the mechanism and tells you where to look for the next one: in the failure stream, where the friction lives.
 
 ---
 
