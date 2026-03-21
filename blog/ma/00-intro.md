@@ -18,9 +18,9 @@ The Harness stays characterizable by staying in the **specified band** — trans
 
 ## Why this exists
 
-The industry has strong intuitions about agent architecture. Restrict the tool set. Put a deterministic orchestrator at the hub. Sandbox your executors. Martin Fowler calls it harness engineering. OpenAI built a methodology around it. LangChain demonstrated it empirically: same model, better infrastructure, 52.8% → 66.5% on SWE-bench. Zhang and Wang's MCE provides a composition algebra for multi-agent systems.
+The industry has strong intuitions about agent architecture. Restrict the tool set. Put a deterministic orchestrator at the hub. Sandbox your executors. Martin Fowler calls it harness engineering. OpenAI built a methodology around it. LangChain demonstrated it empirically: same model, better infrastructure, 52.8% → 66.5% on SWE-bench. Zhang and Wang's MCE provides a composition algebra for multi-agent systems. Nate Crandall [documented the same phenomenon](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made) at a starker scale: the same model scored 78% in one harness and 42% in another, and the harness's accumulated configuration layers created compounding lock-in that made the architectural choice increasingly irreversible.
 
-The practice works. The composition algebra works. What's missing is a *design theory* underneath both — one that explains why restriction helps, why determinism belongs at the hub specifically, and why these are the same insight.
+The practice works. The composition algebra works. What's missing is a *design theory* underneath both — one that explains why restriction helps, why determinism belongs at the hub specifically, why the same model in different harnesses is a different system, and why these are the same insight.
 
 This series proposes one. It draws on programming language theory (closures, algebraic effects, monads), cybernetics (Ashby's variety, Beer's variety engineering, Conant-Ashby's Good Regulator Theorem), capability-based security (Miller's object capabilities), Actor-Network Theory (Callon's obligatory passage point), and stigmergy (Grassé, Heylighen). The formalism isn't the theory — it's the part of the theory that can be tested, and therefore the part that can be improved.
 

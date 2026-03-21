@@ -56,6 +56,8 @@ Every actor in the specified band — regardless of world coupling — has a tra
 
 The threat to regulation is never world coupling growth. It's **decision surface growth** — replacing specified rules with trained models in the regulator.
 
+The competitive landscape illustrates this directly. Claude Code operates at `(broad, specified)` — the model runs in the user's local environment with full filesystem access, but the Harness mediates every interaction through specified permission gates, scope construction, and tool dispatch. Codex operates at `(scoped, specified)` — the model works in a sealed container with bounded world coupling, also with specified mediation. Both are in the specified band. Both are characterizable. The [78% vs 42% performance gap](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made) between harnesses of the same model is a difference in world coupling and harness engineering, not in characterizability — and the framework explains why the broader harness wins: it gives the model more to work with while the specified Harness keeps the regulatory cost manageable.
+
 ```
 Specified Harness + process monitoring:    (broad, specified)  → characterizable
 Specified Harness + filesystem auditing:   (broad, specified)  → characterizable

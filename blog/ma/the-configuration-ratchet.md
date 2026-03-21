@@ -224,6 +224,8 @@ The substrate changes — parts, code, queries, decisions — but the mechanism 
 
 Each row is the same loop: explore → capture → crystallize → exploit → repeat.
 
+Crandall [documents](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made) the ratchet's consequences at team scale: a developer built six workflow automation layers over months, each depending on the previous. Switching harnesses would reset all layers to zero — multiplied across an engineering team. This is the ratchet's cost: the specified base grows monotonically, which makes the system more capable and more trustworthy, but also more expensive to abandon. The lock-in is real, and it's a feature viewed from inside (accumulated capability) and a risk viewed from outside (switching cost). The framework doesn't resolve this tension — it names it. The specified base is the system's memory of what works. Discarding it discards the learning.
+
 ---
 
 ## The limit

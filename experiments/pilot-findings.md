@@ -4,6 +4,21 @@
 
 ---
 
+## 0. Framing: The Harness Matters, But How?
+
+Crandall's ["Same Model, 78% vs 42%"](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made) documents at practitioner scale what the Ma framework formalizes: the harness determines the system's behavior more than the model does. The same model in different harnesses is a different system. The LangChain finding (52.8% → 66.5%) showed this on a benchmark. Crandall shows it in production, with compounding lock-in as accumulated configuration makes the choice increasingly irreversible.
+
+Our pilot tests a more specific question: **within a well-engineered harness, does additional tool capability help?** Crandall compares designed harnesses (Claude Code's open environment vs Codex's sealed sandbox). We compare tool configurations within a single harness design (same MCP server, same permission model, same scope construction — just different tools available).
+
+The results are complementary:
+- **Crandall**: A well-engineered open harness beats a poorly-engineered closed one. (World coupling matters; the collar harness vs throat harness from post 1.)
+- **Our pilot**: Within a well-engineered harness, fewer tools can produce better outcomes. (Restriction has returns; the supermodularity claim from post 2.)
+- **The reconciliation**: Today's open harness is tomorrow's specified harness. The ratchet converts exploration into specification. The 78% harness earned its capability through accumulated configuration layers — each one a crystallized piece of exploratory behavior. The openness was necessary for discovery; the specification is what made it reliable.
+
+This framing — "start open, crystallize what works, restrict the solved parts" — is the ratchet applied to experimental design itself. We built the experiment infrastructure with the full Claude Code harness. We observed what tools the agent actually used. We built an MCP server with specific tools. We found the specific tools were sufficient — and more efficient. One turn of the ratchet, performed on our own infrastructure.
+
+---
+
 ## 1. Infrastructure Summary
 
 ### What was built
