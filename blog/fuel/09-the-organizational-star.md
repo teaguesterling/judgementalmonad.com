@@ -94,19 +94,19 @@ The person who plans well and externalizes the Harness effectively isn't compens
 
 Scale up. Same structure, different substrate.
 
-A data team in a research organization. Researchers bring the questions. Analysts and bioinformaticians translate the questions into approaches and execute them against the data. The data platform runs the queries. A governance layer manages access, reviews outputs, enforces compliance.
+A data and analytics team at a fintech company. Product managers and business leads bring the questions. Analysts translate the questions into approaches and execute them against the data. The data platform runs the queries. A governance layer manages access, reviews outputs, enforces PCI compliance.
 
 The VSM mapping falls out naturally:
 
-**System 5 — the Principal.** The researchers. They decide what matters. What questions are worth asking. What outcomes would change their understanding. They hold the purpose. Their contribution is judgment about the science, not about the data infrastructure.
+**System 5 — the Principal.** The product managers and business leads. They decide what matters. What questions are worth asking. What outcomes would change the product roadmap. They hold the purpose. Their contribution is judgment about the business, not about the data infrastructure.
 
-**System 4 — the Inferencer.** The analysts and bioinformaticians. They take a research question — broad, natural language, often underspecified — and translate it into an approach: which data sources, which methods, which controls, which outputs. This is the fold operation: scan the available data landscape, build a model of how the question maps to the data, propose a structured plan. High ma. Room for judgment, creativity, domain expertise.
+**System 4 — the Inferencer.** The analysts. They take a business question — broad, natural language, often underspecified — and translate it into an approach: which data sources, which methods, which cohort definitions, which outputs. This is the fold operation: scan the available data landscape, build a model of how the question maps to the data, propose a structured plan. High ma. Room for judgment, creativity, domain expertise.
 
 **System 1 — the Executor.** The data platform. Query in, result out. DuckDB, a warehouse, a compute cluster — the substrate doesn't matter. What matters is the interface: structured input (a query), characterized output (a result set), bounded effects (the query doesn't modify the data). Low ma. Specified behavior.
 
-**System 2 — the Harness.** The governance and coordination layer. Data access policies, review workflows, output disclosure rules, request routing. This layer doesn't decide what questions to ask (System 5) or how to answer them (System 4). It manages the handoffs. It enforces the rules. It routes requests to the right analyst. It ensures outputs go through disclosure review before release. Specified, routine, transparent.
+**System 2 — the Harness.** The governance and coordination layer. Data access policies, PCI compliance workflows, output review rules, request routing. This layer doesn't decide what questions to ask (System 5) or how to answer them (System 4). It manages the handoffs. It enforces the rules. It routes requests to the right analyst. It ensures outputs comply with data sensitivity classifications before release. Specified, routine, transparent.
 
-**System 3 — the controller.** The team captain, the data team lead, the person who watches the whole operation and notices when the configuration isn't serving the mission. Not making the scientific decisions (that's System 5). Not doing the analysis (that's System 4). Not running the queries (that's System 1). Not enforcing the policies (that's System 2). Watching the performance. Intervening when it degrades.
+**System 3 — the controller.** The team lead, the analytics manager, the person who watches the whole operation and notices when the configuration isn't serving the mission. Not making the business decisions (that's System 5). Not doing the analysis (that's System 4). Not running the queries (that's System 1). Not enforcing the policies (that's System 2). Watching the performance. Intervening when it degrades.
 
 ---
 
@@ -114,11 +114,11 @@ The VSM mapping falls out naturally:
 
 The failure stream at organizational scale looks different from the agent failure stream, but it has the same categories and the same diagnostic value.
 
-**Requests that take too long.** A researcher submits a question. Weeks pass. The analyst is backlogged, or the question is underspecified and requires multiple rounds of clarification, or the data access request is stuck in governance review. This is the organizational equivalent of a timeout. The approach is wrong for this problem size. The fix might be self-service tools (let the researcher run simple queries directly), or structured request templates (reduce the clarification rounds), or pre-approved data access tiers (eliminate the per-request review).
+**Requests that take too long.** A product manager submits a question. Weeks pass. The analyst is backlogged, or the question is underspecified and requires multiple rounds of clarification, or the data access request is stuck in compliance review. This is the organizational equivalent of a timeout. The approach is wrong for this problem size. The fix might be self-service dashboards (let the PM run simple queries directly), or structured request templates (reduce the clarification rounds), or pre-approved data access tiers (eliminate the per-request review).
 
 **Reviews that are rubber stamps.** Every output goes through disclosure review. The reviewer glances at it, approves it, moves on. The review adds latency but catches nothing. This is a constraint that isn't earning its cost — the organizational equivalent of a permission gate that never denies. The fix isn't to remove the review (it might catch something eventually) but to instrument it. How often does the review actually modify or reject an output? If the answer is never, the review process is a specified rule that could be replaced by an automated check — minimum cell sizes, no individual-level data, output format validation. Move the review from trained judgment (the reviewer's assessment) to specified rules (automated checks). The reviewer's judgment is freed for the cases that actually need it.
 
-**Collaborations that don't produce reusable artifacts.** A researcher and an analyst spend three weeks building a custom analysis. The analysis answers the question. The code lives on the analyst's laptop. Six months later, a different researcher asks a similar question. A different analyst builds it again from scratch.
+**Collaborations that don't produce reusable artifacts.** A product manager and an analyst spend three weeks building a custom churn analysis. The analysis answers the question. The SQL lives in the analyst's notebook. Six months later, a different PM asks a similar question. A different analyst builds it again from scratch.
 
 This is the ratchet failing to turn. Stage 1 happened — the discovery, the collaboration, the working solution. Stage 2 didn't — the crystallization, the promotion from bespoke work to reusable tool. The organization paid the full cost of exploration twice.
 
@@ -128,11 +128,11 @@ This is the ratchet failing to turn. Stage 1 happened — the discovery, the col
 
 Every time a bespoke analyst-researcher collaboration produces a reusable tool, the organizational computation channel level drops.
 
-The first time a researcher asks "what's the distribution of this phenotype in my cohort?", the interaction is natural-language delegation. The researcher explains what they need. The analyst interprets, asks clarifying questions, writes custom code, runs the analysis, formats the output, sends it back. This is a computation channel interaction. The characterization difficulty is quadratic — the analyst could produce a wide range of outputs from the same input, and the researcher can't predict which one without understanding the analyst's full process.
+The first time a product manager asks "what's our churn rate by plan tier for enterprise accounts?", the interaction is natural-language delegation. The PM explains what they need. The analyst interprets, asks clarifying questions, writes custom SQL, runs the analysis, formats the output, sends it back. This is a computation channel interaction. The characterization difficulty is quadratic — the analyst could produce a wide range of outputs from the same input, and the PM can't predict which one without understanding the analyst's full process.
 
-The tenth time someone asks that question, someone should have built a tool. `phenotype_distribution(cohort, phenotype, stratification)` — structured input, characterized output, bounded effects. This is a data channel interaction. The characterization difficulty is linear — the output is determined by the input plus the tool's specified behavior. The researcher can predict what they'll get. The analyst doesn't need to be involved.
+The tenth time someone asks that question, someone should have built a tool. `churn_by_tier(plan_type, min_arr, period)` — structured input, characterized output, bounded effects. This is a data channel interaction. The characterization difficulty is linear — the output is determined by the input plus the tool's specified behavior. The PM can predict what they'll get. The analyst doesn't need to be involved.
 
-That grade drop — from computation channel to data channel, from quadratic characterization difficulty to linear — is the ratchet turning. The interaction got cheaper. The analyst's time is freed for the questions that actually require their judgment. The researcher gets faster answers. The organization's total capacity for answering research questions increased without hiring anyone.
+That grade drop — from computation channel to data channel, from quadratic characterization difficulty to linear — is the ratchet turning. The interaction got cheaper. The analyst's time is freed for the questions that actually require their judgment. The PM gets faster answers. The organization's total capacity for answering business questions increased without hiring anyone.
 
 The ratchet only turns one way. Once the tool exists, the bespoke interaction doesn't come back. Nobody asks an analyst to manually compute a phenotype distribution when there's a tool that does it in seconds. The crystallization is permanent. The organizational computation channel level ratchets down.
 
@@ -142,21 +142,22 @@ The ratchet only turns one way. Once the tool exists, the bespoke interaction do
 
 Here is where freeform email becomes visibly expensive.
 
-A researcher emails an analyst: "Hey, I'm looking at some stuff with hypertension in our older cohort and wondering if you could pull some numbers on medication use, maybe broken down by age group? Also, are there any comorbidities we should be looking at?"
+A product manager slacks an analyst: "Hey, I'm looking at some stuff with churn in our enterprise accounts and wondering if you could pull some numbers on feature usage before they churned, maybe broken down by plan tier? Also, are there any engagement signals we should be looking at?"
 
-That email is a computation channel. The analyst has to parse natural language, infer what "older cohort" means (over 60? over 65? over 70?), decide what "some numbers" means (counts? percentages? distributions?), choose how to break down "by age group" (decades? quintiles? clinically relevant categories?), and determine what counts as a relevant comorbidity. The analyst's interpretation could go in many directions. The researcher can't predict which one. Multiple clarification rounds are likely.
+That message is a computation channel. The analyst has to parse natural language, infer what "enterprise accounts" means (by ARR? by employee count? by plan type?), decide what "some numbers" means (counts? percentages? trends?), choose how to define "before they churned" (30 days? 90 days? last active month?), and determine what counts as a relevant engagement signal. The analyst's interpretation could go in many directions. The PM can't predict which one. Multiple clarification rounds are likely.
 
 A structured request template changes the channel:
 
 ```
-Cohort: participants aged >= 65
-Primary variable: antihypertensive medication use (binary)
-Stratification: age group (65-74, 75-84, 85+)
-Secondary variables: diabetes, CKD, heart failure (binary)
-Output format: frequency table with percentages and 95% CI
+Segment: enterprise accounts, ARR >= $50K, churned in Q4 2025
+Primary metric: feature usage frequency (logins, API calls, report views)
+Time window: 90 days before churn date
+Stratification: plan tier (starter, growth, enterprise)
+Comparison: same metrics for non-churned enterprise accounts
+Output format: comparison table with statistical significance
 ```
 
-Same question. Different channel. The structured template is a co-domain funnel — it forces the researcher's broad intent through a narrow, specified interface. The researcher has to make their choices explicit. The analyst receives a specification, not a conversation. The characterization difficulty drops from quadratic to linear. The interaction cost drops from multiple rounds of clarification to a single handoff.
+Same question. Different channel. The structured template is a co-domain funnel — it forces the PM's broad intent through a narrow, specified interface. The PM has to make their choices explicit. The analyst receives a specification, not a conversation. The characterization difficulty drops from quadratic to linear. The interaction cost drops from multiple rounds of clarification to a single handoff.
 
 Structured handoff schemas at organizational boundaries are co-domain funnels. Every boundary where two teams interact through freeform communication is a computation channel operating at the organization's expense. Every boundary where the interaction is structured — request templates, intake forms, API contracts, shared schemas — is a data channel operating at a fraction of the cost.
 
@@ -168,7 +169,7 @@ The organizational ratchet's most impactful turn is often not a new tool. It's a
 
 The personal system and the organizational system have the same architecture. Star topology with a mediating layer. Specialized actors at the points. Structured handoffs at the boundaries. Failures flowing inward as signal. A ratchet that crystallizes repeated patterns into specified infrastructure.
 
-The person with ADHD externalizing their Harness into calendar blocks and task lists is running the same architecture as the data team crystallizing analyst-mediated queries into self-service tools. The planning phase that compresses broad reasoning through a co-domain funnel into a structured plan is the same operation as the researcher compressing a research question through a request template into a structured specification. The body double providing ambient monitoring is the same function as the team lead watching the failure stream for signs that the configuration isn't working.
+The person with ADHD externalizing their Harness into calendar blocks and task lists is running the same architecture as the analytics team crystallizing analyst-mediated queries into self-service tools. The planning phase that compresses broad reasoning through a co-domain funnel into a structured plan is the same operation as the product manager compressing a business question through a request template into a structured specification. The body double providing ambient monitoring is the same function as the team lead watching the failure stream for signs that the configuration isn't working.
 
 Same structure. Different substrates. The star topology works because it works — not because the participants are software.
 
@@ -176,9 +177,11 @@ The framework was developed by studying AI agent systems. The concepts were name
 
 And naming it matters, because once you can see the pattern, you can diagnose it. When your personal productivity system fails, you can ask: is the problem in the planning (System 4), the execution (System 1), or the coordination (Harness)? When your data team is underperforming, you can ask: are the failures in the request channel (unstructured handoffs), the governance layer (constraints that aren't earning their cost), or the ratchet (bespoke work that never gets crystallized)?
 
-The diagnosis leads to the fix. And the fix is always a configuration change — a structural adjustment to where the space lives, where the constraints operate, and where the failures flow. Not a mandate to work harder. Not a new tool that solves everything. A specific, testable change to the architecture of coordination.
+The diagnosis leads to the fix. And the fix is always a configuration change — a structural adjustment to where the constraints operate and where the failures flow. Not a mandate to work harder. Not a new tool that solves everything. A specific, testable change to the architecture of coordination.
 
-Put the space where it can do the most good. Put the failures where recovery is cheap. Let the ratchet turn.
+Put the failures where they become learnings. The calendar block that catches a missed transition. The request template that eliminates a clarification round. The structured tool that replaces a bespoke analysis. Each failure that gets crystallized into infrastructure makes the system cheaper and the people freer — freer to do the work that actually needs their judgment.
+
+The ratchet turns the same way in every substrate. Let it.
 
 ---
 
