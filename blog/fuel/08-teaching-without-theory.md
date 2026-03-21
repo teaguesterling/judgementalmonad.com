@@ -86,6 +86,57 @@ And the failure stream that refines the CLAUDE.md over time — the repeated pat
 
 No one taught the Claude instance lattice theory. No one explained the formal framework. The CLAUDE.md file *is* the teaching, and it gets better every time the ratchet turns.
 
+### Hooks: constraints as code
+
+Claude Code hooks are the ratchet's most concrete form — failure patterns crystallized into enforcement. A hook is a shell command that runs before or after a tool call. It can gate, modify, or log the operation. Here's what the ratchet looks like as hooks.
+
+**Failure pattern observed:** the agent keeps trying to push to main directly.
+
+```json
+{
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Bash",
+      "command": "python3 -c \"import sys, json; d=json.load(sys.stdin); cmd=d.get('input',{}).get('command',''); sys.exit(1) if 'git push' in cmd and 'origin main' in cmd else sys.exit(0)\"",
+      "description": "Block direct pushes to main — use a PR"
+    }
+  ]
+}
+```
+
+That's a failure pattern → constraint. The agent hit "push rejected" three times. Instead of adding a CLAUDE.md instruction ("please don't push to main"), the constraint is enforced by the environment. The agent can't push to main because the hook prevents it. No instruction to forget. No judgment to apply.
+
+**Failure pattern observed:** the agent creates new files when it should edit existing ones.
+
+```json
+{
+  "hooks": [
+    {
+      "event": "PreToolUse",
+      "matcher": "Write",
+      "command": "python3 -c \"import sys, json, os; d=json.load(sys.stdin); path=d.get('input',{}).get('file_path',''); sys.exit(1) if os.path.exists(path) else sys.exit(0)\"",
+      "description": "Warn before overwriting — prefer Edit for existing files"
+    }
+  ]
+}
+```
+
+**Failure pattern observed:** bash commands take too long because the agent runs full test suites instead of targeted tests.
+
+This one goes in the CLAUDE.md as a principle rather than a hook — it requires judgment about *which* test to run:
+
+```markdown
+## Testing
+- Run specific tests during development: `pytest tests/test_specific.py -x`
+- Only run the full suite before committing
+- Use blq: `mcp__blq_mcp__run(command="test")` instead of raw pytest
+```
+
+The distinction matters: constraints (hooks) handle the cases where the right answer is always the same. Principles (CLAUDE.md) handle the cases where judgment is needed but should be guided. Reference (the formal companion) handles the cases where someone needs to understand why.
+
+Each hook is a ratchet artifact — a failure that will never happen again because the environment prevents it. The hook file grows over time. The CLAUDE.md gets more specific. The agent gets better not because it learns, but because the infrastructure encodes what previous instances discovered.
+
 ---
 
 ## Onboarding an analyst to a data platform
@@ -94,7 +145,7 @@ The same pattern works for humans. Consider a data platform — a BI tool, a dat
 
 The ratchet approach uses the three layers instead.
 
-**Constraints: access tiers.** The analyst gets a role-scoped database connection. They can see the tables relevant to their team. They can't see PII columns unless their role includes PII access. They can't run queries that exceed a resource limit. They can't modify production data.
+**Constraints: access tiers.** The analyst gets a role-scoped database connection. They can see the tables relevant to their team. They can't see cardholder data or financial PII unless their role includes PCI scope. They can't run queries that exceed a resource limit. They can't modify production data.
 
 These constraints don't need to be taught. They're enforced by the platform. The analyst who tries to access a restricted table gets an error, not a policy document. The constraint is the teaching.
 
@@ -110,21 +161,30 @@ Each batch of tickets makes the next analyst's onboarding smoother. No one rewri
 
 ---
 
-## The best documentation makes itself unnecessary
+## Documentation should be hierarchical, discoverable, and actionable at every level
 
-There's a design principle embedded in all of this, and it's worth stating directly: the goal of good documentation is to make itself unnecessary.
+This isn't a new idea. Good CLI tools have known this forever:
 
-If the constraints are right, most questions never arise. The analyst who can't access restricted data never needs to learn the access control policy. The agent that has only three tools never needs to learn when not to use the other twelve. The junior engineer whose linter catches formatting issues never needs to read the style guide.
+- **Guessable names** — `jetsam save`, `jetsam ship`, `jetsam sync`. You can infer what they do without reading anything. This is Layer 1: the tool's name is the constraint on your expectation.
+- **`--help`** — the flag names and one-line descriptions. Enough to use the tool. This is Layer 2: design principles, consulted when you need them.
+- **`--help-all`** — every flag, every option, edge cases. Still scoped to one command.
+- **Man pages and tutorials** — how the pieces fit together. When to use `save` vs `ship`. This is Layer 3: reference, loaded when you have a specific question.
+- **API docs and developer docs** — how to extend, modify, or understand the internals. For contributors and architects.
 
-Good constraints eliminate categories of questions. Each eliminated question is a piece of documentation that doesn't need to exist, a training session that doesn't need to happen, a mistake that doesn't need to be made and then corrected.
+Each level stands on its own. You can use `jetsam save -m "fix bug"` without reading the man page. You can read `--help` without reading the API docs. Basic usage requires minimal documentation. Advanced usage requires more — but it never requires reading *everything*.
 
-This is not about dumbing things down or removing autonomy. It's about putting knowledge in the right layer. The access control policy is real and important — but it belongs in the permission system, not in a PDF that new hires are supposed to read. The style guide is real and important — but it belongs in the linter, not in a wiki page. The tool restrictions are real and important — but they belong in the configuration, not in a prompt that says "please don't use these tools."
+The same hierarchy applies to agent systems:
 
-Every piece of knowledge that can move from documentation to constraint should move. Every piece that can move from reference to principle should move. Every piece that can move from principle to constraint should move. The ratchet pushes knowledge downward through the layers, from "thing you need to understand" to "thing the environment handles for you."
+- **Tool names and parameter types** are guessable — `search(pattern, path)` doesn't need documentation to use.
+- **Tool descriptions** in the MCP schema are the `--help` — enough to choose the right tool.
+- **CLAUDE.md instructions** are the tutorial — how the tools fit together, what patterns to follow.
+- **The formal companion** is the developer docs — for the person modifying the framework itself.
 
-The documentation that remains — the reference layer, the "why" documents, the formal companion — exists for the edge cases. For the person who needs to modify a constraint and wants to understand what it protects. For the architect who's designing a new subsystem and needs to understand the principles it should embody. For the rare moment when understanding the mechanism matters more than using its artifacts.
+The ratchet pushes knowledge *down* this hierarchy. A principle in the CLAUDE.md ("don't push to main") becomes a hook (the push is blocked). A template in the analyst's library ("revenue by region") becomes a named segment definition. A pattern in the `--help` text becomes a guessable default. Each descent makes the knowledge cheaper to access and harder to miss.
 
-That documentation is valuable precisely because it's rarely needed. It serves the person who's already deep enough in the work to have a specific question that the constraints and principles don't answer.
+More documentation is more context consumed — for LLMs, that's tokens spent on instructions instead of work. For humans, that's startup time before they're productive. The goal isn't comprehensive documentation. The goal is the minimum documentation at each level that makes the next level unnecessary for most users.
+
+The documentation that remains at the top — the reference layer, the "why" documents — is valuable precisely because it's rarely needed. It serves the person who's already deep enough to have a specific question that the constraints and tool names don't answer.
 
 ---
 
