@@ -59,6 +59,7 @@ _task_id: str = "00"
 _log_dir: Path = Path("./logs")
 _workspace: Path = Path(".")
 _allowed_dirs: list[str] = []
+_test_detail: str = "detailed"  # "detailed" or "minimal"
 _call_log: list[dict] = []
 
 # ---------------------------------------------------------------------------
@@ -436,6 +437,8 @@ def run_tests(test_file: str = "", verbose: bool = False) -> str:
     (pytest) on fixed inputs (the original test files) and returns
     structured output. Available in ALL conditions.
 
+    The level of detail in the output depends on the server configuration.
+
     Args:
         test_file: Specific test file to run (relative to workspace).
                    Empty string runs all tests.
@@ -481,13 +484,15 @@ def run_tests(test_file: str = "", verbose: bool = False) -> str:
         else:
             cmd.append(str(tests_dir))
 
-        if verbose:
-            cmd.append("-v")
+        if _test_detail == "minimal":
+            # Minimal: just pass/fail counts, no tracebacks, no test names
+            cmd.extend(["--tb=no", "-q", "--no-header"])
+        elif verbose:
+            # Verbose: full tracebacks with local variables, all test names
+            cmd.extend(["--tb=long", "-v"])
         else:
-            cmd.append("--tb=short")
-
-        cmd.append("--no-header")
-        cmd.append("-q")
+            # Detailed (default): short tracebacks, quiet output
+            cmd.extend(["--tb=short", "-q", "--no-header"])
 
         proc = subprocess.run(
             cmd,
@@ -700,6 +705,8 @@ def main():
                         help="Workspace directory the agent operates in")
     parser.add_argument("--allowed-dirs", nargs="*", default=[],
                         help="For low-W conditions: restrict file access to these directories only")
+    parser.add_argument("--test-detail", choices=["detailed", "minimal"], default="detailed",
+                        help="Test output detail level: 'detailed' (tracebacks, line numbers) or 'minimal' (pass/fail counts only)")
 
     args = parser.parse_args()
 
@@ -708,11 +715,13 @@ def main():
     _log_dir = Path(args.log_dir)
     _workspace = Path(args.workspace).resolve()
     _allowed_dirs = args.allowed_dirs or []
+    _test_detail = args.test_detail
 
     _apply_condition(_condition)
 
     print(f"[experiment-server] Condition {_condition} | Task {_task_id} | Workspace {_workspace}", file=sys.stderr)
     print(f"[experiment-server] Tools: {CONDITION_TOOLS[_condition]}", file=sys.stderr)
+    print(f"[experiment-server] Test detail: {_test_detail}", file=sys.stderr)
     if _allowed_dirs:
         print(f"[experiment-server] Allowed dirs: {_allowed_dirs}", file=sys.stderr)
     print(f"[experiment-server] Logging to: {_log_dir}", file=sys.stderr)

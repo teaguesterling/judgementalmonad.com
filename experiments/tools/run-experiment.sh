@@ -37,6 +37,7 @@ BRANCH_PREFIX="experiment"
 MAX_TURNS=100
 MAX_BUDGET="10.00"
 MODEL="sonnet"
+TEST_DETAIL="detailed"
 DRY_RUN=false
 CLEANUP=false
 
@@ -54,6 +55,7 @@ while [[ $# -gt 0 ]]; do
         --max-turns)      MAX_TURNS="$2"; shift 2 ;;
         --max-budget)     MAX_BUDGET="$2"; shift 2 ;;
         --model)          MODEL="$2"; shift 2 ;;
+        --test-detail)    TEST_DETAIL="$2"; shift 2 ;;
         --dry-run)        DRY_RUN=true; shift ;;
         --cleanup)        CLEANUP=true; shift ;;
         -h|--help)
@@ -73,6 +75,7 @@ Optional:
   --max-turns N         Max agentic turns (default: 100)
   --max-budget USD      Max API spend per run (default: 10.00)
   --model NAME          Model to use (default: sonnet)
+  --test-detail LEVEL   Test output detail: "detailed" (default) or "minimal"
   --dry-run             Show what would happen without running
   --cleanup             Remove worktree after run completes
   -h, --help            Show this help
@@ -132,6 +135,7 @@ SERVER_ARGS=("$SERVER_DIR/server.py"
     "--task-id" "$TASK_ID"
     "--log-dir" "$LOG_DIR"
     "--workspace" "$WORKTREE_DIR"
+    "--test-detail" "$TEST_DETAIL"
 )
 [[ -n "$ALLOWED_DIRS" ]] && SERVER_ARGS+=("--allowed-dirs" $ALLOWED_DIRS)
 
@@ -178,6 +182,7 @@ echo "[run] │ Condition: $CONDITION"
 echo "[run] │ Model:     $MODEL"
 echo "[run] │ Workspace: $WORKTREE_DIR"
 echo "[run] │ Budget:    \$$MAX_BUDGET / $MAX_TURNS turns"
+echo "[run] │ Tests:     $TEST_DETAIL"
 echo "[run] └─────────────────────────────────────"
 
 if [[ "$DRY_RUN" == true ]]; then
