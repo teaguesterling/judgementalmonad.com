@@ -53,5 +53,4 @@ html_title = "The Judgemental Monad"
 html_show_sourcelink = False
 
 # Suppress "document isn't included in any toctree" warnings for linked pages
-# Temporarily show all warnings during restructure verification
-# suppress_warnings = ["myst.xref_missing"]
+suppress_warnings = ["myst.xref_missing"]
