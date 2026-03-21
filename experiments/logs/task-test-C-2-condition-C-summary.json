@@ -1,0 +1,18 @@
+{
+  "task_id": "test-C-2",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 76,
+  "duration_api_ms": 72081,
+  "num_turns": 9,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 7,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 834,
+  "final_response_preview": "`workspace/macro-audit.md` is written. Here's the summary:\n\n**61 total macros** across 4 active files:\n\n| File | Macros | TABLE | SCALAR |\n|------|--------|-------|--------|\n| `tree_navigation.sql` | 15 | 15 | 0 |\n| `pattern_matching.sql` | 12 | 2 | 10 |\n| `semantic_predicates.sql` | 30 | 0 | 30 |\n| `file_utilities.sql` | 4 | 1 | 3 |\n\nKey dependency patterns:\n- `semantic_predicates.sql` is the most-depended-on file \u2014 nearly every TABLE macro in `tree_navigation.sql` and `file_utilities.sql` call",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-test-C-2-condition-C"
+}

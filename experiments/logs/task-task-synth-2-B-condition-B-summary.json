@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-2-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 171,
+  "duration_api_ms": 166250,
+  "num_turns": 14,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 9,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 5,
+  "final_response_length": 1643,
+  "final_response_preview": "The implementation looks correct. Here's a summary of what was done:\n\n---\n\n**Changes to `src/parser.py`:**\n\n- `__init__`: added `strict=False` parameter, stored as `self.strict`\n- Variable definition parsing (line 63): in strict mode, raises `ParseError` if the variable's value contains any `${...}` reference\n- `_interpolate` (line 130): in strict mode, raises `ParseError` naming the undefined variable and its line number instead of returning `\"\"`\n- New `get_undefined_references(text)` method: s",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-2-B-condition-B"
+}

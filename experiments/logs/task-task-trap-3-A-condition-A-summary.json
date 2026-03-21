@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trap-3-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 106,
+  "duration_api_ms": 102147,
+  "num_turns": 13,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 10,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 923,
+  "final_response_preview": "Written to `macro-dependencies.md`. Here's the summary:\n\n## Findings\n\n**Dependency graph (cross-file only):**\n```\nC++ built-ins\n    \u2514\u2500\u2500 semantic_predicates.sql   (wraps is_semantic_type; no macro deps)\n            \u251c\u2500\u2500 file_utilities.sql      (ast_source_of calls is_*_definition)\n            \u2514\u2500\u2500 tree_navigation.sql     (ast_definitions, ast_function_metrics,\n                                         ast_security_audit, ast_dead_code, etc.)\n\nC++ built-ins (parse_ast, is_syntax_only, is_kind)\n    \u2514\u2500",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trap-3-A-condition-A"
+}

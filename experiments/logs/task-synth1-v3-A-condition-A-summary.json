@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-v3-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 395,
+  "duration_api_ms": 384971,
+  "num_turns": 14,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 11,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.9090909090909091,
+  "sandbox_commits": 5,
+  "final_response_length": 700,
+  "final_response_preview": "All 48 tests pass. Here's a summary of the 4 bugs fixed:\n\n| # | File | Bug | Fix |\n|---|------|-----|-----|\n| 1 | `tokenizer.py` | String token values included surrounding quotes | Strip outer quotes; remove `\\X` escape sequences from stored value |\n| 2 | `evaluator.py` | `d.name` dot access on dicts raised `EvalError` | Check `isinstance(o, dict) and name in o` before `getattr` |\n| 3 | `evaluator.py` | `map`/`filter` builtins crashed with `UserFunction` | Added `_call()` helper that handles bot",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-v3-A-condition-A"
+}

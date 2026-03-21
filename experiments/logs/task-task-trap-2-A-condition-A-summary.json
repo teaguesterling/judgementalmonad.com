@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trap-2-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 56,
+  "duration_api_ms": 51484,
+  "num_turns": 7,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 4,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 490,
+  "final_response_preview": "The macro already existed but had two gaps vs. the success criteria. Fixed both:\n\n1. **`>=` instead of `>`** \u2014 now includes the root node itself\n2. **`ORDER BY a.start_line, a.start_column`** \u2014 results ordered by source position\n\nThe core strategy (already correctly in place) exploits DFS pre-order node assignment: all nodes in a subtree rooted at `node_id` have IDs in the contiguous range `[node_id, node_id + descendant_count]`, making this an O(1) range scan with no recursion needed.",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trap-2-A-condition-A"
+}

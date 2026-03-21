@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trust-1-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 199,
+  "duration_api_ms": 196366,
+  "num_turns": 37,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 35,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 1521,
+  "final_response_preview": "`decorator-behavior.md` has been written. Here's a summary of what was found:\n\n## Key Findings\n\n**1. Decorated functions appear once in `ast_definitions`**\nThe `decorated_definition` wrapper (`METADATA_ANNOTATION`) and `decorator` node (`NAME_ATTRIBUTE`) are both filtered out by `is_definition(semantic_type)`. Only the underlying `function_definition` or `class_definition` passes the filter and appears.\n\n**2. Semantic types used**\n- `decorator` node (`@something` token) \u2192 **`NAME_ATTRIBUTE`** (0",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trust-1-B-condition-B"
+}

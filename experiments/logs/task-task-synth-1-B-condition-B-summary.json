@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-1-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 125,
+  "duration_api_ms": 120960,
+  "num_turns": 15,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 12,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 11,
+  "final_response_length": 715,
+  "final_response_preview": "All done. Here's a summary:\n\n| # | File | Bug | Fix |\n|---|------|-----|-----|\n| 1 | `src/parser.py:122` | Undefined `${var}` silently \u2192 `\"\"` | Raise `ParseError` instead |\n| 2 | `src/parser.py:144` | Comma-separated values stay as strings | Split on `,` in `_coerce` |\n| 3 | `src/validator.py:62` | `True`/`False` pass `int` type check | Explicit `bool` guard before `isinstance` |\n| 4 | `src/merger.py:32` | List + scalar override discards list | Append scalar: `base_val + [value]` |\n| 5 | `src/me",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-1-B-condition-B"
+}

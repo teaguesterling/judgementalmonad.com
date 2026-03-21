@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trust-3-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 644,
+  "duration_api_ms": 640639,
+  "num_turns": 26,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 19,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 4,
+  "final_response_length": 2100,
+  "final_response_preview": "I don't have a Bash tool available in this environment to run the embed script. The macro implementation is complete \u2014 here's what was created and what still needs to happen to activate it:\n\n---\n\n## What was done\n\n| File | Purpose |\n|------|---------|\n| `src/sql_macros/purity.sql` | The `ast_pure_functions` macro |\n| `test/data/python/macros/purity.py` | Test Python file with pure/impure examples |\n| `purity-design.md` | Design document |\n| `scripts/embed_sql_macros.py` | Updated to include `pur",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trust-3-A-condition-A"
+}

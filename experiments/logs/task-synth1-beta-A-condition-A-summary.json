@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-beta-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 1337,
+  "duration_api_ms": 1322462,
+  "num_turns": 42,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 35,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.7142857142857143,
+  "sandbox_commits": 7,
+  "final_response_length": 2010,
+  "final_response_preview": "All fixes are in place. Here's a summary of what was done:\n\n## Summary of fixes\n\n**4 bugs fixed across 2 files (`src/` only):**\n\n### Bug 1 \u2014 Tokenizer: string values included outer quotes (`src/tokenizer.py`)\nThe tokenizer stored `line[start:col]` which included the opening/closing quote characters. Replaced with a character-by-character builder that:\n- Skips outer quote delimiters\n- For escape sequences: skips the `\\`; if the next char is the outer delimiter (`\\\"`), skips it too (not stored); o",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-beta-A-condition-A"
+}

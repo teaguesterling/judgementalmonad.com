@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-2-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 165,
+  "duration_api_ms": 160771,
+  "num_turns": 15,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 12,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 5,
+  "final_response_length": 1576,
+  "final_response_preview": "Everything looks correct. Here's a summary of what was implemented:\n\n---\n\n## Changes Made\n\n### `src/parser.py`\n\n**`__init__`** \u2014 added `strict=False` parameter, stored as `self.strict`.\n\n**Variable definition handling** \u2014 in strict mode, if a variable's value contains `${...}`, raises `ParseError` at the definition site (enforces \"no recursive interpolation\").\n\n**`_interpolate`** \u2014 when `strict=True` and a variable isn't in `self.variables`, raises `ParseError` with the variable name and line nu",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-2-A-condition-A"
+}

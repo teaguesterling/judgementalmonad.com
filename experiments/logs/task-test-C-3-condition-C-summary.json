@@ -1,0 +1,18 @@
+{
+  "task_id": "test-C-3",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 100,
+  "duration_api_ms": 93133,
+  "num_turns": 8,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 6,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 829,
+  "final_response_preview": "`macro-audit.md` written. Here's the summary:\n\n| File | Macros | TABLE | SCALAR |\n|---|---|---|---|\n| `tree_navigation.sql` | 15 | 15 | 0 |\n| `pattern_matching.sql` | 12 | 2 | 10 |\n| `semantic_predicates.sql` | 30 | 0 | 30 |\n| `file_utilities.sql` | 4 | 1 | 3 |\n| **Total** | **61** | **18** | **43** |\n\nKey dependency patterns found:\n- `semantic_predicates.sql` is a leaf layer \u2014 all 30 macros delegate to the C++ `is_semantic_type()` extension function with no SQL macro deps\n- `tree_navigation.sql",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-test-C-3-condition-C"
+}

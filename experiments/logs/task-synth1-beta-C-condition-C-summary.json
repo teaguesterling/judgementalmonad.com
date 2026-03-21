@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-beta-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 995,
+  "duration_api_ms": 979898,
+  "num_turns": 33,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 29,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.8275862068965517,
+  "sandbox_commits": 21,
+  "final_response_length": 991,
+  "final_response_preview": "All 48 tests pass. Here's a summary of the 4 bugs fixed:\n\n1. **Tokenizer \u2014 quotes included in string values** (`src/tokenizer.py`): `value = line[start:col]` included the surrounding `\"` or `'` delimiters. Fixed to strip outer quotes and process `\\X` escape sequences.\n\n2. **Evaluator \u2014 dict attribute access** (`src/evaluator.py`): `Attr` node handler used `getattr(o, name)` which fails on dicts. Fixed to use `o[name]` when the object is a dict.\n\n3. **Evaluator \u2014 `map`/`filter` can't call `UserFu",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-beta-C-condition-C"
+}

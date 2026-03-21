@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-1-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 182,
+  "duration_api_ms": 177958,
+  "num_turns": 27,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 23,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.9565217391304348,
+  "sandbox_commits": 12,
+  "final_response_length": 739,
+  "final_response_preview": "All 5 bugs fixed. Here's a summary:\n\n| # | File | Bug | Fix |\n|---|------|-----|-----|\n| 1 | `src/parser.py:124` | Undefined `${var}` silently returns `\"\"` | Raise `ParseError` instead |\n| 2 | `src/parser.py:144` | Comma-separated values not parsed as list | Split on `,` in `_coerce` |\n| 3 | `src/validator.py:66` | `bool` passes `int` type check (`bool` subclasses `int`) | Explicit `bool` check before `isinstance` |\n| 4 | `src/merger.py:35` | list + scalar merge silently replaces list | Append s",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-1-A-condition-A"
+}

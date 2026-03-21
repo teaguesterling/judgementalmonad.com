@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-v3-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 659,
+  "duration_api_ms": 645477,
+  "num_turns": 20,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 18,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.8333333333333334,
+  "sandbox_commits": 7,
+  "final_response_length": 1134,
+  "final_response_preview": "All 48 tests pass. Here's a summary of the 5 bugs fixed:\n\n1. **Tokenizer: string values included surrounding quotes** \u2014 `\"hello\"` produced value `\"hello\"` instead of `hello`. Fixed by stripping the delimiters.\n\n2. **Tokenizer: escape sequences not processed** \u2014 `\\\"` inside strings left a bare `\"` in the token value. Fixed by building the value character-by-character, skipping the backslash (and the escaped quote when the escaped char is a quote character).\n\n3. **Evaluator: dict dot-access (`d.na",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-v3-C-condition-C"
+}

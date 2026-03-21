@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-2-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 156,
+  "duration_api_ms": 152314,
+  "num_turns": 16,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 12,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 7,
+  "final_response_length": 1273,
+  "final_response_preview": "All done. Here's a summary of what was implemented:\n\n## Changes\n\n**`src/parser.py`**\n- `ConfigParser.__init__` gains `strict=False` parameter\n- `_interpolate`: when `strict=True`, raises `ParseError(\"Undefined variable: ${name}\", line_num, filename)` instead of returning `\"\"`\n- Variable definition handler: when `strict=True`, raises if the RHS contains any `${...}` (no recursive interpolation)\n- New `get_undefined_references(text) -> list[str]`: sequential scan that never raises, returns dedupli",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-2-C-condition-C"
+}

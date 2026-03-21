@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-v3-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 997,
+  "duration_api_ms": 980610,
+  "num_turns": 26,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 23,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.7391304347826086,
+  "sandbox_commits": 8,
+  "final_response_length": 827,
+  "final_response_preview": "All 48 tests pass. Here's a summary of the 4 bugs fixed:\n\n| # | Bug | File | Fix |\n|---|-----|------|-----|\n| 1 | String token values included surrounding quote chars | `tokenizer.py` | Strip outer quotes with `line[start+1:col-1]`; process escape sequences (also strips `\\\"` / `\\'`) |\n| 2 | Inner function assignments leaked to outer scope | `evaluator.py` | Always use `env.set()` in `Assign` (never walk up the scope chain) |\n| 3 | `d.name` on a dict raised `AttributeError` | `evaluator.py` | Che",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-v3-B-condition-B"
+}

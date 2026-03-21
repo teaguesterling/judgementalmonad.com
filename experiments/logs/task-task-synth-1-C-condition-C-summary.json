@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-1-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 232,
+  "duration_api_ms": 229279,
+  "num_turns": 28,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 17,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.9411764705882353,
+  "sandbox_commits": 12,
+  "final_response_length": 1013,
+  "final_response_preview": "All 5 bugs are fixed. Here's a summary:\n\n---\n\n### Bugs Fixed\n\n| # | File | Bug | Fix |\n|---|------|-----|-----|\n| 1 | `src/parser.py:122` | `_interpolate` silently returns `\"\"` for undefined `${var}` | Raise `ParseError(\"Undefined variable: ...\")` |\n| 2 | `src/parser.py:144` | Comma-separated values not split into lists | Split on `,`, strip items, coerce each element recursively |\n| 3 | `src/validator.py:66` | `isinstance(True, int) == True` lets booleans pass `int` validation | Explicitly reje",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-1-C-condition-C"
+}

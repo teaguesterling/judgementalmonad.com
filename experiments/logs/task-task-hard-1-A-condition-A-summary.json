@@ -1,0 +1,18 @@
+{
+  "task_id": "task-hard-1-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 107,
+  "duration_api_ms": 103515,
+  "num_turns": 26,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 34,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.9705882352941176,
+  "sandbox_commits": 0,
+  "final_response_length": 0,
+  "final_response_preview": "",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-hard-1-A-condition-A"
+}

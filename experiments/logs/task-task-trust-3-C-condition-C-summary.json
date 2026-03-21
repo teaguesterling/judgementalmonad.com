@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trust-3-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 1064,
+  "duration_api_ms": 1060708,
+  "num_turns": 28,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 19,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 4,
+  "final_response_length": 1512,
+  "final_response_preview": "Here's a summary of what was created and why:\n\n---\n\n## Files Created\n\n### `src/sql_macros/purity.sql`\n\nThree structural impurity signals, each a CTE:\n\n1. **`impure_calls`** \u2014 standalone function calls (callee is a bare identifier, not `obj.method`) where the name isn't in local scope (params + local vars + nested function names). `x + y` is a `binary_operator` node, not a call, so arithmetic is never flagged.\n\n2. **`impure_attr`** \u2014 attribute access (`COMPUTATION_ACCESS`) where the object's iden",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trust-3-C-condition-C"
+}

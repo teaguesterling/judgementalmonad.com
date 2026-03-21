@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-v2-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 459,
+  "duration_api_ms": 445004,
+  "num_turns": 18,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 15,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.8666666666666667,
+  "sandbox_commits": 7,
+  "final_response_length": 1331,
+  "final_response_preview": "All 48 tests pass. Here's a summary of the 4 bugs fixed:\n\n**Bug 1 \u2014 Tokenizer: string values included surrounding quotes** (`tokenizer.py`)\nThe tokenizer used `line[start:col]` (a slice including the quote chars). Fixed by building the value char-by-char, collecting only content between delimiters. Also properly skips escape sequences (`\\\"` \u2192 neither char included), which satisfies `test_escaped_string`.\n\n**Bug 2 \u2014 Evaluator: `Attr` used `getattr` on dicts** (`evaluator.py`)\nDot-access on a dict",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-v2-C-condition-C"
+}

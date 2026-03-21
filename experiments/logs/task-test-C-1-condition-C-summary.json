@@ -1,0 +1,18 @@
+{
+  "task_id": "test-C-1",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 117,
+  "duration_api_ms": 113567,
+  "num_turns": 11,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 9,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 978,
+  "final_response_preview": "`workspace/macro-audit.md` has been written. Here's a summary of findings:\n\n**5 active macro files analyzed, 69 macros total:**\n\n| File | TABLE | SCALAR | Total |\n|------|-------|--------|-------|\n| `src/sql_macros/tree_navigation.sql` | 15 | 0 | 15 |\n| `src/sql_macros/pattern_matching.sql` | 2 | 10 | 12 |\n| `src/sql_macros/semantic_predicates.sql` | 0 | 30 | 30 |\n| `src/sql_macros/file_utilities.sql` | 1 | 3 | 4 |\n| `tools/ast-cli/lib/useful_macros.sql` | 8 | 0 | 8 |\n| **Total** | **26** | **43",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-test-C-1-condition-C"
+}

@@ -1,0 +1,18 @@
+{
+  "task_id": "synth1-v2-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 657,
+  "duration_api_ms": 632000,
+  "num_turns": 17,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 15,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.8666666666666667,
+  "sandbox_commits": 7,
+  "final_response_length": 948,
+  "final_response_preview": "All 48 tests pass. Here's a summary of the 5 bugs fixed:\n\n| # | File | Bug | Fix |\n|---|------|-----|-----|\n| 1 | `tokenizer.py` | String token values included surrounding quotes (root cause of 5+ evaluator failures) | Strip outer quotes: `line[start+1:col-1]` |\n| 2 | `tokenizer.py` | Escape sequences not processed in string values | Process char-by-char: `\\n`\u2192newline, `\\\\`\u2192`\\`, `\\\"`/`\\'`\u2192removed |\n| 3 | `evaluator.py` | `Attr` node used `getattr()` on dicts, which fails | Check `isinstance(o, d",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-beta/trees/experiment/task-synth1-v2-A-condition-A"
+}

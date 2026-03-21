@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trap-1-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 153,
+  "duration_api_ms": 148687,
+  "num_turns": 12,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 9,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 3,
+  "final_response_length": 1503,
+  "final_response_preview": "Done. Here's a summary of what was created:\n\n**`src/sql_macros/complexity.sql`** \u2014 the `ast_complexity_score(source, language, function_name)` macro:\n- Finds the named function using `is_function_definition` + name match\n- Builds function scope using the same DFS pre-order range trick as `ast_function_scope`, excluding nested function bodies\n- Counts 4 component types using the same type-filter patterns as `ast_function_metrics` (to avoid double-counting keyword child nodes):\n  - `is_conditional",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trap-1-B-condition-B"
+}

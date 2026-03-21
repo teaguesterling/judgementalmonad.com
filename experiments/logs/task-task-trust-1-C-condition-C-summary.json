@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trust-1-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 129,
+  "duration_api_ms": 124574,
+  "num_turns": 26,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 39,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 0,
+  "final_response_length": 0,
+  "final_response_preview": "",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trust-1-C-condition-C"
+}

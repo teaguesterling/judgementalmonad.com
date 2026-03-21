@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trust-3-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 566,
+  "duration_api_ms": 562686,
+  "num_turns": 30,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 20,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 4,
+  "final_response_length": 1563,
+  "final_response_preview": "All four deliverables are complete. Here's a summary of what was implemented:\n\n---\n\n## What was built\n\n### `src/sql_macros/purity.sql`\nThe macro works in three stages:\n\n1. **Build local scope** per function: parameters (extracted by walking the `parameters` subtree for all identifier nodes), local variable definitions, directly-nested function names, and the function's own name (for recursion).\n\n2. **Three impurity signals** checked in priority order:\n   - `global`/`nonlocal` statements \u2192 `\"uses",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trust-3-B-condition-B"
+}

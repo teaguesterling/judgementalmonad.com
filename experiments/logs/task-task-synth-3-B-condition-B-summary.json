@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-3-B",
+  "condition": "B",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 172,
+  "duration_api_ms": 169046,
+  "num_turns": 10,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 6,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 0.8333333333333334,
+  "sandbox_commits": 2,
+  "final_response_length": 1367,
+  "final_response_preview": "The code looks good. Let me trace through the critical compatibility check \u2014 the existing `test_unflatten_conflict` expects `TypeError` or `AttributeError`, and `UnflattenConflict(TypeError)` satisfies that since it inherits from `TypeError`.\n\nHere's a summary of what was implemented:\n\n**`src/merger.py` changes:**\n\n- **`MergeConflict(ValueError)`** \u2014 raised by `strategy=\"strict\"` on structural type mismatches\n- **`UnflattenConflict(TypeError)`** \u2014 raised by fixed `unflatten_config`; subclasses `",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-3-B-condition-B"
+}

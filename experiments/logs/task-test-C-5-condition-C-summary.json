@@ -1,0 +1,18 @@
+{
+  "task_id": "test-C-5",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 71,
+  "duration_api_ms": 68318,
+  "num_turns": 8,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 6,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 699,
+  "final_response_preview": "`macro-audit.md` written. Summary of findings:\n\n- **61 total macros** across 4 active files in `src/sql_macros/`\n- **18 TABLE macros**, **43 SCALAR macros**\n- **Dependency layers:**\n  - `semantic_predicates.sql` (30 macros) \u2014 all thin wrappers over the C++ `is_semantic_type()` built-in\n  - `tree_navigation.sql` (15 TABLE macros) \u2014 heavy consumers of the semantic predicate layer; 8 of 15 macros have SQL macro dependencies\n  - `file_utilities.sql` (4 macros) \u2014 `ast_source_of` depends on 5 semantic",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-test-C-5-condition-C"
+}

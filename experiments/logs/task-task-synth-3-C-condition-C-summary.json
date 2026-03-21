@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-3-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 135,
+  "duration_api_ms": 131880,
+  "num_turns": 9,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 5,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 3,
+  "final_response_length": 1047,
+  "final_response_preview": "50/50 passing. Here's a summary of what was done:\n\n**`src/merger.py` changes:**\n\n- `MergeConflict(ValueError)` \u2014 raised by `strategy=\"strict\"` on type mismatches\n- `FlattenConflict(TypeError)` \u2014 raised by `unflatten_config` on key conflicts (subclasses `TypeError` so the existing test's `except (TypeError, AttributeError)` still catches it)\n- `MergeReport` dataclass with `keys_added`, `keys_overridden`, `keys_removed`, `type_conflicts`\n- `deep_merge` gains `strategy` parameter \u2014 `\"override\"` (de",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-3-C-condition-C"
+}

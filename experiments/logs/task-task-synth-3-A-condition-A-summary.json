@@ -1,0 +1,18 @@
+{
+  "task_id": "task-synth-3-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 132,
+  "duration_api_ms": 129865,
+  "num_turns": 11,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 8,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 2,
+  "final_response_length": 1484,
+  "final_response_preview": "The implementation looks good. Here's a summary of what was done:\n\n**`src/merger.py` changes:**\n\n1. **Added `MergeConflict` exception** and **`MergeReport` dataclass** at the top.\n\n2. **`deep_merge`** gains a `strategy` parameter (default `\"override\"`):\n   - `override`: existing behavior (silent replacement on type conflicts)\n   - `strict`: raises `MergeConflict` on list-vs-scalar or dict-vs-scalar mismatches\n   - `append`: appends scalar to base list instead of replacing\n   - `protect`: base wi",
+  "worktree": "/mnt/aux-data/teague/Projects/judgementalmonad.com/experiments/synthetic/codebase-alpha/trees/experiment/task-task-synth-3-A-condition-A"
+}

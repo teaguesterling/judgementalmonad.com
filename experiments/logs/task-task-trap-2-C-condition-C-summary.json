@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trap-2-C",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 123,
+  "duration_api_ms": 120496,
+  "num_turns": 18,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 12,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 6,
+  "final_response_length": 736,
+  "final_response_preview": "The embedded macro is correct (`>=` and `ORDER BY`). The changes are:\n\n1. **`src/sql_macros/tree_navigation.sql`**: Fixed `ast_descendants` to use `>=` (include the node itself) and added `ORDER BY a.start_line, a.start_column`\n2. **`src/include/embedded_sql_macros.hpp`**: Regenerated with the updated macro\n3. **`test/sql/tree_navigation_macros.test`**: Updated expected count from 10\u219211, added test verifying the node itself is included, and test verifying ordering\n\nThe key insight the hint was p",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trap-2-C-condition-C"
+}

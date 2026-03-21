@@ -1,0 +1,18 @@
+{
+  "task_id": "test-C-4",
+  "condition": "C",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 87,
+  "duration_api_ms": 83056,
+  "num_turns": 9,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 7,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 1,
+  "final_response_length": 756,
+  "final_response_preview": "`macro-audit.md` written. Here's a summary of findings:\n\n| File | Macros | TABLE | SCALAR |\n|---|---|---|---|\n| `tree_navigation.sql` | 15 | 15 | 0 |\n| `pattern_matching.sql` | 12 | 2 | 10 |\n| `semantic_predicates.sql` | 30 | 0 | 30 |\n| `file_utilities.sql` | 4 | 1 | 3 |\n| **Total** | **61** | **18** | **43** |\n\nKey dependency patterns:\n- `tree_navigation.sql` and `file_utilities.sql` both depend heavily on `semantic_predicates.sql` (specifically the `is_*_definition` and `is_function_call` macr",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-test-C-4-condition-C"
+}

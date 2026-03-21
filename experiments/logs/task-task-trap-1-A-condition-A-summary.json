@@ -1,0 +1,18 @@
+{
+  "task_id": "task-trap-1-A",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 273,
+  "duration_api_ms": 269418,
+  "num_turns": 16,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 12,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 3,
+  "final_response_length": 1629,
+  "final_response_preview": "Done. Here's a summary of what was written:\n\n---\n\n## `src/sql_macros/complexity.sql`\n\nA scalar macro `ast_complexity_score(source, language, function_name) \u2192 INTEGER` that:\n\n1. Parses the file with `read_ast(source, language)`\n2. Finds the named function using `is_function_definition(semantic_type)`\n3. Collects function scope, **excluding nested function bodies** (same pattern as `ast_function_metrics`)\n4. Counts decision points across four independent categories using semantic type predicates p",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-task-trap-1-A-condition-A"
+}

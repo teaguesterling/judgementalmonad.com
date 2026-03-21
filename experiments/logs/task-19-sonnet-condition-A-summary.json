@@ -1,0 +1,18 @@
+{
+  "task_id": "19-sonnet",
+  "condition": "A",
+  "model": "sonnet",
+  "exit_code": 0,
+  "duration_s": 207,
+  "duration_api_ms": 202835,
+  "num_turns": 21,
+  "is_error": false,
+  "tool_calls_conversation": 0,
+  "tool_calls_mcp": 22,
+  "tool_call_breakdown": {},
+  "mcp_success_rate": 1.0,
+  "sandbox_commits": 529,
+  "final_response_length": 0,
+  "final_response_preview": "",
+  "worktree": "/mnt/aux-data/teague/Projects/sitting_duck/main/trees/experiment/task-19-sonnet-condition-A"
+}
