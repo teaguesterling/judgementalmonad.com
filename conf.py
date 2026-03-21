@@ -4,6 +4,7 @@ copyright = "2025-2026, Teague Sterling"
 
 extensions = [
     "myst_parser",
+    "sphinxcontrib.mermaid",
 ]
 
 myst_enable_extensions = [

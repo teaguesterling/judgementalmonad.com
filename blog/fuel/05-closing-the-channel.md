@@ -24,34 +24,16 @@ Let's build.
 
 Start with your conversation logs. Claude Code stores every tool call as structured data — tool name, arguments, result, success flag, duration. DuckDB reads these natively.
 
-The discovery query is the one from [Post 1](01-fuel.md), focused on bash:
+The discovery query is the one from [Post 1](01-fuel.md), focused on Bash calls. Group tool calls by command prefix, count frequency, measure success rate. (The queries below use a simplified schema — `tool`, `arguments`, `success` — for readability. Fledgling's `tool_calls()` macro handles parsing the real Claude Code JSONL into this shape.)
 
 ```sql
 -- What bash commands does the agent actually run?
--- Focus on the patterns that succeed consistently.
-CREATE OR REPLACE VIEW bash_patterns AS
-WITH parsed AS (
-    SELECT *,
-           -- Extract the command prefix (first word or first two words)
-           regexp_extract(
-               arguments->>'command',
-               '^\s*(\S+(?:\s+\S+)?)',
-               1
-           ) as command_prefix,
-           -- Extract the full command for detailed analysis
-           arguments->>'command' as full_command
-    FROM tool_calls
-    WHERE tool = 'Bash'
-)
 SELECT command_prefix,
        count(*) as frequency,
        round(avg(CASE WHEN success THEN 1.0 ELSE 0.0 END), 3) as success_rate,
-       round(avg(duration_ms), 0) as avg_duration_ms,
-       count(DISTINCT task_id) as across_n_tasks
-FROM parsed
-GROUP BY command_prefix
-HAVING count(*) >= 3
-ORDER BY frequency * avg(CASE WHEN success THEN 1.0 ELSE 0.0 END) DESC;
+       count(DISTINCT session_id) as across_n_sessions
+FROM bash_patterns
+ORDER BY frequency * success_rate DESC;
 ```
 
 When we ran this against Fledgling's development logs, the results were immediate:
@@ -83,21 +65,7 @@ Twenty-five times per task the model did its most expensive work to produce some
 
 The top-level frequency tells you *which* pattern to investigate. The next query tells you *what* the pattern actually does:
 
-```sql
--- Detailed analysis of the grep -r pattern
--- What does the agent actually search for? How does it use the results?
-SELECT arguments->>'command' as full_command,
-       success,
-       length(result_preview) as result_size,
-       duration_ms
-FROM tool_calls
-WHERE tool = 'Bash'
-  AND arguments->>'command' LIKE 'grep -r%'
-ORDER BY timestamp
-LIMIT 20;
-```
-
-The commands follow a tight distribution. Almost all of them look like:
+Drill into the top candidate — filter for `grep -r` calls and look at the actual commands. The commands follow a tight distribution. Almost all of them look like:
 
 ```bash
 grep -r "pattern" ./path --include="*.py"
@@ -142,12 +110,13 @@ search_tool.py — A structured codebase search tool.
 Replaces: Bash("grep -r pattern path")
 Grade before: Level 4 computation channel (arbitrary string -> universal machine)
 Grade after: Level 1 data channel (structured query -> bounded search -> structured results)
+
+Full implementation: https://github.com/teaguesterling/fledgling
 """
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
-
+import re
 
 @dataclass
 class MatchResult:
@@ -157,7 +126,6 @@ class MatchResult:
     line_content: str
     match_start: int
     match_end: int
-
 
 @dataclass
 class SearchResult:
@@ -170,7 +138,6 @@ class SearchResult:
     truncated: bool = False
     error: str | None = None
 
-
 def search(
     pattern: str,
     root: str = ".",
@@ -182,16 +149,6 @@ def search(
     """
     Search files under root for lines matching pattern.
 
-    Args:
-        pattern: Regular expression to search for.
-        root: Directory to search (default: current directory).
-        include: Glob pattern for file filtering (e.g., "*.py").
-        max_results: Maximum matches to return before truncating.
-        case_sensitive: Whether the search is case-sensitive.
-
-    Returns:
-        SearchResult with structured match data.
-
     This function:
         - Reads files directly (no shell, no PATH lookup, no aliases)
         - Returns structured data (not strings to parse)
@@ -200,74 +157,15 @@ def search(
         - Handles errors explicitly (no silent failures)
     """
     result = SearchResult(pattern=pattern, root=str(root))
-
-    try:
-        flags = 0 if case_sensitive else re.IGNORECASE
-        compiled = re.compile(pattern, flags)
-    except re.error as e:
-        result.error = f"Invalid pattern: {e}"
-        return result
-
+    compiled = re.compile(pattern, 0 if case_sensitive else re.IGNORECASE)
     root_path = Path(root).resolve()
-    if not root_path.is_dir():
-        result.error = f"Not a directory: {root}"
-        return result
 
-    skip_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.venv'}
-
-    for dirpath in _walk(root_path, skip_dirs):
-        for filepath in dirpath.iterdir():
-            if not filepath.is_file():
-                continue
-
-            # Apply include filter
-            if include and not _matches_glob(filepath.name, include):
-                continue
-
-            result.files_searched += 1
-
-            try:
-                text = filepath.read_text(encoding='utf-8', errors='ignore')
-            except (OSError, PermissionError):
-                continue
-
-            file_matched = False
-            for line_number, line in enumerate(text.splitlines(), start=1):
-                match = compiled.search(line)
-                if match:
-                    if not file_matched:
-                        result.files_matched += 1
-                        file_matched = True
-
-                    result.matches.append(MatchResult(
-                        file=str(filepath.relative_to(root_path)),
-                        line_number=line_number,
-                        line_content=line.rstrip(),
-                        match_start=match.start(),
-                        match_end=match.end(),
-                    ))
-
-                    if len(result.matches) >= max_results:
-                        result.truncated = True
-                        return result
+    for filepath in _walk_files(root_path, include):
+        result.files_searched += 1
+        # ... read file, match lines, append MatchResult objects ...
+        # ... respect max_results cap, set truncated flag ...
 
     return result
-
-
-def _walk(root: Path, skip: set[str]):
-    """Walk directory tree, skipping named directories."""
-    if root.name in skip:
-        return
-    yield root
-    for child in sorted(root.iterdir()):
-        if child.is_dir():
-            yield from _walk(child, skip)
-
-
-def _matches_glob(filename: str, pattern: str) -> bool:
-    """Simple glob matching for include filters."""
-    from fnmatch import fnmatch
-    return fnmatch(filename, pattern)
 ```
 
 ### What changed
@@ -286,20 +184,11 @@ Read that implementation carefully. Notice what's *not there*.
 
 ### The MCP tool version
 
-If you're building MCP tools, the structured search becomes a tool definition:
+The structured search becomes an MCP tool definition — five typed parameters, structured output:
 
 ```python
-"""
-search_mcp.py — MCP tool wrapper for structured search.
-"""
-
-from mcp.server import Server
-from mcp.types import Tool, TextContent
-
-from search_tool import search, SearchResult
-
-server = Server("codebase-search")
-
+# search_mcp.py — MCP tool wrapper for structured search.
+# Full implementation: blog/fuel/code/search_mcp.py
 
 @server.tool()
 async def codebase_search(
@@ -310,89 +199,22 @@ async def codebase_search(
     case_sensitive: bool = True,
 ) -> list[TextContent]:
     """Search codebase files for a regex pattern.
-
-    Returns structured match results with file paths,
-    line numbers, and match content. Read-only operation.
-    """
-    result = search(
-        pattern=pattern,
-        root=root,
-        include=include,
-        max_results=max_results,
-        case_sensitive=case_sensitive,
-    )
-    return [TextContent(
-        type="text",
-        text=_format_result(result),
-    )]
-
-
-def _format_result(result: SearchResult) -> str:
-    """Format SearchResult for LLM consumption."""
-    if result.error:
-        return f"Search error: {result.error}"
-
-    lines = [
-        f"Found {len(result.matches)} matches "
-        f"in {result.files_matched} files "
-        f"({result.files_searched} files searched)",
-    ]
-
-    if result.truncated:
-        lines.append(f"(truncated at {len(result.matches)} results)")
-
-    lines.append("")
-
-    current_file = None
-    for match in result.matches:
-        if match.file != current_file:
-            current_file = match.file
-            lines.append(f"--- {current_file} ---")
-        lines.append(f"{match.line_number}: {match.line_content}")
-
-    return "\n".join(lines)
+    Returns structured match results. Read-only operation."""
+    result = search(pattern=pattern, root=root, include=include, ...)
+    return [TextContent(type="text", text=format_result(result))]
 ```
 
-The MCP tool schema exposes five parameters, each with a known type. The agent selects from a defined interface. It doesn't compose a shell command. It fills in structured fields.
+The agent fills in structured fields. It doesn't compose a shell command.
 
 ### The DuckDB version
 
-If your analysis pipeline is SQL-native — if you're already querying conversation logs with DuckDB — the search tool can be a macro that operates over an indexed codebase table:
+If your pipeline is SQL-native, the search tool is a macro over an indexed codebase table:
 
 ```sql
--- Index the codebase into a DuckDB table
-CREATE OR REPLACE TABLE codebase AS
-SELECT file_path,
-       line_number,
-       line_content
-FROM read_csv_auto(
-    'codebase_index.csv',
-    columns={
-        'file_path': 'VARCHAR',
-        'line_number': 'INTEGER',
-        'line_content': 'VARCHAR'
-    }
-);
-
--- Build the index from the filesystem
--- Run this once, or after significant changes
-COPY (
-    SELECT path as file_path,
-           generate_series as line_number,
-           split(content, E'\n')[generate_series] as line_content
-    FROM (
-        SELECT path,
-               content,
-               generate_series(1, length(content) - length(replace(content, E'\n', '')) + 1)
-        FROM read_text('src/**/*.py')
-    )
-) TO 'codebase_index.csv';
-
 -- The structured search macro
+-- Full implementation: blog/fuel/code/search.sql
 CREATE OR REPLACE MACRO search(search_pattern, search_path) AS TABLE
-    SELECT file_path,
-           line_number,
-           line_content
+    SELECT file_path, line_number, line_content
     FROM codebase
     WHERE regexp_matches(line_content, search_pattern)
       AND file_path LIKE (search_path || '%')
@@ -403,7 +225,7 @@ CREATE OR REPLACE MACRO search(search_pattern, search_path) AS TABLE
 FROM search('def test_', 'src/tests/');
 ```
 
-Same operation. No shell. Structured input, structured output, bounded results. The search is a SQL query against an indexed table. DuckDB's query planner handles the execution. The codebase index is a specified artifact — you can read it, audit it, version it.
+Same operation. No shell. Structured input, structured output, bounded results. The codebase index is a specified artifact — you can read it, audit it, version it.
 
 ---
 
@@ -461,6 +283,30 @@ That's it. No shell. No PATH. No aliases. No argument expansion. No output parsi
 The Harness can fully characterize what this tool call will do: it will read files under `src/tests/`, search for lines matching `def test_`, and return up to 200 structured matches. The characterization is complete. The Harness doesn't need to solve an undecidable problem. It reads the tool's declared interface and knows.
 
 **Grade: Level 1 data channel.** Known input language (regex pattern + path). Known effects (read-only filesystem access, scoped to root). Known output schema (SearchResult with typed fields). The characterization difficulty is linear — proportional to the number of parameters.
+
+### The two paths
+
+```{mermaid}
+%%{init: {'theme': 'neutral'}}%%
+graph TD
+    subgraph before ["BEFORE: Computation Channel (Level 4)"]
+        A1["Agent intent:<br/>'find test functions'"] --> A2["Compose shell<br/>command string"]
+        A2 --> A3["Shell resolves PATH,<br/>expands aliases,<br/>parses args"]
+        A3 --> A4["grep binary produces<br/>unstructured text"]
+        A4 --> A5["Agent parses text<br/>to extract<br/>file:line:match"]
+        A5 --> A6["Agent uses<br/>parsed data"]
+    end
+
+    subgraph after ["AFTER: Data Channel (Level 1)"]
+        B1["Agent intent:<br/>'find test functions'"] --> B2["Fill structured<br/>parameters"]
+        B2 --> B3["search() walks<br/>filesystem directly<br/>(no shell)"]
+        B3 --> B4["Returns SearchResult<br/>{file, line_no,<br/>content, ...}"]
+        B4 --> B5["Agent uses<br/>structured data"]
+    end
+
+    style before fill:#fff5f5,stroke:#c53030
+    style after fill:#f0fff4,stroke:#276749
+```
 
 ### The grade drop
 
@@ -533,38 +379,7 @@ This process works for any frequently-successful bash pattern. The steps are alw
 
 **6. Deploy and verify.** Make the structured tool available. Run the next session. Query the logs again. The bash pattern should appear less frequently (ideally not at all for the promoted operation). The tool call should appear in its place. The failure rate for this class of operation should drop.
 
-```sql
--- Verify the promotion: did the bash pattern frequency drop?
--- Run after deploying the structured tool
-WITH before AS (
-    SELECT count(*) as bash_calls
-    FROM tool_calls
-    WHERE tool = 'Bash'
-      AND arguments->>'command' LIKE 'grep -r%'
-      AND timestamp < '2026-03-01'  -- before promotion
-),
-after AS (
-    SELECT count(*) as bash_calls
-    FROM tool_calls
-    WHERE tool = 'Bash'
-      AND arguments->>'command' LIKE 'grep -r%'
-      AND timestamp >= '2026-03-01'  -- after promotion
-),
-structured AS (
-    SELECT count(*) as search_calls
-    FROM tool_calls
-    WHERE tool = 'codebase_search'
-      AND timestamp >= '2026-03-01'
-)
-SELECT before.bash_calls as grep_before,
-       after.bash_calls as grep_after,
-       structured.search_calls as structured_after,
-       round(100.0 * (before.bash_calls - after.bash_calls)
-             / before.bash_calls, 1) as reduction_pct
-FROM before, after, structured;
-```
-
-The verification is specified. SQL over structured logs. No judgment in the measurement loop. You can see whether the ratchet turned by reading a query result.
+The verification is specified: count `grep -r` bash calls before and after deployment, count `codebase_search` tool calls after. The bash pattern frequency should drop. The structured tool calls should appear in its place. SQL over structured logs — no judgment in the measurement loop. You can see whether the ratchet turned by reading a query result.
 
 ---
 
