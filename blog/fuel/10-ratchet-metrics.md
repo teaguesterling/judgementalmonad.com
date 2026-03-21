@@ -140,7 +140,7 @@ Each validated definition is a ratchet promotion. Somebody wrote an ad-hoc query
 
 ## Code ships: the dashboard
 
-These DuckDB queries extract all six metrics from the conversation logs and failure stream data established in Post 1. They assume the `tool_calls` view from Post 1 exists, plus a `tool_promotions` table that tracks when patterns are promoted to structured tools, and a `mode_transitions` table that logs mode changes.
+These DuckDB queries extract all six metrics from the conversation logs and failure stream data established in Post 1. They use a simplified schema (`tool_calls` with `tool`, `success`, `timestamp`, etc.) for readability — Fledgling's `tool_calls()` macro handles parsing real Claude Code JSONL into this shape. The queries also assume a `tool_promotions` table that tracks promotions and a `mode_transitions` table that logs mode changes. Full implementations are in [blog/fuel/code/ratchet_dashboard.sql](code/ratchet_dashboard.sql).
 
 ### Schema setup
 
@@ -341,25 +341,53 @@ Run these queries weekly. The numbers tell you three things.
 
 **Whether you can trust the system.** The trust gap metrics — boundary hit rate, observer divergence rate — tell you how much of the system's behavior you can actually verify. A system with great ratchet rate but no observer checks is a system that's getting more powerful without getting more verified. That's the wrong direction.
 
-The metrics interact. A high ratchet rate should produce a declining computation channel fraction. A healthy failure stream composition (mostly repeated patterns) should correlate with a positive ratchet rate (those patterns are getting promoted). A declining observer divergence rate should correlate with increasing self-service ratio (validated definitions are more reliable than ad-hoc queries).
+### When the metrics disagree
 
-When the metrics disagree — high ratchet rate but stable computation channel fraction, for example — something is wrong. Either the promotions aren't being adopted (the tools got built but the agent isn't using them) or new computation channels are opening as fast as old ones close (new tasks are outpacing the ratchet). The disagreement is the diagnostic.
+The metrics interact. When they agree, the system is coherent. When they disagree, the disagreement is the diagnostic. Here's what that looks like in practice.
+
+**Scenario: High ratchet rate, stable computation channel fraction.**
+
+Your team promoted four bash patterns to structured tools last month. The ratchet rate looks great. But the computation channel fraction hasn't moved — the same percentage of tool calls are still going through Bash.
+
+What's happening: the agent isn't using the new tools. The promotions happened — the structured tools exist — but the agent is still reaching for Bash because the CLAUDE.md doesn't mention the new tools, or the tool names aren't guessable, or the tool descriptions don't make it clear when to use them over Bash. The tools got built but the teaching layer (Post 8) didn't update.
+
+The fix: add the tools to the agent's context. Update CLAUDE.md. Make the tool names match what the agent would naturally reach for. Check whether the agent's Bash calls are for the exact patterns you promoted — if they are, it's a discoverability problem, not a tool problem.
+
+**Scenario: Declining computation channel fraction, rising observer gap rate.**
+
+The agent is using more structured tools and less Bash. That's good — the ratchet is turning. But the observer is catching more divergences between what the agent claims and what actually happened. The trust gap is widening even as the system gets more structured.
+
+What's happening: the new structured tools may have bugs, or they may not cover the edge cases that the Bash patterns handled implicitly. The agent calls `search(pattern, path)` and gets results, but the results are incomplete because the structured tool skips binary files that `grep -r` would have included. The tool's type commitments aren't fully backed by its implementation — a type honesty failure from [Post 2](02-the-two-stage-turn.md).
+
+The fix: review the observer divergences. Each one points to a gap between the tool's interface promise and its implementation. Fix the tool, not the metric. The observer is doing its job — it's catching what the ratchet introduced.
+
+**Scenario: Low ratchet rate, healthy failure stream (mostly repeated patterns).**
+
+The failure stream is full of ratchet candidates. Bash patterns appearing dozens of times with high success rates. The promotion query returns a long list of candidates. But nobody is promoting them. The ratchet rate is zero.
+
+What's happening: it's an attention problem. The data is there. The candidates are identified. The crystallization step requires a human decision — review the candidate, build the tool, deploy it. That step isn't happening because it's not in anyone's workflow. The failure stream is producing fuel. Nobody is burning it.
+
+The fix: schedule the promotion review. Weekly, thirty minutes, one person. Run the repeated-patterns query from Post 1. Pick the top candidate. Build the tool. Deploy it. Verify the Bash pattern frequency drops. Repeat. The ratchet needs a cadence, not just a mechanism.
 
 ---
 
-## The metrics tell you where the ratchet should turn next
+## What to do Monday morning
 
 This series started with a claim: your system will teach itself to need less AI over time, if you instrument it to learn from its own failures.
 
-The failures are the fuel — [Post 1](01-fuel.md). The two-stage mechanism converts exploration into infrastructure — [Post 2](02-the-two-stage-turn.md). The placement of autonomy determines what the system can learn — [Post 3](03-where-the-failures-live.md). The controller watches counters and switches modes — [Post 4](04-the-failure-driven-controller.md). And the organizational star distributes the ratchet across teams — [Post 9](09-the-organizational-star.md).
+The failures are the fuel — [Post 1](01-fuel.md). The two-stage mechanism converts exploration into infrastructure — [Post 2](02-the-two-stage-turn.md). The placement of failures determines what the system can learn cheaply — [Post 3](03-where-the-failures-live.md). The controller watches counters and switches modes — [Post 4](04-the-failure-driven-controller.md). And the organizational star distributes the ratchet across teams — [Post 9](09-the-organizational-star.md).
 
-The metrics close the loop. They tell you whether the ratchet is turning, how fast, and where it should turn next. They convert the qualitative question — "is the system getting better?" — into arithmetic. Numbers you can track. Trends you can plot. Thresholds you can set.
+The metrics close the loop. Here's what to do with them.
 
-The instrument panel is itself a specified observer. It runs at Layer 0 through Layer 3. No trained judgment in the monitoring pipeline. SQL over structured logs. The thing that measures the system is the simplest thing in the system — because the thing that measures the system must be the thing you trust most.
+**This week:** Point DuckDB at your conversation logs. Run the failure stream composition query. Find out what category dominates. If it's repeated patterns, pick the top one and build a structured tool. If it's permission denials, make one constraint visible. If it's timeouts, add one scoped alternative. One change. Measure the shift next week.
 
-Build the dashboard. Run it weekly. Let the numbers tell you what to build next.
+**This month:** Build the dashboard. All six queries, running weekly. Track the ratchet rate. Track the computation channel fraction. Set up an observer check — even a simple one, like diffing the files the agent claimed to modify against what actually changed. Start the feedback loop.
 
-The ratchet turns when you look at it.
+**This quarter:** Schedule the promotion review. Thirty minutes, weekly, one person. Run the repeated-patterns query. Pick the top candidate. Build the tool. Deploy it. Verify the pattern frequency drops. This is the cadence that makes the ratchet turn — not the mechanism, but the habit of looking at the numbers and acting on what they say.
+
+The instrument panel is itself a specified observer. No trained judgment in the monitoring pipeline. SQL over structured logs. The thing that measures the system is the simplest thing in the system — because the thing that measures the system must be the thing you trust most.
+
+The theory is in the [Ma series](../ma/00-intro.md). The mechanism is in this series. The data is in your logs right now. The only thing left is to look.
 
 ---
 
