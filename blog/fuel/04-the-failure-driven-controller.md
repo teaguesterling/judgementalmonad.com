@@ -4,55 +4,112 @@
 
 ---
 
-## Two different jobs
+## Five systems, one gap
 
-Your agent system has a coordination layer. It routes tool calls, enforces permissions, manages state, constructs scope. This is the Harness — and it does its job well. Pre-hooks gate calls before execution. Post-hooks inspect results after. Permissions get enforced. State gets tracked.
+Stafford Beer's Viable System Model says any viable organization needs five functions. Agent systems have four of them:
 
-But coordination is not control.
+| System | Function | In agent architecture |
+|---|---|---|
+| **System 1** | Operations | The tools — they do the work |
+| **System 2** | Coordination | The Harness — routes messages, enforces permissions, manages state |
+| **System 4** | Intelligence | The model — scans the environment, proposes actions, reasons |
+| **System 5** | Identity/purpose | The human — decides what matters, mediates trade-offs |
 
-Coordination is routine. It follows the same rules on every turn. It doesn't care whether the agent is thriving or spiraling. It processes the current tool call against the current permission set and moves on. It has no memory of the last twenty turns. It has no opinion about whether the configuration is working.
+**System 3 — control — is missing.** Coordination (System 2) follows the same rules on every turn. It doesn't care whether the agent is thriving or spiraling. It processes the current tool call against the current permission set and moves on. It has no memory of the last twenty turns. It has no opinion about whether the configuration is working.
 
 Control watches the trajectory. It notices that the agent has failed twelve times in the last fifteen turns. It notices that the same grep pattern has appeared three times with no progress. It notices that the success rate was 90% at turn twenty and is 40% at turn sixty. And it does something about it: switches the mode, tightens the permissions, forces a re-plan.
 
-Coordination is System 2 — routine, transparent, stateless per-turn processing. Control is System 3 — evaluative monitoring across turns, with the authority to intervene.
+Beer was specific about what System 3 does: **monitor** whether the current configuration is working, **intervene** when it isn't, and **allocate resources** across competing demands. It's the factory floor manager — not the CEO (System 5), not the strategist (System 4), not the shift coordinator (System 2). The floor manager who notices the line is backing up and moves people to where they're needed.
 
 Most agent systems have coordination. Almost none have control. The human fills that gap manually — watching the output, noticing the spiral, hitting Ctrl-C. That works. It also means your system can't get better at managing itself.
 
-This post builds the controller.
+Beer also insisted: System 3 must be simpler than what it manages. If the controller requires the same kind of reasoning as the agent, you haven't built a controller — you've built another agent. The people using LLM-backed guardrails are putting System 4 where System 3 should be. The failure-driven controller is the specified alternative.
+
+This post builds it.
 
 ---
 
-## Four modes
+## Modes already exist
 
-A mode is a named configuration that determines what the agent can read, what it can write, and what its output looks like. Four modes cover the core development workflow. Each has a specific trust profile.
+Modes aren't a theoretical proposal. They're already shipping in production agent systems — they just aren't called modes yet, and nobody has a controller managing them.
+
+### Claude Code
+
+Claude Code has three modes — plus a hidden fourth:
+
+**Standard mode** — the default. The agent can read anything. Write operations (Edit, Write, Bash with side effects) require user approval. The permission gate is the System 3 function performed manually: the human evaluates each proposed write and allows or denies.
+
+**Accept-edits mode** (`--accept-edits`) — all file writes are auto-approved. Bash still requires approval. The trust surface widens: the agent can modify the codebase without per-operation human review.
+
+**Plan mode** (`--plan`) — no edits at all. The agent reads and reasons but doesn't execute. This is a qualitative shift: the system drops from computation channel level 4+ to level 0-2. The dynamics go from self-amplifying to convergent. The regulatory burden drops to near-zero.
+
+**Dangerously-skip-permissions** (`--dangerously-skip-permissions`) — everything auto-approved, including Bash. The trust surface is the entire sandbox. Maximally capable, maximally hard to regulate.
+
+For all of these except the last, individual tool calls are further controlled by allow/deny lists — per-tool permission rules that operate independently of the mode. The mode sets the overall trust posture; the allow/deny lists handle the per-tool details.
+
+### Claude Desktop
+
+Claude Desktop has a different mode structure, oriented around capability bundles rather than permission levels:
+
+**Standard mode** — conversational. The model reasons and responds. No tools, no web access, no file system. Pure co-domain funnel: deep reasoning, text output.
+
+**Research mode** — adds web search and extended thinking. The model can pull in external information and spend more computation on reasoning. The trust surface expands to include web content, but there are no write effects — the model reads from the web and reasons, but doesn't modify anything.
+
+**Tool-use configurations** — when connected to MCP servers, the model gains access to structured tools. Each MCP server is a named capability grant. The user decides which servers to enable.
+
+### Modes across the industry
+
+This isn't an Anthropic pattern. The industry has converged on modes independently:
+
+**Cursor** has Agent mode (full tool access, terminal commands), Ask mode (read-only, conversational), and Edit mode (scoped inline changes). Agent ≈ implementation, Ask ≈ review, Edit ≈ scoped implementation.
+
+**GitHub Copilot** in VS Code has Chat (conversational, no edits), Edits (multi-file with diff preview), and Agent (autonomous, terminal access). Same three-tier structure.
+
+**OpenAI Codex CLI** runs in an isolated sandbox by default — sealed environment, structured output. That's the snapshot-seal-funnel pattern as the *only* mode.
+
+### What all these modes have in common
+
+Every system implements modes as **named configurations that determine what the agent can do.** The mode is a permission filter — which tool calls require approval (Claude Code), which capabilities are available (Claude Desktop), or which interaction pattern applies (Cursor, Copilot).
+
+What's missing in all of them is the *other* dimension of mode control: which *projections of the world* are accessible, and — critically — **who manages the transitions.** Right now the human switches modes manually. There's no controller watching the failure stream and saying "you've been spinning for twenty turns, drop to plan mode."
+
+### Modes as tool-set configurations
+
+A richer mode system ties modes to tools, not just to permission gates. Each mode defines:
+
+1. **Which tools are available** — not just whether they're auto-approved, but whether they exist in the agent's tool set at all
+2. **Which world projections are accessible** — which files, directories, or resources the agent can see and with what access (read, write, sealed-write)
+3. **What output schema constrains the boundary** — what structure the mode's output must conform to
+
+Here's what that looks like for a development workflow:
 
 ### Debug mode
 
-Tests are read-only ground truth. Implementation is available as a sealed snapshot — the agent gets a copy it can modify freely, but nothing persists. Every diagnostic cycle starts from the same known state.
+Tools: `{Read, Glob, Grep, Bash(read-only), RunTests}`. No `Edit`, no `Write`. Tests are read-only ground truth. Implementation is readable but not writable.
 
-The agent can be maximally invasive. Insert print statements. Modify control flow to isolate a bug. Run the test suite with extra logging. None of it persists. The only thing that crosses the boundary outward is a structured diagnosis: which test failed, what the expected behavior was, what the actual behavior was, where the discrepancy likely lives, and a hypothesis about why.
+The agent can be maximally invasive in its *analysis* — read anything, search anything, run tests with extra flags — but it can't modify the codebase. The only output is a structured diagnosis: which test failed, what the expected behavior was, what the actual behavior was, where the discrepancy lives, and a hypothesis about why.
 
-Broad inward, zero outward, structured through the funnel.
+This is Claude Code's plan mode, but scoped to debugging: broad read, zero write, structured output through the funnel.
 
 ### Implementation mode
 
-Implementation is writable. Tests are read-only. The agent writes code, runs tests, iterates. The test suite is the verification layer — a constraint, not a suggestion.
+Tools: `{Read, Glob, Grep, Edit, Write, Bash(sandboxed), RunTests}`. Full write access to implementation files. Tests are read-only — not in the tool set's write scope.
 
-The agent cannot edit tests. This is the critical property. If the agent has simultaneous write access to both tests and implementation, it can resolve a failing test by changing the test. This is not a hypothetical failure mode. It's a natural optimization target: the agent's objective is "make the tests pass," and editing the test is often easier than fixing the implementation. The mode boundary prevents this by construction.
+The agent writes code, runs tests, iterates. The test suite is the verification layer — a constraint, not a suggestion. The agent cannot edit tests. If it has simultaneous write access to both tests and implementation, it can resolve a failing test by changing the test. That's not a hypothetical — it's a natural optimization target. The mode boundary prevents it by construction.
 
 The diagnosis from debug mode flows in as a structured artifact — the agent knows what to fix and why.
 
 ### Test development mode
 
-Tests are writable. Implementation is read-only. The agent is writing specification, not implementation. The ground truth is the requirements or design spec, not the existing code.
+Tools: `{Read, Glob, Grep, Edit(tests only), Write(tests only), RunTests}`. Tests are writable. Implementation is read-only.
 
-This inverts the implementation profile: tests become the mutable surface, code becomes the reference. The agent can read the implementation to understand what it does, but cannot modify it. The separation ensures that test development is a distinct activity from implementation — you're defining what the system *should* do, not changing what it *does*.
+The agent is writing specification, not implementation. It can read the implementation to understand what it does, but cannot modify it. The separation ensures that test development is a distinct activity — you're defining what the system *should* do, not changing what it *does*.
 
 ### Review mode
 
-Everything is read-only. The agent reads the codebase with full trained reasoning and outputs a structured assessment: findings, severity, recommendation.
+Tools: `{Read, Glob, Grep}`. Everything is read-only. The agent reads the codebase with full trained reasoning and outputs a structured assessment: findings, severity, recommendation.
 
-This is the safest mode. Zero write coupling to anything. The agent's only output is its structured review. The regulatory burden is minimal — you only need to evaluate the assessment, not worry about side effects.
+Zero write coupling to anything. This is the safest mode — the regulatory burden is minimal because you only need to evaluate the assessment, not worry about side effects. This is a co-domain funnel: high internal reasoning compressed through a narrow output interface.
 
 ---
 
@@ -155,11 +212,23 @@ This is a prototype. It's meant to be run against conversation logs to test the 
 """
 Failure-driven mode controller (prototype).
 
-Reads a conversation log (JSONL), tracks failure counters,
+Reads a pre-processed tool call stream (JSONL), tracks failure counters,
 and outputs mode transition recommendations.
 
+Each input line is a JSON object with:
+  - tool: tool name (e.g., "Bash", "Edit", "Read")
+  - arguments: dict of tool arguments (e.g., {"command": "grep -r ..."})
+  - success: bool
+  - result: string (error message or output preview)
+  - duration_ms: int (optional)
+  - cumulative_tokens: int (optional)
+
+Claude Code's raw JSONL has a nested structure (message.content blocks
+with tool_use/tool_result types). Use Fledgling's tool_calls() macro
+or a preprocessing script to flatten it into this format.
+
 Usage:
-    python mode_controller.py conversation.jsonl
+    python mode_controller.py tool_calls.jsonl
 """
 
 import json
