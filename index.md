@@ -4,15 +4,48 @@
 
 ---
 
-## Two series, one framework
+## What this is
 
-**[The Ma of Multi-Agent Systems](blog/ma/index)** — Nine posts developing a formal theory of agent architecture. The grade lattice, the specified band, the fold model, computation channels. Why restriction works, why the orchestrator belongs at the hub, and why these are the same insight.
+This site develops a framework for understanding systems where humans and AI agents work together. The central idea: the *space between* actors — what each can do, what each can see, how they connect — determines the system's behavior more than any individual component. Measure that space, and the architecture follows.
 
-**[Ratchet Fuel](blog/fuel/index)** — A practitioner series on building systems that get smarter through friction. Tool design, failure streams, data platforms, organizational patterns. Code ships in every post.
+The framework draws on programming language theory, cybernetics, and capability-based security. It produces testable predictions about which architectural decisions matter and why. It also produces tools — DuckDB queries, structured macros, mode controllers, segment builders — that ship in every practitioner post.
+
+The name comes from *ma* (間), the Japanese concept that the space between things is itself functional. And from the observation that the orchestrator at the hub of every agent system is, structurally, a judgemental monad — it threads state, manages effects, and mediates between the opaque and the specified.
 
 ---
 
-*Ma* is the Japanese concept that the space between things is itself functional. These series explore what that means for systems where humans and AI agents work together — and for the design decisions that shape whether they work well.
+## Two series, one framework
+
+### [The Ma of Multi-Agent Systems](blog/ma/index)
+
+*The theory.* Nine posts developing a formal design theory for agent architecture. The grade lattice measures the space between actors. The specified band explains why the orchestrator must be transparent. The fold model shows that conversations aren't growing computations — they're stateless calls over managed state. Computation channels explain why Bash changes what kind of system you're running.
+
+Supplementary essays develop the configuration ratchet, world decoupling, the failure-driven controller, and the formal companion with proofs and conjectures.
+
+### [Ratchet Fuel](blog/fuel/index)
+
+*The practice.* Eleven posts for people who build with AI agents, data platforms, and organizations. Every failed tool call is data about where your configuration doesn't match the task. Capture those failures. Crystallize them into tools. The system gets more trustworthy with use — not because the model improved, but because the configuration layer accumulated evidence.
+
+Code ships in every post: DuckDB queries over conversation logs, a prototype mode controller, a complete structured tool, a segment builder, an access control layer, and a metrics dashboard.
+
+---
+
+## Recent
+
+- **Ratchet Fuel series** — Eleven posts published. The practitioner companion to the Ma series, covering failure streams, the two-stage turn, placement, mode control, tool building, data platform case studies, organizational patterns, and metrics.
+- **Coordination Is Not Control** — Companion essay filling the System 3 gap in the Ma framework. World decoupling, named modes, the snapshot-seal-funnel pattern, and the failure-driven controller.
+- **The Residual Framework** — Companion essay decomposing *ma* into three components: dishonesty, side effects, and partiality. Interface enumerability replaces the monad morphism preorder for practical purposes.
+- **External evidence** — Nate Crandall's [harness comparison](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made): the same model scored 78% in one harness and 42% in another. The infrastructure determines the outcome, not the model.
+
+---
+
+## Start here
+
+**If you build things:** [The Ratchet Review](blog/fuel/00-ratchet-review) — seven rules and a series map. You'll know within two minutes whether this is useful.
+
+**If you want the theory:** [The Ma of Multi-Agent Systems](blog/ma/00-intro) — start at the beginning. Each post builds on the previous.
+
+**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it, so pick your tools carefully, put structure at every boundary, keep your orchestrator boring and readable, and log everything so the system can teach itself to need less AI over time.
 
 ```{toctree}
 :hidden:

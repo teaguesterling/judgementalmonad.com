@@ -32,3 +32,11 @@ where-the-space-lives
 case-studies
 reference-tables
 ```
+
+## In the Ratchet Fuel Series
+
+The companion series [Ratchet Fuel](../fuel/index) develops the practitioner treatment of these concepts.
+
+**[The Two-Stage Turn](../fuel/02-the-two-stage-turn)** — The practitioner treatment of the configuration ratchet. How to discover patterns and crystallize them into tools.
+
+**[Where the Failures Live](../fuel/03-where-the-failures-live)** — The placement principle applied to failures and friction. Where do you want the failures to happen?
