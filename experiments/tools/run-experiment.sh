@@ -80,13 +80,13 @@ Optional:
   --cleanup             Remove worktree after run completes
   -h, --help            Show this help
 
-Conditions:
-  A  File tools + run_tests                           Data channels only
-  B  File tools + run_tests + readonly bash            + exploration
-  C  File tools + run_tests + sandboxed bash           + computation channel
-  D  Sandboxed bash only                              Pure computation channel
-  E  File tools + readonly bash (no run_tests)        Must pytest via bash
-  F  run_tests + sandboxed bash (no file tools)       Must read/edit via bash
+Conditions (2x2x2 factorial: file_tools x run_tests x bash):
+  A  File tools + run_tests                           Structured only
+  C  File tools + run_tests + bash                    Everything
+  D  Bash only                                        Unstructured only
+  E  File tools + bash (no run_tests)                 Must pytest via bash
+  F  run_tests + bash (no file tools)                 Must read/edit via bash
+  B  File tools + run_tests + readonly bash            (outside factorial)
 USAGE
             exit 0
             ;;

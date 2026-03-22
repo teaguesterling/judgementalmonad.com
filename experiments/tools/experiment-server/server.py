@@ -33,22 +33,30 @@ from fastmcp import FastMCP
 # ---------------------------------------------------------------------------
 
 CONDITION_TOOLS = {
-    "A": {"file_tools", "enhanced_file_tools", "run_tests"},
-    "B": {"file_tools", "enhanced_file_tools", "run_tests", "bash_readonly"},
-    "C": {"file_tools", "enhanced_file_tools", "run_tests", "bash_sandboxed"},
-    "D": {"bash_sandboxed"},
-    "E": {"file_tools", "enhanced_file_tools", "bash_readonly"},
-    "F": {"run_tests", "bash_sandboxed"},
+    # Original conditions (A-C)
+    "A": {"file_tools", "enhanced_file_tools", "run_tests"},                          # Structured tools only
+    "B": {"file_tools", "enhanced_file_tools", "run_tests", "bash_readonly"},          # + exploration
+    "C": {"file_tools", "enhanced_file_tools", "run_tests", "bash_sandboxed"},         # Everything
+    # Factorial conditions (D-F): isolate each capability's contribution
+    "D": {"bash_sandboxed"},                                                           # Bash only
+    "E": {"file_tools", "enhanced_file_tools", "bash_sandboxed"},                      # File tools + bash, no run_tests
+    "F": {"run_tests", "bash_sandboxed"},                                              # run_tests + bash, no file tools
 }
 
 # Tools are tagged by capability group:
 #   "file_tools"          - file_read, file_search, file_glob, file_list, file_edit, file_write
 #   "enhanced_file_tools" - file_read_batch, file_search_context, file_count
-#   "run_tests"           - run_tests
-#   "bash_readonly"       - bash_readonly (tagged "bash:readonly")
-#   "bash_sandboxed"      - bash_sandboxed (tagged "bash:sandboxed")
+#   "run_tests"           - run_tests (structured pytest wrapper)
+#   "bash_readonly"       - bash_readonly (read-only commands in bwrap)
+#   "bash_sandboxed"      - bash_sandboxed (any command in bwrap)
 #
-# _apply_condition() disables groups not in the condition's set.
+# The 2×2×2 factorial (file_tools × run_tests × bash):
+#   A = file + tests          C = file + tests + bash
+#   D = bash only             E = file + bash
+#   F = tests + bash          (file only = useless, nothing = useless)
+#
+# B (file + tests + readonly bash) is outside the factorial — it tests
+# exploration without execution, a different question.
 
 BASH_READONLY_ALLOWLIST = [
     "cat", "head", "tail", "wc", "grep", "find", "ls", "tree",
