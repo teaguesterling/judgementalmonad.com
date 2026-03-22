@@ -565,6 +565,13 @@ def run_tests(test_file: str = "", verbose: bool = False) -> str:
         if _test_detail == "minimal":
             # Minimal: just pass/fail counts, no tracebacks, no test names
             pytest_args.extend(["--tb=no", "-q", "--no-header"])
+        elif _test_detail == "diagnostic":
+            # Diagnostic: failures only, with expected vs actual, no passing tests.
+            # Designed for agent workflows — actionable failure info, no noise.
+            pytest_args.extend(["--tb=short", "-v", "--no-header", "-x"])
+            # -x stops after first failure group for faster feedback
+            # --tb=short gives assertion + location without full stack
+            # -v gives test names (tells agent WHAT was tested, not just that it failed)
         elif verbose:
             # Verbose: full tracebacks with local variables, all test names
             pytest_args.extend(["--tb=long", "-v"])
@@ -795,8 +802,8 @@ def main():
                         help="Workspace directory the agent operates in")
     parser.add_argument("--allowed-dirs", nargs="*", default=[],
                         help="For low-W conditions: restrict file access to these directories only")
-    parser.add_argument("--test-detail", choices=["detailed", "minimal"], default="detailed",
-                        help="Test output detail level: 'detailed' (tracebacks, line numbers) or 'minimal' (pass/fail counts only)")
+    parser.add_argument("--test-detail", choices=["detailed", "minimal", "diagnostic"], default="detailed",
+                        help="Test output detail: 'detailed' (short tracebacks), 'minimal' (counts only), 'diagnostic' (failures with expected vs actual, stops early)")
 
     args = parser.parse_args()
 
