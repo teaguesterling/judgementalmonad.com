@@ -122,7 +122,11 @@ The cheapest layer to change had the largest effect. Six tokens of text outperfo
 
 ---
 
-*This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. n=5 per condition on one synthetic task (600-line Python codebase, 13 bugs, 48 tests). The findings are suggestive, not definitive. The effect sizes are large enough to be interesting and small enough in sample size to require replication. The code, data, and analysis scripts are in the experiments/ directory of the project repository.*
+*This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. n=5 per condition on one synthetic task (600-line Python codebase, 13 bugs, 48 tests). All conditions achieved 100% pass rate — the differences are in cost, not quality.*
+
+*Statistical honesty: the effect sizes are large (Cohen's d = 1.40 for I vs A, 1.11 for A vs D) but the confidence intervals overlap at n=5. I vs A is marginal (p ≈ 0.07). Nothing reaches conventional significance. The 32% savings is the point estimate; the 95% confidence interval for I's cost is [$0.70, $1.24] vs A's [$0.92, $1.94] — overlapping. The patterns are suggestive. The sample sizes require replication at n=15-20 per condition for confident conclusions.*
+
+*The code, data, and analysis scripts are in the experiments/ directory of the project repository.*
 
 ---
 
