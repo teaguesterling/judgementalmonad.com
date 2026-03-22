@@ -44,6 +44,8 @@ CONDITION_TOOLS = {
     # Minimal conditions (J+): reduced tool set for weaker models
     "J": {"batch_tools", "run_tests"},                         # Batch-only file tools + run_tests
     "K": {"simple_tools", "run_tests"},                        # Simple file tools only + run_tests
+    # Semantic conditions: AST-aware tools via sitting_duck/DuckDB
+    "L": {"simple_tools", "run_tests", "semantic_tools"},      # Simple tools + semantic + run_tests
 }
 
 # Tools are tagged by capability group:
@@ -507,6 +509,193 @@ def file_count(path: str = ".", glob_filter: str = "") -> str:
         return err
 
 
+# --- Semantic tools (Fledgling-powered, via DuckDB + sitting_duck) ─
+
+def _get_ast_db():
+    """Get a DuckDB connection with sitting_duck loaded."""
+    import duckdb
+    db = duckdb.connect()
+    db.execute("INSTALL sitting_duck FROM community")
+    db.execute("LOAD sitting_duck")
+    return db
+
+
+@server.tool(tags={"group:semantic_tools"})
+def find_definitions(file_pattern: str = "**/*.py", name_pattern: str = "") -> str:
+    """Find function, class, and variable definitions across the codebase.
+    Understands code structure — not just text matching.
+
+    Args:
+        file_pattern: Glob pattern for files to search (default: all Python files)
+        name_pattern: Optional filter on definition name (substring match)
+    """
+    t0 = time.monotonic()
+    try:
+        db = _get_ast_db()
+        ws = _workspace.resolve()
+        matches = sorted(ws.glob(file_pattern))
+        matches = [m for m in matches if m.is_file() and "__pycache__" not in str(m)]
+
+        results = []
+        for m in matches[:20]:
+            rel = str(m.relative_to(ws))
+            try:
+                query = f"""
+                    SELECT name, type, semantic_type, start_line, end_line
+                    FROM read_ast('{m}')
+                    WHERE semantic_type LIKE 'DEFINITION%'
+                    AND name IS NOT NULL AND name != ''
+                    {"AND name LIKE '%" + name_pattern + "%'" if name_pattern else ""}
+                    ORDER BY start_line
+                """
+                rows = db.execute(query).fetchall()
+                if rows:
+                    results.append(f"── {rel} ──")
+                    for name, typ, sem, start, end in rows:
+                        kind = typ.replace("_definition", "").replace("_", " ")
+                        results.append(f"  {start:>4} {kind:<20} {name}")
+            except Exception:
+                pass
+
+        result = "\n".join(results) or "(no definitions found)"
+        _log_call("find_definitions", {"file_pattern": file_pattern, "name_pattern": name_pattern},
+                  result, True, (time.monotonic() - t0) * 1000)
+        db.close()
+        return result
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("find_definitions", {"file_pattern": file_pattern}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
+@server.tool(tags={"group:semantic_tools"})
+def find_callers(file_pattern: str = "**/*.py", function_name: str = "") -> str:
+    """Find all call sites for a function across the codebase.
+
+    Args:
+        file_pattern: Glob pattern for files to search
+        function_name: Name of the function to find calls to
+    """
+    t0 = time.monotonic()
+    try:
+        db = _get_ast_db()
+        ws = _workspace.resolve()
+        matches = sorted(ws.glob(file_pattern))
+        matches = [m for m in matches if m.is_file() and "__pycache__" not in str(m)]
+
+        results = []
+        for m in matches[:20]:
+            rel = str(m.relative_to(ws))
+            try:
+                query = f"""
+                    SELECT name, start_line, type
+                    FROM read_ast('{m}')
+                    WHERE type = 'call'
+                    AND name = '{function_name}'
+                    ORDER BY start_line
+                """
+                rows = db.execute(query).fetchall()
+                if rows:
+                    results.append(f"── {rel} ──")
+                    for name, line, typ in rows:
+                        results.append(f"  {line:>4} {name}()")
+            except Exception:
+                pass
+
+        result = "\n".join(results) or f"(no calls to '{function_name}' found)"
+        _log_call("find_callers", {"file_pattern": file_pattern, "function_name": function_name},
+                  result, True, (time.monotonic() - t0) * 1000)
+        db.close()
+        return result
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("find_callers", {"file_pattern": file_pattern}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
+@server.tool(tags={"group:semantic_tools"})
+def code_structure(file_path: str) -> str:
+    """Show the structural outline of a file: classes, functions, methods
+    with nesting. Like a table of contents for code.
+
+    Args:
+        file_path: Path to the file (relative to workspace)
+    """
+    t0 = time.monotonic()
+    try:
+        db = _get_ast_db()
+        resolved = _resolve_path(file_path)
+        query = f"""
+            SELECT name, type, semantic_type, start_line, end_line, depth
+            FROM read_ast('{resolved}')
+            WHERE (type LIKE '%definition%' OR type LIKE '%class%')
+            AND name IS NOT NULL AND name != ''
+            ORDER BY start_line
+        """
+        rows = db.execute(query).fetchall()
+
+        results = [f"── {file_path} ──"]
+        for name, typ, sem, start, end, depth in rows:
+            kind = typ.replace("_definition", "").replace("_", " ")
+            indent = "  " * min(depth, 4)
+            size = end - start + 1
+            results.append(f"  {start:>4}-{end:<4} {indent}{kind} {name} ({size} lines)")
+
+        result = "\n".join(results) or "(no structure found)"
+        _log_call("code_structure", {"file_path": file_path},
+                  result, True, (time.monotonic() - t0) * 1000)
+        db.close()
+        return result
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("code_structure", {"file_path": file_path}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
+@server.tool(tags={"group:semantic_tools"})
+def find_imports(file_pattern: str = "**/*.py") -> str:
+    """Find all import statements across the codebase.
+
+    Args:
+        file_pattern: Glob pattern for files to search
+    """
+    t0 = time.monotonic()
+    try:
+        db = _get_ast_db()
+        ws = _workspace.resolve()
+        matches = sorted(ws.glob(file_pattern))
+        matches = [m for m in matches if m.is_file() and "__pycache__" not in str(m)]
+
+        results = []
+        for m in matches[:20]:
+            rel = str(m.relative_to(ws))
+            try:
+                query = f"""
+                    SELECT name, type, start_line
+                    FROM read_ast('{m}')
+                    WHERE semantic_type LIKE '%IMPORT%'
+                    AND name IS NOT NULL AND name != ''
+                    ORDER BY start_line
+                """
+                rows = db.execute(query).fetchall()
+                if rows:
+                    results.append(f"── {rel} ──")
+                    for name, typ, line in rows:
+                        results.append(f"  {line:>4} {name}")
+            except Exception:
+                pass
+
+        result = "\n".join(results) or "(no imports found)"
+        _log_call("find_imports", {"file_pattern": file_pattern},
+                  result, True, (time.monotonic() - t0) * 1000)
+        db.close()
+        return result
+    except Exception as e:
+        err = f"Error: {e}"
+        _log_call("find_imports", {"file_pattern": file_pattern}, err, False, (time.monotonic() - t0) * 1000)
+        return err
+
+
 # --- Test runner (all conditions) ─────────────────────────────────
 
 @server.tool(tags={"group:run_tests"})
@@ -771,7 +960,7 @@ def bash_sandboxed(command: str) -> str:
 
 ALL_GROUPS = {
     "file_tools", "batch_tools", "simple_tools", "run_tests",
-    "bash_readonly", "bash_sandboxed",
+    "semantic_tools", "bash_readonly", "bash_sandboxed",
 }
 
 
@@ -796,7 +985,7 @@ def main():
     global _condition, _task_id, _log_dir, _workspace, _allowed_dirs
 
     parser = argparse.ArgumentParser(description="Experiment MCP Server")
-    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J", "K"], required=True,
+    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J", "K", "L"], required=True,
                         help="Experimental condition (A=file+tests, B=A+readonly-bash, C=A+bash, D=bash-only, E=file+readonly-bash, F=tests+bash)")
     parser.add_argument("--task-id", required=True,
                         help="Task identifier (e.g. '01', 'task-03-condition-A')")
