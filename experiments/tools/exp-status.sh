@@ -25,7 +25,9 @@ for f in sorted(logs.glob("*-conversation.json")):
     elif task_id.startswith("opus-"): model = "opus"
 
     # Determine logical condition
-    if "-J-" in task_id:
+    if "-K-" in task_id:
+        logical = "K"
+    elif "-J-" in task_id:
         logical = "J"
     elif "principle" in task_id or "-I-" in task_id:
         logical = "I"
