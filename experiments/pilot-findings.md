@@ -542,7 +542,7 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 
 ### What the three claims look like now
 
-**Claim 1 (security without cost):** SUPPORTED by I. Structured tools with the right principle ($0.97) beat bash ($1.05). The 27% cost penalty from A was a strategy problem, not a tool problem. With the right strategy, structured tools are both safer AND cheaper.
+**Claim 1 (security without cost):** SUPPORTED by I — and stronger than "without cost." I is cheaper ($0.97 vs $1.05), simpler (no sandbox, no shell metacharacter filter, no bwrap isolation, no command allowlist), and fully auditable (every tool call is structured, typed, and logged — no bash scripts to read). The computation channel and its entire regulatory apparatus are eliminated. You don't trade safety for efficiency. You get both. The 27% cost penalty from A was a strategy problem, not a security tax.
 
 **Claim 2 (structured tools are better):** CONDITIONALLY SUPPORTED. Structured tools + principle (I: $0.97) beat bash (D: $1.05). Structured tools alone (A: $1.43) are worse. The tools aren't better on their own — they're better with the right strategy.
 
