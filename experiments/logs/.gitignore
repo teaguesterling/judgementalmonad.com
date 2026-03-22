@@ -1,0 +1,4 @@
+# Experiment logs are data, not source. They're large (100KB+ each),
+# regenerable, and would bloat the repo. Keep them local.
+*
+!.gitignore
