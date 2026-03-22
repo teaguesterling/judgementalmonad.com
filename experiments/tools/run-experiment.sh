@@ -81,9 +81,12 @@ Optional:
   -h, --help            Show this help
 
 Conditions:
-  A  Data channels only (file tools, no bash)         Levels 0-2
-  B  Readonly bash (file tools + read-only bash)      Levels 2-3
-  C  Computation channel (file tools + sandboxed bash) Level 4
+  A  File tools + run_tests                           Data channels only
+  B  File tools + run_tests + readonly bash            + exploration
+  C  File tools + run_tests + sandboxed bash           + computation channel
+  D  Sandboxed bash only                              Pure computation channel
+  E  File tools + readonly bash (no run_tests)        Must pytest via bash
+  F  run_tests + sandboxed bash (no file tools)       Must read/edit via bash
 USAGE
             exit 0
             ;;
@@ -98,7 +101,7 @@ if [[ -z "$CONDITION" || -z "$TASK_ID" || -z "$TASK_FILE" || -z "$REPO" ]]; then
     exit 1
 fi
 
-[[ "$CONDITION" =~ ^[ABC]$ ]] || { echo "Condition must be A, B, or C"; exit 1; }
+[[ "$CONDITION" =~ ^[A-F]$ ]] || { echo "Condition must be A, B, C, D, E, or F"; exit 1; }
 [[ -f "$TASK_FILE" ]]         || { echo "Task file not found: $TASK_FILE"; exit 1; }
 [[ -d "$REPO" ]]              || { echo "Repo not found: $REPO"; exit 1; }
 

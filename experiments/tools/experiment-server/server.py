@@ -33,15 +33,22 @@ from fastmcp import FastMCP
 # ---------------------------------------------------------------------------
 
 CONDITION_TOOLS = {
-    "A": {"file_read", "file_search", "file_glob", "file_edit", "file_write", "file_list"},
-    "B": {"file_read", "file_search", "file_glob", "file_edit", "file_write", "file_list", "bash_readonly"},
-    "C": {"file_read", "file_search", "file_glob", "file_edit", "file_write", "file_list", "bash_sandboxed"},
+    "A": {"file_tools", "enhanced_file_tools", "run_tests"},
+    "B": {"file_tools", "enhanced_file_tools", "run_tests", "bash_readonly"},
+    "C": {"file_tools", "enhanced_file_tools", "run_tests", "bash_sandboxed"},
+    "D": {"bash_sandboxed"},
+    "E": {"file_tools", "enhanced_file_tools", "bash_readonly"},
+    "F": {"run_tests", "bash_sandboxed"},
 }
 
-# Tags: file tools have no condition tags (always available).
-# Only bash tools are tagged with their specific condition.
-# server.disable(tags={"condition:X"}) disables ANY tool with that tag,
-# so universal tools must NOT carry condition tags.
+# Tools are tagged by capability group:
+#   "file_tools"          - file_read, file_search, file_glob, file_list, file_edit, file_write
+#   "enhanced_file_tools" - file_read_batch, file_search_context, file_count
+#   "run_tests"           - run_tests
+#   "bash_readonly"       - bash_readonly (tagged "bash:readonly")
+#   "bash_sandboxed"      - bash_sandboxed (tagged "bash:sandboxed")
+#
+# _apply_condition() disables groups not in the condition's set.
 
 BASH_READONLY_ALLOWLIST = [
     "cat", "head", "tail", "wc", "grep", "find", "ls", "tree",
@@ -163,7 +170,7 @@ server = FastMCP(
 
 # --- File tools (all conditions) ---
 
-@server.tool()
+@server.tool(tags={"group:file_tools"})
 def file_read(path: str, offset: int = 0, limit: int = 0) -> str:
     """Read a file's contents. Returns the file text with line numbers.
 
@@ -192,7 +199,7 @@ def file_read(path: str, offset: int = 0, limit: int = 0) -> str:
         return err
 
 
-@server.tool()
+@server.tool(tags={"group:file_tools"})
 def file_search(pattern: str, path: str = ".", glob_filter: str = "") -> str:
     """Search file contents using grep-like pattern matching.
 
@@ -218,7 +225,7 @@ def file_search(pattern: str, path: str = ".", glob_filter: str = "") -> str:
         return err
 
 
-@server.tool()
+@server.tool(tags={"group:file_tools"})
 def file_glob(pattern: str, path: str = ".") -> str:
     """Find files matching a glob pattern.
 
@@ -241,7 +248,7 @@ def file_glob(pattern: str, path: str = ".") -> str:
         return err
 
 
-@server.tool()
+@server.tool(tags={"group:file_tools"})
 def file_list(path: str = ".") -> str:
     """List files and directories at a path.
 
@@ -265,7 +272,7 @@ def file_list(path: str = ".") -> str:
         return err
 
 
-@server.tool()
+@server.tool(tags={"group:file_tools"})
 def file_edit(path: str, old_string: str, new_string: str) -> str:
     """Edit a file by replacing an exact string match.
 
@@ -299,7 +306,7 @@ def file_edit(path: str, old_string: str, new_string: str) -> str:
         return err
 
 
-@server.tool()
+@server.tool(tags={"group:file_tools"})
 def file_write(path: str, content: str) -> str:
     """Write content to a file (creates or overwrites).
 
@@ -324,7 +331,7 @@ def file_write(path: str, content: str) -> str:
 
 # --- Enhanced data channel tools (all conditions) ---
 
-@server.tool()
+@server.tool(tags={"group:enhanced_file_tools"})
 def file_read_batch(paths: list[str], limit_per_file: int = 200) -> str:
     """Read multiple files in a single call. Returns each file's contents
     with a header showing the path.
@@ -356,7 +363,7 @@ def file_read_batch(paths: list[str], limit_per_file: int = 200) -> str:
     return result or "(no files read)"
 
 
-@server.tool()
+@server.tool(tags={"group:enhanced_file_tools"})
 def file_search_context(pattern: str, path: str = ".", context: int = 3,
                         glob_filter: str = "") -> str:
     """Search file contents with context lines around each match.
@@ -386,7 +393,7 @@ def file_search_context(pattern: str, path: str = ".", context: int = 3,
         return err
 
 
-@server.tool()
+@server.tool(tags={"group:enhanced_file_tools"})
 def file_count(path: str = ".", glob_filter: str = "") -> str:
     """Count files and lines matching a pattern. Returns file counts,
     line counts, and a breakdown by file.
@@ -428,7 +435,7 @@ def file_count(path: str = ".", glob_filter: str = "") -> str:
 
 # --- Test runner (all conditions) ─────────────────────────────────
 
-@server.tool()
+@server.tool(tags={"group:run_tests"})
 def run_tests(test_file: str = "", verbose: bool = False) -> str:
     """Run pytest on the workspace's test suite. Tests are read-only —
     if any test file has been modified, this tool refuses to run.
@@ -526,7 +533,7 @@ def run_tests(test_file: str = "", verbose: bool = False) -> str:
 
 # --- Bash read-only (Condition B) ---
 
-@server.tool(tags={"condition:B"})
+@server.tool(tags={"group:bash_readonly"})
 def bash_readonly(command: str) -> str:
     """Execute a read-only bash command. Only safe, non-modifying commands are allowed.
 
@@ -619,7 +626,7 @@ def _build_bwrap_cmd(command: str, *, readonly: bool = False) -> list[str]:
     ]
 
 
-@server.tool(tags={"condition:C"})
+@server.tool(tags={"group:bash_sandboxed"})
 def bash_sandboxed(command: str) -> str:
     """Execute a bash command in a sandboxed environment.
 
@@ -667,24 +674,23 @@ def bash_sandboxed(command: str) -> str:
 # Condition-based tool filtering
 # ---------------------------------------------------------------------------
 
-def _apply_condition(condition: str):
-    """Disable bash tools not in the specified condition.
+ALL_GROUPS = {
+    "file_tools", "enhanced_file_tools", "run_tests",
+    "bash_readonly", "bash_sandboxed",
+}
 
-    File tools have no condition tags and are always available.
-    Only bash_readonly (tagged "condition:B") and bash_sandboxed
-    (tagged "condition:C") need conditional disabling.
+
+def _apply_condition(condition: str):
+    """Disable tool groups not in the specified condition.
+
+    Each tool is tagged with a group (e.g. "group:file_tools").
+    The CONDITION_TOOLS dict specifies which groups are active per condition.
+    All other groups are disabled.
     """
-    if condition == "A":
-        # No bash tools — disable both
-        server.disable(tags={"condition:B"})
-        server.disable(tags={"condition:C"})
-    elif condition == "B":
-        # Read-only bash only — disable sandboxed
-        server.disable(tags={"condition:C"})
-    # Condition C: both bash tools? No — B gets bash_readonly, C gets bash_sandboxed.
-    # They're different tools, not cumulative. Disable read-only in C.
-    elif condition == "C":
-        server.disable(tags={"condition:B"})
+    active_groups = CONDITION_TOOLS.get(condition, set())
+    for group in ALL_GROUPS:
+        if group not in active_groups:
+            server.disable(tags={f"group:{group}"})
 
 
 # ---------------------------------------------------------------------------
@@ -695,8 +701,8 @@ def main():
     global _condition, _task_id, _log_dir, _workspace, _allowed_dirs
 
     parser = argparse.ArgumentParser(description="Experiment MCP Server")
-    parser.add_argument("--condition", choices=["A", "B", "C"], required=True,
-                        help="Experimental condition (A=data-channel, B=readonly, C=computation)")
+    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F"], required=True,
+                        help="Experimental condition (A=file+tests, B=A+readonly-bash, C=A+bash, D=bash-only, E=file+readonly-bash, F=tests+bash)")
     parser.add_argument("--task-id", required=True,
                         help="Task identifier (e.g. '01', 'task-03-condition-A')")
     parser.add_argument("--log-dir", default="./logs",
