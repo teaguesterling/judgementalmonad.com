@@ -47,8 +47,23 @@ for f in sorted(logs.glob("*-conversation.json")):
         if not cost: continue
         conditions[key]["complete"] += 1
         conditions[key]["cost"].append(cost)
-        # Check pass (rough)
-        if any("48 passed" in m.get("result", "") for m in conv if m.get("type") == "result"):
+        # Check pass — look in result text AND tool_result blocks
+        passed = False
+        r = result[0]
+        if "48 passed" in str(r.get("result", "")) or "all" in str(r.get("result", "")).lower() and "pass" in str(r.get("result", "")).lower():
+            passed = True
+        if not passed:
+            for m in conv:
+                content = m.get("content", m.get("message", {}).get("content", []))
+                if not isinstance(content, list): continue
+                for block in content:
+                    if isinstance(block, dict):
+                        text = str(block.get("text", "") or block.get("content", ""))
+                        if "48 passed" in text:
+                            passed = True
+                            break
+                if passed: break
+        if passed:
             conditions[key]["pass"] += 1
     except:
         pass
