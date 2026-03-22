@@ -1,6 +1,6 @@
-# Pilot Findings: Session 1-2
+# Experimental Findings
 
-*Observations from infrastructure development and pilot runs, March 2026.*
+*Observations from infrastructure development and experimental runs, March 2026.*
 
 ---
 
@@ -308,4 +308,134 @@ This varies the W axis (world coupling = how much code the agent might need to r
 
 ---
 
-*These findings are from pilot runs (n=1 per condition). All numerical comparisons are descriptive, not inferential. The next phase should produce data at n≥5 per cell for statistical testing.*
+## 8. Experiment H5: Test Detail × Computation Channel Interaction
+
+### Design
+
+2×2 factorial: (Condition A vs C) × (detailed vs minimal test output), n=5 per cell.
+
+- **Detailed**: `run_tests` returns tracebacks, assertion errors, line numbers (`--tb=short`)
+- **Minimal**: `run_tests` returns only pass/fail counts (`--tb=no -q`)
+
+### Hypothesis
+
+The computation channel's value depends on what the structured test tool provides. When `run_tests` gives detailed tracebacks (pointing to the bug), bash is unnecessary — the agent can reason from the output. When `run_tests` gives only pass/fail counts, the agent needs bash to investigate *why* tests fail.
+
+**Predicted interaction**: A-minimal suffers more than C-minimal, because C can compensate with bash exploration.
+
+### Results (n=5 per cell, all 48/48 tests passing in every run)
+
+| | Detailed tests | Minimal tests | Penalty from minimal |
+|---|---|---|---|
+| **A** (structured only) | **$1.43** / 28.2 turns | $1.64 / 27.4 turns | +$0.21 (+14%) |
+| **C** (structured + bash) | **$1.15** / 26.0 turns | $1.72 / 28.2 turns | +$0.57 (+50%) |
+
+| | Detailed tests | Minimal tests |
+|---|---|---|
+| **A bash calls** | 0 | 0 |
+| **C bash calls** | 0 | **4.5** |
+| **A output tokens** | 50,170 | 67,820 |
+| **C output tokens** | 37,724 | **63,022** |
+
+### Finding: AGAINST the predicted interaction
+
+**The computation channel doesn't compensate for reduced data channel quality. It makes the penalty worse.**
+
+C-minimal used bash (4.5 calls/run) while C-detailed and both A cells used zero bash. When the structured test tool gave less information, C reached for bash to investigate — and it cost more, not less. The bash investigation was counterproductive: the agent spent tokens exploring without improving its diagnosis.
+
+A-minimal's penalty (+14%) came from the agent reasoning harder from limited information — more output tokens (67K vs 50K) but the same tool call count. The agent thought longer, not broader.
+
+C-minimal's penalty (+50%) came from both reasoning AND exploring — more output tokens (63K vs 38K) AND bash calls (4.5 vs 0). The exploration widened the search without improving the result.
+
+### Interpretation
+
+**Tool quality trumps tool quantity.** The most important variable in this experiment is `run_tests`'s output quality, not whether bash is available:
+
+- C-detailed ($1.15) < A-detailed ($1.43) — bash available, good tests: cheapest cell
+- A-minimal ($1.64) < C-minimal ($1.72) — no bash, bad tests: beats bash + bad tests
+- The gap between detailed and minimal ($0.21-0.57) exceeds the gap between A and C within the same detail level ($0.28 detailed, $0.08 minimal)
+
+The structured test tool is itself a tool — and its quality determines whether other tools add value or add waste. This is the Ma framework's claim applied to the experiment's own infrastructure: **the quality of the data channel determines whether the computation channel helps or hurts.**
+
+When `run_tests` provides good information (detailed tracebacks), the agent doesn't need bash — it reasons from the output. Bash is available but unused, and the small overhead of having it in the tool registry is offset by... something (C-detailed is actually cheaper than A-detailed, possibly because the agent's tool selection is slightly better with bash available as a fallback it never uses).
+
+When `run_tests` provides poor information (pass/fail counts), the agent needs *something* to compensate. A-minimal compensates by reasoning harder (more output tokens). C-minimal compensates by exploring with bash (more tool calls AND more output tokens). The reasoning approach is cheaper because it doesn't generate round-trip overhead.
+
+### What this means for tool design
+
+**1. Invest in data channel quality before adding computation channels.** A well-configured `run_tests` (detailed output) saves more than adding bash. The framework predicts this: within the specified band, increasing world coupling is safe; leaving the specified band is not.
+
+**2. `run_tests` is the most important tool in the experiment.** It's a data channel tool (level 1 — runs a fixed program on fixed inputs) but it provides the feedback loop that drives the agent's edit cycle. Its quality determines the cost of every subsequent turn.
+
+**3. Computation channels are a last resort, not a complement.** The prediction was that bash would complement degraded structured tools. Instead, it competed with reasoning — the agent explored when it should have thought. The computation channel is a distraction when the agent should be concentrating.
+
+**4. This is the Taylor/Johannsen principle applied to tools.** The structured test tool is Johannsen's specification — it frees the agent's reasoning (the "space between operations") to focus on diagnosis. Bash is Taylor's extra measurements — it adds options but doesn't improve the quality of the judgment that selects among them.
+
+---
+
+## 9. Condition D vs A: Bash-Only vs Structured Tools
+
+### Design
+
+Condition D: `bash_sandboxed` only. No file tools, no `run_tests`. The agent does everything through bash — `cat` for reading, `sed`/heredocs for editing, `python -m pytest` for testing. This is the "raw Claude Code" experience.
+
+Compared against Condition A: structured file tools + `run_tests`. No bash.
+
+n=5 per condition, same synthetic bug-fixing task.
+
+### Results
+
+| | A (structured) | D (bash only) | D/A ratio |
+|---|---|---|---|
+| **Pass rate** | 100% (5/5) | 100% (5/5) | — |
+| **Avg turns** | 28.2 | **26.4** | 0.94x |
+| **Avg tool calls** | 16.2 | **12.0** | 0.74x |
+| **Avg cost** | $1.43 | **$1.05** | **0.73x** |
+| **Avg time** | 812s | **668s** | 0.82x |
+| **Output tokens** | 50,170 | **30,739** | 0.61x |
+| **Bash calls** | 0 | 12.0 | — |
+
+### Finding: D outperforms A on every metric
+
+Same outcome (100% pass rate), but D is 27% cheaper, 18% faster, and generates 39% fewer output tokens. D is better on *every efficiency metric*.
+
+### Why: work per call
+
+| | A | D |
+|---|---|---|
+| Avg chars sent per call | 50 | **896** |
+| Avg chars received per call | 226 | 289 |
+
+D packs 18x more content per call. Each bash call is a multi-line script that does the work of several structured tool calls.
+
+A's pattern: `file_list, file_list, file_list, run_tests, file_read, file_read, file_read, file_read, file_edit, file_edit, file_edit, file_edit, file_edit, run_tests, file_write` — 15 calls.
+
+D's pattern: `find, pytest, cat, cat, python_fix_script, python_fix_script, pytest, heredoc_write` — 8 calls.
+
+D's calls #4 and #5 are 50-76 line Python scripts that read a source file, apply all fixes programmatically, and write it back. The equivalent of A's 5 `file_edit` calls is D's 2 Python scripts.
+
+### The cognitive insight
+
+D doesn't batch because it's strategic. **It batches because bash naturally accepts multi-statement programs.** The agent writes a Python script the same way it would write any code — as a coherent program. The tool doesn't constrain it to one operation per call.
+
+A doesn't batch because `file_edit` structurally encourages one-at-a-time thinking. The agent reasons about each edit individually because that's what the tool offers. Even with `file_edit_batch` available (added later), the agent didn't use it — its reasoning pattern is "identify bug → fix bug → next bug."
+
+**The computation channel's advantage here is cognitive, not computational.** The agent thinks in code. A bash script is how it naturally expresses "fix all of these." Structured tools force it to decompose that natural expression into atomic operations, adding round-trip overhead that costs tokens, time, and money.
+
+This has implications for tool design: the goal isn't just to match bash's *capabilities* (file_edit_batch can do what the Python script does) but to match bash's *cognitive fit* with how the agent naturally expresses solutions.
+
+### What this means for the two claims
+
+**Claim 1 (security without cost): PARTIALLY SUPPORTED.** A achieves the same outcome as D (100% pass rate). Security is free in terms of *quality*. But it's not free in terms of *cost* — A is 27% more expensive. For enterprises, this may be an acceptable tradeoff: $1.43 vs $1.05 per task for full auditability and no computation channel risk.
+
+**Claim 2 (structured tools are better): NOT YET SUPPORTED.** On this task, D beats A on efficiency. The structured tools don't improve outcomes and add cost. However:
+
+- This is a small codebase (600 lines) where the agent holds everything in context. At scale, structured tools may help by providing better search and navigation.
+- The structured tools haven't been optimized for this task. The ratchet turn (file_edit_batch, better instructions) may close the gap.
+- The test is n=5 on one task — not powered for strong conclusions.
+
+**Claim 3 (the ratchet justification): THE CORE QUESTION.** If ratcheted A (with batch tools, better instructions) matches D's cost, the ratchet works — we observed bash's advantage (batching), crystallized it into structured tools, and eliminated the computation channel without losing efficiency. The ratchet run is in progress.
+
+---
+
+*Findings updated 2026-03-21 with H5 (n=20) and A-vs-D (n=10) results. D/E/F factorial and Experiment H (ratchet) in progress.*
