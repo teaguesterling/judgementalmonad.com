@@ -584,8 +584,35 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 
 **The E finding:** The cheapest condition (E: file tools + bash, $0.98, p<0.01 vs A) uses bash for *exactly one thing*: running pytest. Every bash call across 13 runs was `python -m pytest`. The agent naturally selected structured file tools for reading/editing and bash for execution. This is Claude Code's design — and it's empirically validated as the most cost-efficient configuration. But it operates at level 4 (computation channel), not level 3 (characterizable). The choice between E and I is the choice between efficiency and auditability.
 
-**Multi-model experiment in progress:** Running A, D, E, I with Haiku and Opus (n=5 each) to test whether the effects are model-dependent. If weaker models benefit more from the principle (or can't complete the task without bash), the security-capability tradeoff is model-dependent — which matters for deployment decisions.
+---
+
+## 11. Multi-Model Results
+
+### Haiku (n=5 per condition)
+
+| Condition | Tools | Principle | Pass rate | Cost |
+|---|---|---|---|---|
+| A (structured) | 9 tools + run_tests | No | **40%** | $0.69 |
+| E (file + bash) | 9 tools + bash | No | **40%** | $0.62 |
+| D (bash only) | bash | No | **60%** | $0.54 |
+| **I (structured + principle)** | 9 tools + run_tests | **Yes** | **100%** | $0.66 |
+
+**The principle is a capability enabler for weaker models.** Haiku/I passes 100% — the only Haiku condition that reliably completes the task. Without the principle, Haiku fails 40-60% of the time regardless of tool configuration. The six tokens aren't a cost optimization for Haiku — they're the difference between a working system and a broken one.
+
+**More tools hurt Haiku.** E (file tools + bash, 40%) is no better than A (structured only, 40%) — and both are worse than D (bash only, 60%). For Sonnet, E was the most efficient configuration. For Haiku, additional tools increase the decision surface beyond what the model can navigate efficiently. Haiku wastes turns choosing between tools rather than solving the problem.
+
+**Bash helps Haiku slightly (D: 60% vs A: 40%) but the principle helps dramatically (I: 100% vs A: 40%).** The computation channel provides some capability benefit for weaker models, but the strategy instruction provides far more. Haiku doesn't need more tools — it needs focus.
+
+### Opus (in progress)
+
+### The model-dependent finding (Haiku + Sonnet)
+
+**The principle's value is inversely proportional to model capability.** For Haiku, it's essential (40% → 100%). For Sonnet, it's helpful (16% cost reduction). This is the supermodularity prediction applied to the model axis: restricting d_reachable (via the principle) has larger returns when the decision surface is harder to navigate (weaker model = less effective internal planning).
+
+### Experiment J (in progress)
+
+Testing Haiku with minimal tools (5 tools: file_glob, file_read_batch, file_edit_batch, file_write, run_tests) plus the principle. Hypothesis: fewer tool descriptions = more context for reasoning = better or equal to I's 100%.
 
 ---
 
-*Findings updated 2026-03-22 with final Sonnet results (n=13-26 per condition). A vs D significant (p<0.05). E vs A significant (p<0.01). I vs A trending (d=0.56, p≈0.06). Haiku and Opus runs in progress.*
+*Findings updated 2026-03-22 with Haiku results (n=5), partial Opus results, and Experiment J. Sonnet findings stable (n=13-26). The principle's value is model-dependent: essential for Haiku, helpful for Sonnet, possibly unnecessary for Opus.*
