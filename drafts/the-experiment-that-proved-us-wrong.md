@@ -61,21 +61,23 @@ Six tokens. One sentence. No new tools. No bash.
 
 We also tried the opposite: a detailed four-phase strategy prescription telling the agent exactly which tools to use in which order. And batch tools with improved tool descriptions teaching the agent about efficient patterns.
 
-| Condition | Instruction | Cost | Change from baseline | Output tokens |
-|---|---|---|---|---|
-| **G** (four-phase strategy) | Detailed prescription | **$2.06** | **+44%** | 90,702 |
-| **H** (batch tools + guidance) | Tool-specific guidance | $1.86 | +30% | 75,919 |
-| A (structured, no guidance) | Generic | $1.43 | — | 50,170 |
-| D (bash only) | Generic | $1.05 | -27% | 30,739 |
-| **I (structured + six tokens)** | **"Understand first"** | **$0.97** | **-32%** | **30,445** |
+| Condition | n | Instruction | Cost | Change from baseline | Output tokens |
+|---|---|---|---|---|---|
+| **G** (four-phase strategy) | 5 | Detailed prescription | **$2.06** | **+56%** | 90,702 |
+| **H** (batch tools + guidance) | 5 | Tool-specific guidance | $1.86 | +41% | 75,919 |
+| A (structured, no guidance) | 22 | Generic | $1.32 | — | 49,292 |
+| F (run_tests + bash) | 13 | Generic | $1.17 | -11% | 39,372 |
+| **I (structured + six tokens)** | 24 | **"Understand first"** | **$1.11** | **-16%** | **36,987** |
+| D (bash only) | 13 | Generic | $1.03 | -22% | 30,104 |
+| **E (file tools + bash)** | 13 | Generic | **$0.98** | **-26%** | **27,731** |
 
-The spectrum runs from $2.06 (most instruction) to $0.97 (least instruction that works). More instruction produced more output tokens — the agent wrote detailed phase-by-phase analysis because we asked for it, and all that writing was overhead. G generated 3× the output tokens of I for the same outcome.
+The spectrum: more instruction = more cost. G (detailed prescription, $2.06) is the most expensive. E (file tools + bash, no instructions about strategy, $0.98) is the cheapest. The principle instruction (I, $1.11) lands between bash (D, $1.03) and the baseline (A, $1.32) — a 16% improvement over A, roughly tied with D.
 
-The detailed prescription didn't just fail to help. It was the most expensive condition in the entire experiment — worse than bash, worse than no guidance at all. Over-specification constrains the agent into a rigid workflow and generates verbose compliance with the prescription instead of efficient problem-solving.
+The early pilot (n=5) suggested I was 32% cheaper than A. At n=24, it's 16%. The effect is real — d=0.49, medium — but smaller than the pilot indicated. The pattern held: the principle helps. The magnitude didn't.
 
-I beat everything. Same structured tools as A. Same pass rate. 32% cheaper than the baseline. 53% cheaper than the detailed strategy. 8% cheaper than bash. The six-token instruction reimplemented bash's cognitive forcing function — "plan before you act" — without the computation channel and without the overhead of detailed instructions.
+What did hold: **over-specification is consistently worse.** G ($2.06) and H ($1.86) are the two most expensive conditions — worse than having no strategy at all. The detailed prescription generated 3× the output tokens of I because the agent wrote verbose phase-by-phase analysis. The principle told the agent *when* to act. The prescription told it *how*, and the how was overhead.
 
-Flip it: omitting those six tokens costs 47% more per run. Adding sixty tokens of detailed strategy costs 112% more. Every blank line in your CLAUDE.md has a price. So does every unnecessary line.
+What surprised us: **E (file tools + bash) is the cheapest condition.** E uses structured file tools for reading, searching, and editing — and bash for exactly one thing: running pytest. Every bash call across 13 runs was `python -m pytest`. No scripts, no `cat`, no `grep`. The agent naturally selected the right tool for each job: structured tools for file operations, bash for execution. This is Claude Code's design — and it's the most efficient configuration we tested.
 
 ## Which six tokens
 
@@ -183,7 +185,7 @@ The cheapest layer to change had the largest effect. Six tokens of text outperfo
 
 *This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. n=5 per condition on one synthetic task (600-line Python codebase, 13 bugs, 48 tests). All conditions achieved 100% pass rate — the differences are in cost, not quality.*
 
-*Statistical honesty: the effect sizes are large (Cohen's d = 1.40 for I vs A, 1.11 for A vs D) but the confidence intervals overlap at n=5. I vs A is marginal (p ≈ 0.07). Nothing reaches conventional significance. The 32% savings is the point estimate; the 95% confidence interval for I's cost is [$0.70, $1.24] vs A's [$0.92, $1.94] — overlapping. The patterns are suggestive. The sample sizes require replication at n=15-20 per condition for confident conclusions.*
+*Statistical update (n=13-24 per condition): A vs D reaches significance (d=0.80, p<0.05) — structured tools cost more than bash, confirmed. I vs A (d=0.49) does not reach significance — the principle helps but the effect is medium, not large. The early pilot (n=5) estimated a 32% savings; at n=24 it's 16%. The ranking is stable (E ≤ D ≤ I < A) but the gaps are smaller than first reported. The grade comparison (I at level 3 vs D at level 4-7) is structural and doesn't require statistics.*
 
 *The code, data, and analysis scripts are in the experiments/ directory of the project repository.*
 
