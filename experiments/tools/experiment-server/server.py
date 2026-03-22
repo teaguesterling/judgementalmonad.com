@@ -555,28 +555,41 @@ def run_tests(test_file: str = "", verbose: bool = False) -> str:
             pass  # If git check fails, allow the run anyway
 
     try:
-        cmd = ["python3", "-m", "pytest"]
+        pytest_args = ["python3", "-m", "pytest"]
         if test_file:
             resolved = _resolve_path(test_file)
-            cmd.append(str(resolved))
+            pytest_args.append(str(resolved))
         else:
-            cmd.append(str(tests_dir))
+            pytest_args.append(str(tests_dir))
 
         if _test_detail == "minimal":
             # Minimal: just pass/fail counts, no tracebacks, no test names
-            cmd.extend(["--tb=no", "-q", "--no-header"])
+            pytest_args.extend(["--tb=no", "-q", "--no-header"])
         elif verbose:
             # Verbose: full tracebacks with local variables, all test names
-            cmd.extend(["--tb=long", "-v"])
+            pytest_args.extend(["--tb=long", "-v"])
         else:
             # Detailed (default): short tracebacks, quiet output
-            cmd.extend(["--tb=short", "-q", "--no-header"])
+            pytest_args.extend(["--tb=short", "-q", "--no-header"])
+
+        # Run pytest inside bwrap: read-only workspace, no network, isolated PIDs.
+        # This sandboxes the *consequences* of what the agent wrote — if it injected
+        # malicious code into the source files, the code runs but can't exfiltrate
+        # data, access the network, or see other processes.
+        pytest_cmd_str = f"PYTHONPATH={_workspace.resolve()} {' '.join(pytest_args)}"
+        bwrap_cmd = _build_bwrap_cmd(pytest_cmd_str, readonly=True)
+
+        env = {
+            "PATH": "/usr/bin:/bin",
+            "HOME": "/tmp",
+            "TERM": os.environ.get("TERM", "xterm"),
+            "LANG": os.environ.get("LANG", "C.UTF-8"),
+        }
 
         proc = subprocess.run(
-            cmd,
+            bwrap_cmd,
             capture_output=True, text=True, timeout=60,
-            cwd=_workspace,
-            env={**os.environ, "PYTHONPATH": str(_workspace)},
+            env=env,
         )
 
         result = proc.stdout
