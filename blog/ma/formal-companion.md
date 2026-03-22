@@ -527,12 +527,14 @@ Each arrow through the Inferencer is a pure function of its input. The state liv
 
 ```
 d_total     = const                      -- the weights (fixed)
-d_reachable = f(d_total, |context|)      -- monotone in context length
+d_reachable = f(d_total, context)        -- depends on context content, not just length
 ```
 
-`d_total` is the full path space of the weights — the grade component, constant across the conversation. `d_reachable` is the portion of that path space the current input can activate. It grows with context length because the attention mechanism creates an interaction graph whose size depends on input length (`O(n^2)` pairwise interactions per layer per head).
+`d_total` is the full path space of the weights — the grade component, constant across the conversation. `d_reachable` is the portion of that path space the current input can activate. Context length provides an upper bound (the attention mechanism creates `O(n^2)` pairwise interactions per layer per head), but the actual value of `d_reachable` depends on the *semantic content* of the context, not just its length. Two contexts of identical token count can activate very different path sets — a six-token strategy instruction ("understand the problem before editing") can dramatically reduce `d_reachable` by pruning exploration paths without changing `|context|` meaningfully.
 
-The Harness controls context length (scope construction, compaction), which controls `d_reachable`. Compaction reduces both world coupling (discards accumulated data) and `d_reachable` (shorter context, fewer interactions). Context management is the single most leveraged Harness operation because it simultaneously controls both axes.
+**Remark (Coupling between W and d_reachable).** This means `d_reachable` is coupled to world coupling more tightly than the product lattice suggests. What enters through the world coupling channel — tool descriptions, instructions, conversation history — determines which paths through the weights activate. The two axes of the grade are not independent: `d_reachable` is downstream of `w` through the context window. The product order `(w, d)` remains a valid partial order for the grade, but the axes are parameterically coupled: varying `w` (what enters the context) changes `d_reachable` (which paths activate) even at constant `d_total`.
+
+The Harness controls context content (scope construction, compaction, tool description, system prompt), which controls both `w` and `d_reachable` simultaneously. Compaction reduces both: it discards accumulated data (reducing `w`) and shortens the context (reducing `d_reachable`). A strategy instruction in the system prompt is a small addition to `w` with a potentially large effect on `d_reachable` — a high-leverage operation.
 
 ### 8.3 The coupled recurrence
 

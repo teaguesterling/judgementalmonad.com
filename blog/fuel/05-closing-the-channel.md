@@ -363,6 +363,40 @@ The space moved from mechanics to judgment. That's the placement principle at wo
 
 ---
 
+## The part we almost missed
+
+The channel closed. The grade dropped. The trust gap shrank. Job done?
+
+Not quite. In controlled experiments, we closed the channel exactly as described above — replaced bash patterns with structured tools — and the result was *more expensive*. Same outcome (every bug fixed, every test passing). Higher cost. More tokens. More round-trips.
+
+The structured tools worked correctly. The grade genuinely dropped. But the agent used them one at a time — read a file, think, read another file, think, make one edit, think, make another edit — where bash had let it write a single script that did all five edits at once. The channel closed, but the agent's *workflow* didn't adapt to the new tools. It used them like a worse version of bash.
+
+Then we added six tokens to the prompt: "understand the full picture before editing."
+
+Cost dropped 32%. Below bash. Below every other configuration we tested.
+
+The channel closure was necessary. The grade drop was real. But the tool by itself was half the job. The other half was teaching the agent *when to act* — a strategy principle that changed which paths through its decision surface it took, without changing which tools it had.
+
+The ratchet has two products:
+
+**The tool** changes world coupling — what the system can reach. `search()` replaces `grep -r`. `read_file()` replaces `cat`. The W axis moves.
+
+**The strategy** changes d_reachable — which paths through the decision surface the agent actually takes. "Understand before editing" doesn't remove any tools. It constrains the order: explore first, then act. Fewer wasted paths. Fewer round-trips. Lower cost.
+
+Building the tool without teaching the strategy is like Taylor's tables without Johannsen's transitions. The specification exists. The space between operations — where the agent decides *how* to compose the specified tools — is where the efficiency lives or dies. A one-sentence principle that tells the agent *when* to transition from reading to editing frees its judgment for the *how*.
+
+The revised ratchet turn, complete:
+
+1. **Discover** the bash pattern in the logs
+2. **Characterize** its dependencies and essential operation
+3. **Crystallize** the structured tool (the channel closes)
+4. **Teach** the strategy for using it — when, in what order, how it composes with other tools
+5. **Deploy** and measure both the grade drop AND the cost change
+
+Step 4 is cheap — it's text, not code. A sentence in CLAUDE.md. A principle in the system prompt. A mode instruction that says "in debug mode, read everything before proposing fixes." But it's the step that makes the difference between a tool that costs more than bash and a tool that costs less.
+
+---
+
 ## The generalization
 
 This process works for any frequently-successful bash pattern. The steps are always the same:

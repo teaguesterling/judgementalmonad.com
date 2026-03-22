@@ -37,6 +37,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 - **Ratchet Fuel series** — Eleven posts published. The practitioner companion to the Ma series, covering failure streams, the two-stage turn, placement, mode control, tool building, data platform case studies, organizational patterns, and metrics.
 - **Coordination Is Not Control** — Companion essay filling the System 3 gap in the Ma framework. World decoupling, named modes, the snapshot-seal-funnel pattern, and the failure-driven controller.
 - **External evidence** — Nate Crandall's [harness comparison](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made): the same model scored 78% in one harness and 42% in another. The infrastructure determines the outcome, not the model.
+- **Experimental findings** — Controlled experiments across six tool configurations show: structured tools with one sentence of strategy guidance ("understand before editing") cost 32% less than any other configuration — including bash. The ratchet has two products: tools and strategy. Strategy is the more valuable one.
 
 ---
 
@@ -46,7 +47,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 **If you want the theory:** [The Ma of Multi-Agent Systems](blog/ma/00-intro) — start at the beginning. Each post builds on the previous.
 
-**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it, so pick your tools carefully, put structure at every boundary, keep your orchestrator boring and readable, and log everything so the system can teach itself to need less AI over time.
+**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it — but *how the agent uses those tools* matters even more, and six tokens of strategy instruction can outperform any tool configuration change you make.
 
 ```{toctree}
 :hidden:
