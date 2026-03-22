@@ -105,7 +105,11 @@ Remember: we started with a security question. Can we lock down a coding activit
 
 The six-token version is also the most *secure* configuration.
 
-Condition D (bash) is a level 7 computation channel. The agent writes a bash command, the shell executes it. That single tool call can: read any file in the workspace, write any file, execute arbitrary Python, spawn background processes that outlive the tool call, and create new executable scripts. The Harness receives the command string, pattern-matches on it, and hopes. Rice's theorem applies — non-trivial semantic properties of the command are undecidable.
+To understand why, consider what bash actually is in production. Our experiment's Condition D ran bash inside bubblewrap — sandboxed to the workspace, no network, isolated processes. Even sandboxed, it's a level 4 computation channel (level 7 without `--die-with-parent`, which we had to add after discovering that forked processes survived the tool call).
+
+Default Claude Code bash — what ships in production — is **level 8**. No sandbox. The agent can read any file the user can, write anywhere, install packages (level 5), create executable scripts (level 6), spawn persistent background processes (level 7), and edit `CLAUDE.md` and `.mcp.json` — modifying its own regulatory parameters (level 8). The permission gate (the Principal approving each bash call) is the only thing between the tool and level 8 effects. That gate is a human reading a command string and deciding if it's safe — doing manually, for every call, what Rice's theorem says can't be automated.
+
+With `--dangerously-skip-permissions` — the configuration used for CI, batch processing, and autonomous agents — the gate is gone. Level 8, no filter.
 
 Condition I is a level 3 system. The agent *writes* code (via `file_edit` — level 3, mutation) and *verifies* it (via `run_tests` — level 1 interface, sandboxed execution). The critical structural property: **the agent cannot close the write-execute loop on its own.** It writes through one tool (structured, logged, auditable) and the only execution path goes through a sandbox it doesn't control.
 
@@ -133,6 +137,10 @@ What the Harness can decide about each condition's tool calls *before execution*
 | What are the effects? | Enumerable | Uncharacterizable |
 
 I is characterizable on every dimension. D is characterizable only on the bwrap-guaranteed dimensions (network, termination). The difference isn't a matter of degree — it's the difference between decidable and undecidable properties. The Harness can write an exhaustive policy for I. It structurally cannot for D.
+
+I is characterizable on every dimension. D is characterizable only on the bwrap-guaranteed dimensions (network, termination). The Harness can write an exhaustive policy for I. It structurally cannot for D.
+
+In our experiment, D was sandboxed — level 4 with `--die-with-parent`. In production, bash is level 8. The grade gap between I (level 3) and production bash (level 8) is five levels of the computation taxonomy. The permission gate that the Principal applies to each bash call — reading the command, deciding if it's safe — is a human doing System 3 work on every turn. Condition I eliminates that work entirely. Every tool call is self-evidently characterizable. The Principal doesn't need to evaluate it.
 
 Cheaper, simpler, more auditable, and provably lower grade. Not by adding more infrastructure — by separating write from execute and sandboxing the execute path.
 
