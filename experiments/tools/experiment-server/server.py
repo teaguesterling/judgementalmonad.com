@@ -34,21 +34,21 @@ from fastmcp import FastMCP
 
 CONDITION_TOOLS = {
     # Original conditions (A-C)
-    "A": {"file_tools", "enhanced_file_tools", "run_tests"},                          # Structured tools only
-    "B": {"file_tools", "enhanced_file_tools", "run_tests", "bash_readonly"},          # + exploration
-    "C": {"file_tools", "enhanced_file_tools", "run_tests", "bash_sandboxed"},         # Everything
+    "A": {"file_tools", "run_tests"},                          # Structured tools only
+    "B": {"file_tools", "run_tests", "bash_readonly"},         # + exploration
+    "C": {"file_tools", "run_tests", "bash_sandboxed"},        # Everything
     # Factorial conditions (D-F): isolate each capability's contribution
-    "D": {"bash_sandboxed"},                                                           # Bash only
-    "E": {"file_tools", "enhanced_file_tools", "bash_sandboxed"},                      # File tools + bash, no run_tests
-    "F": {"run_tests", "bash_sandboxed"},                                              # run_tests + bash, no file tools
+    "D": {"bash_sandboxed"},                                   # Bash only
+    "E": {"file_tools", "bash_sandboxed"},                     # File tools + bash, no run_tests
+    "F": {"run_tests", "bash_sandboxed"},                      # run_tests + bash, no file tools
 }
 
 # Tools are tagged by capability group:
-#   "file_tools"          - file_read, file_search, file_glob, file_list, file_edit, file_write
-#   "enhanced_file_tools" - file_read_batch, file_search_context, file_count
-#   "run_tests"           - run_tests (structured pytest wrapper)
-#   "bash_readonly"       - bash_readonly (read-only commands in bwrap)
-#   "bash_sandboxed"      - bash_sandboxed (any command in bwrap)
+#   "file_tools"     - file_read, file_search, file_glob, file_list, file_edit, file_write,
+#                      file_read_batch, file_search_context, file_count
+#   "run_tests"      - run_tests (structured pytest wrapper)
+#   "bash_readonly"  - bash_readonly (read-only commands in bwrap)
+#   "bash_sandboxed" - bash_sandboxed (any command in bwrap)
 #
 # The 2×2×2 factorial (file_tools × run_tests × bash):
 #   A = file + tests          C = file + tests + bash
@@ -339,7 +339,7 @@ def file_write(path: str, content: str) -> str:
 
 # --- Enhanced data channel tools (all conditions) ---
 
-@server.tool(tags={"group:enhanced_file_tools"})
+@server.tool(tags={"group:file_tools"})
 def file_read_batch(paths: list[str], limit_per_file: int = 200) -> str:
     """Read multiple files in a single call. Returns each file's contents
     with a header showing the path.
@@ -371,7 +371,7 @@ def file_read_batch(paths: list[str], limit_per_file: int = 200) -> str:
     return result or "(no files read)"
 
 
-@server.tool(tags={"group:enhanced_file_tools"})
+@server.tool(tags={"group:file_tools"})
 def file_search_context(pattern: str, path: str = ".", context: int = 3,
                         glob_filter: str = "") -> str:
     """Search file contents with context lines around each match.
@@ -401,7 +401,7 @@ def file_search_context(pattern: str, path: str = ".", context: int = 3,
         return err
 
 
-@server.tool(tags={"group:enhanced_file_tools"})
+@server.tool(tags={"group:file_tools"})
 def file_count(path: str = ".", glob_filter: str = "") -> str:
     """Count files and lines matching a pattern. Returns file counts,
     line counts, and a breakdown by file.
@@ -683,7 +683,7 @@ def bash_sandboxed(command: str) -> str:
 # ---------------------------------------------------------------------------
 
 ALL_GROUPS = {
-    "file_tools", "enhanced_file_tools", "run_tests",
+    "file_tools", "run_tests",
     "bash_readonly", "bash_sandboxed",
 }
 
