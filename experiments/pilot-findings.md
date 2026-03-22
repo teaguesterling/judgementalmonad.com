@@ -4,6 +4,28 @@
 
 ---
 
+## Methodological note
+
+This document records an *exploratory* experimental program, not a pre-registered hypothesis test. The pre-registered experiments (Experiments 1-12 in `drafts/experiment-designs.md` and `drafts/experiment-statistics.md`) are the formal program. This document records what happened when we built the infrastructure to run them — and what we discovered along the way that changed the experimental design.
+
+The sequence:
+1. Built infrastructure to run the pre-registered Experiment 3 (computation channel phase transition)
+2. Ran pilot tests to validate the infrastructure
+3. Discovered that the original condition design (A/B/C as a gradient) was confounded — tool parity, run_tests dominance, cognitive fit
+4. Explored the confounds through focused experiments (H5, A-vs-D, G/H/I)
+5. These explorations will inform the design of the formal experiment
+
+This is legitimate pre-experimental exploration — the kind of piloting that should happen before committing to 90+ runs on a pre-registered design. The findings here are descriptive (n=5-10 per cell, not powered for inferential claims). The formal experiment will be designed after this exploration converges.
+
+**What changed from the original plan:**
+- Conditions expanded from A/B/C (gradient) to A-F (2×2×2 factorial)
+- `run_tests` identified as the dominant variable, not bash availability
+- D (bash-only) became the comparison target, not C (bash + structured)
+- Three ratchet experiments (G/H/I) designed to decompose D's advantage
+- The formal experiment will test whichever variable the ratchet experiments identify
+
+---
+
 ## 0. Framing: The Harness Matters, But How?
 
 Crandall's ["Same Model, 78% vs 42%"](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made) documents at practitioner scale what the Ma framework formalizes: the harness determines the system's behavior more than the model does. The same model in different harnesses is a different system. The LangChain finding (52.8% → 66.5%) showed this on a benchmark. Crandall shows it in production, with compounding lock-in as accumulated configuration makes the choice increasingly irreversible.
