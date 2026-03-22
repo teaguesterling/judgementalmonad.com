@@ -710,6 +710,7 @@ def _build_bwrap_cmd(command: str, *, readonly: bool = False) -> list[str]:
         "--unshare-net",
         "--unshare-pid",
         "--new-session",
+        "--die-with-parent",  # kill all children when bwrap exits (prevents level 7)
         # Working directory
         "--chdir", ws,
         # Run bash
