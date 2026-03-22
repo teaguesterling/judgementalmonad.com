@@ -1,2 +1,8 @@
 _build/
 .venv/
+
+# blq
+.lq/*
+!.lq/hooks/
+!.lq/config.toml
+!.lq/commands.toml
