@@ -486,7 +486,7 @@ Same model (Sonnet), same task (fix 13 bugs in 600-line Python codebase), 100% p
 | F vs D | +run_tests | **+36%** | Structured test wrapper adds overhead |
 | A vs D | +file tools +run_tests -bash | +36% | Structured-only costs more than bash-only |
 | H vs A | +batch tools +tool guidance | **+30%** | More tools + more instructions = more deliberation = worse |
-| I vs D | Structured+principle vs bash | **-8%** | Structured tools with the right principle beat bash |
+| I vs D | Structured+principle vs bash | **-8%** | Same cost, but I is level 3 and D is level 7 (see grade analysis below) |
 
 ### The three-tier finding
 
@@ -516,6 +516,40 @@ The per-call content: bash sends 896 chars/call (multi-line scripts). Structured
 
 But — the principle instruction (I) achieves the same efficiency without bash. "Understand before editing" makes the agent plan all fixes *before* making any edits, then execute them efficiently. The agent's natural reasoning, constrained to plan first, produces the same batching that bash produces structurally.
 
+### The grade difference: I is level 3, D is level 7
+
+The cost comparison (I ≈ D at ~$1) is empirical and requires n=144 for significance. The *grade* comparison is structural — provable from the tool definitions without running any experiments.
+
+**Condition D is level 7.** `bash_sandboxed` accepts an arbitrary string and executes it. Within the current bwrap sandbox (read-write workspace, no network), the agent can: write arbitrary files, execute arbitrary programs, create new executable scripts (level 6), and spawn background processes that outlive the tool call (level 7). The Harness receives the command string and cannot decide non-trivial semantic properties of it (Rice's theorem). Write and execute happen in one opaque tool call.
+
+**Condition I is level 3.** The agent *writes* through `file_edit` (level 3 — structured mutation, one file, one replacement, logged and auditable) and *verifies* through `run_tests` (level 1 interface — two parameters, structured output). The critical property: **the agent cannot close the write-execute loop.** It writes through one tool and execution goes through a separate sandbox it doesn't control.
+
+`run_tests` internally executes Turing-complete code (pytest runs agent-written Python). But the sandbox bounds the *consequences*: read-only workspace, no network, isolated processes. The *tool interface* is level 1 (structured query). The *effects ceiling* is level 2 (read + compute). The internal Turing-completeness doesn't leak through the interface, just as a database engine's complexity doesn't leak through SQL.
+
+```
+Condition I:
+  file_edit    tool interface: level 3    effects ceiling: level 3
+  run_tests    tool interface: level 1    effects ceiling: level 2
+  Composite:   level 3 (the join)
+
+Condition D:
+  bash         tool interface: level 4+   effects ceiling: level 7
+  Composite:   level 7
+```
+
+What the Harness can decide about each condition's tool calls *before execution*:
+
+| Property | Condition I | Condition D |
+|---|---|---|
+| Files that will be read | Decidable (path in args) | Undecidable |
+| Files that will be written | Decidable (path in args) | Undecidable |
+| Network access | No (by construction) | No (bwrap) |
+| Subprocess spawning | No (run_tests sandboxed) | Undecidable |
+| Termination | Yes (timeout) | Yes (timeout) |
+| All effects enumerable | Yes | No |
+
+The I vs D cost comparison is a coin flip at n=5. The I vs D grade comparison is a 4-level structural gap — decidable vs undecidable, level 3 vs level 7. The security improvement doesn't need statistical significance because it's not an empirical claim. It's a property of the tool definitions.
+
 ### The ratchet's two products
 
 The grade lattice has two axes: world coupling (W — what tools are available) and decision surface (d_reachable — which paths through the computation the agent takes).
@@ -542,7 +576,7 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 
 ### What the three claims look like now
 
-**Claim 1 (security without cost):** SUPPORTED by I — and stronger than "without cost." I is cheaper ($0.97 vs $1.05), simpler (no sandbox, no shell metacharacter filter, no bwrap isolation, no command allowlist), and more auditable (every tool call is structured, typed, and logged — no bash scripts to read). The computation channel and its entire regulatory apparatus are eliminated. The attack surface isn't zero — prompt injection through file contents, path traversal, resource exhaustion are still possible — but it's *characterizable*. The Harness can enumerate what the tools can do. With bash, it can't (Rice's theorem). You don't trade safety for efficiency. You get both. The 27% cost penalty from A was a strategy problem, not a security tax.
+**Claim 1 (security without cost):** SUPPORTED by I — and stronger than "without cost." The cost comparison (I: $0.97 vs D: $1.05, -8%) is empirically suggestive but not significant at n=5. The *grade* comparison is structural and doesn't need statistics: I operates at level 3 (structured mutation + sandboxed verification), D at level 7 (subprocess spawning within a read-write sandbox). That's a 4-level gap in the computation taxonomy — decidable properties vs undecidable, auditable tool calls vs opaque bash scripts. The Harness can write an exhaustive policy for I's tools. It structurally cannot for D's. The write/execute separation in I (file_edit writes, run_tests executes in a read-only sandbox) prevents the agent from closing the computation channel loop that bash opens by default. The 27% cost penalty from A was a strategy problem, not a security tax — six tokens fixed it.
 
 **Claim 2 (structured tools are better):** CONDITIONALLY SUPPORTED. Structured tools + principle (I: $0.97) beat bash (D: $1.05). Structured tools alone (A: $1.43) are worse. The tools aren't better on their own — they're better with the right strategy.
 
