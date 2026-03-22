@@ -92,12 +92,17 @@ The ratchet only turns one way. Each promotion moves a behavior from high *ma* t
 
 The ratchet is powered by friction. Every repeated failure at a boundary — a permission denial, a tool call that times out, a pattern the agent keeps trying that keeps not working — is a data point about where the system's configuration doesn't match the task's requirements. The crystallization eliminates the friction, either by opening the boundary (promote the access — the agent genuinely needs this capability) or by making the constraint visible (the agent is wasting decision surface probing something that should never open). Either way, the expensive middle state — knowledge without access, repeated probing, wasted inference — is eliminated.^[The companion essay [Coordination Is Not Control](coordination-is-not-control.md) develops this as the failure-driven controller: System 3 in Beer's Viable System Model, monitoring the failure stream and crystallizing patterns into configuration changes.]
 
+But crystallization has two products, and forgetting either one leaves the ratchet incomplete. The obvious product is the **tool** — the structured operation that replaces the bash pattern. The less obvious product is the **strategy** — when and how to use the tool effectively. A tool without its strategy is a worse version of the bash command it replaced, because the agent doesn't know how to compose it with other tools. In controlled experiments, adding batch tools without strategy guidance *increased* costs by 30%, while adding a single strategy instruction without any new tools *decreased* costs by 32%. The strategy is the more valuable product.
+
 The loop is self-sustaining:
 
 ```
 Exploration (high ma)
     ↓ produces
-Artifact (specified)
+Tool artifact (specified operation)
+  + Strategy artifact (when/how to use it)
+    ↓ taught via
+Instructions (CLAUDE.md, principles, mode guidance)
     ↓ consumed by
 Application (low ma)
     ↓ outcomes captured

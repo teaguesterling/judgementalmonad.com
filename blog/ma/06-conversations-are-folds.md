@@ -68,14 +68,16 @@ The right framing distinguishes two quantities:
 
 ```
 d_total     = const                    (the weights — fixed)
-d_reachable = f(d_total, |context|)    (monotone in context length)
+d_reachable = f(d_total, context)      (depends on what enters, not just how much)
 ```
 
-`d_total` is the decision surface — the full path space of the weights. It's the grade component, and it's constant. `d_reachable` is the portion of that path space that the current input can actually activate. It grows with context length, but it's bounded above by `d_total`.^[Def. 8.4 in the [formal companion](formal-companion.md). The token window provides a universal bound: `d_reachable(n) ≤ d_total` and `w(n) ≤ T` — all trajectories are finite (Prop. 8.11).]
+`d_total` is the decision surface — the full path space of the weights. It's the grade component, and it's constant. `d_reachable` is the portion of that path space that the current input can actually activate. It's bounded above by `d_total`.^[Def. 8.4 in the [formal companion](formal-companion.md). The token window provides a universal bound: `d_reachable(n) ≤ d_total` and `w(n) ≤ T` — all trajectories are finite (Prop. 8.11).]
 
-The distinction matters because the Harness controls context length. Scope construction, compaction, what to include in the token window — these determine `|context|`, which determines `d_reachable`. The Harness controls not just what the actor sees (world coupling) but how many paths through the weights are reachable (effective decision surface).
+A subtlety: `d_reachable` depends on the *content* of the context, not just its *length*. Two context windows of identical token count can activate very different path sets depending on what's in them. A six-token instruction ("understand the problem before editing") can dramatically reduce `d_reachable` by pruning exploration paths — not by removing tools or shortening context, but by changing which attention patterns activate. Context length is an upper bound on `d_reachable`, but the actual value is determined by semantic content.
 
-Compaction reduces both simultaneously. It shrinks the context (reducing `d_reachable`) and discards accumulated world state (reducing effective world coupling). Both axes of the grade move down. Both move up as the conversation grows. Context management is the single most leveraged Harness operation because it simultaneously controls world coupling AND effective decision surface.
+This means `d_reachable` is coupled to world coupling more tightly than the product lattice suggests. What enters through the world coupling channel — tool descriptions, instructions, file contents, conversation history — determines which paths activate. The two axes are not independent; `d_reachable` is downstream of `w`. The Harness controls both simultaneously through a single mechanism: scope construction determines what enters the token window, and what enters determines both `w` (what the actor has access to) and `d_reachable` (which paths through the weights that access activates).
+
+Compaction reduces both simultaneously. It shrinks the context (reducing `d_reachable`) and discards accumulated world state (reducing effective world coupling). Both axes of the grade move down. Both move up as the conversation grows. Context management is the single most leveraged Harness operation because it simultaneously controls world coupling AND effective decision surface — and the coupling between them means the effect is superlinear.
 
 ---
 

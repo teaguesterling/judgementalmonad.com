@@ -456,8 +456,94 @@ This has implications for tool design: the goal isn't just to match bash's *capa
 - The structured tools haven't been optimized for this task. The ratchet turn (file_edit_batch, better instructions) may close the gap.
 - The test is n=5 on one task — not powered for strong conclusions.
 
-**Claim 3 (the ratchet justification): THE CORE QUESTION.** If ratcheted A (with batch tools, better instructions) matches D's cost, the ratchet works — we observed bash's advantage (batching), crystallized it into structured tools, and eliminated the computation channel without losing efficiency. The ratchet run is in progress.
+**Claim 3 (the ratchet justification): ANSWERED — but not how we expected.** The tool ratchet (H) made things *worse* (+30%). The strategy ratchet (I) made things better (-32%). The ratchet works, but its most valuable product is strategy (d_reachable constraint), not tools (W-axis change). See Section 10.
 
 ---
 
-*Findings updated 2026-03-21 with H5 (n=20) and A-vs-D (n=10) results. D/E/F factorial and Experiment H (ratchet) in progress.*
+## 10. Complete Results: The Full Factorial
+
+### The experiment
+
+Same model (Sonnet), same task (fix 13 bugs in 600-line Python codebase), 100% pass rate across all conditions, n=5 per condition.
+
+### Results ranked by cost
+
+| Rank | Condition | File tools | run_tests | Bash | Instruction | Cost | Turns | Calls | Output tokens |
+|------|-----------|:----------:|:---------:|:----:|-------------|------|-------|-------|---------------|
+| 1 | **I** (principle) | ✓ | ✓ | | "understand first" | **$0.97** | 22.8 | 12.2 | 30,445 |
+| 2 | **E** (file+bash) | ✓ | | ✓ | generic | $1.01 | 24.6 | 11.4 | 31,106 |
+| 3 | **D** (bash only) | | | ✓ | generic | $1.05 | 26.4 | 12.0 | 30,739 |
+| 4 | **A** (baseline) | ✓ | ✓ | | generic | $1.43 | 28.2 | 16.2 | 50,170 |
+| 5 | **F** (tests+bash) | | ✓ | ✓ | generic | $1.43 | 26.8 | 17.6 | 51,653 |
+| 6 | **H** (batch tools) | ✓ | ✓ | | tool guidance | $1.86 | 26.0 | 14.2 | 75,919 |
+
+### What each contrast tells us
+
+| Contrast | What changed | Cost effect | What it means |
+|----------|-------------|-------------|---------------|
+| I vs A | +principle instruction | **-32%** | Strategy is the most leveraged intervention |
+| E vs D | +file tools | -4% | File tools are nearly free alongside bash |
+| F vs D | +run_tests | **+36%** | Structured test wrapper adds overhead |
+| A vs D | +file tools +run_tests -bash | +36% | Structured-only costs more than bash-only |
+| H vs A | +batch tools +tool guidance | **+30%** | More tools + more instructions = more deliberation = worse |
+| I vs D | Structured+principle vs bash | **-8%** | Structured tools with the right principle beat bash |
+
+### The three-tier finding
+
+**Tier 1: Strategy (d_reachable) is the dominant variable.**
+
+I and A have identical tools. The only difference is one sentence: "Do not start editing until you understand the full picture." That sentence reduces cost by 32%. It reduces output tokens by 39% (50K → 30K). Same capabilities, fewer wasted paths through the decision surface.
+
+**Tier 2: run_tests is the dominant tool-level variable — and it hurts.**
+
+F vs D: adding run_tests to bash costs +36%. A vs E: adding run_tests to file+bash costs +42% ($1.43 vs $1.01). The structured test wrapper adds a tool call boundary (extra round-trip) and returns less useful output than raw `pytest -v` through bash. Every condition with run_tests (A, F, H) costs more than equivalent conditions without it (D, E).
+
+**Tier 3: File tools are neutral alongside bash, costly without it.**
+
+E vs D: file tools alongside bash cost -4% (essentially free — the agent uses whichever tool is more convenient). A vs D: file tools without bash cost +36% (the agent is forced into fine-grained tool calls without bash's batching ability). The file tools themselves aren't the problem — the absence of bash's composability is.
+
+### The cognitive fit explanation
+
+Why does bash beat structured tools on cost? Not because it's more capable — `file_edit` can do everything `sed` can. Because **bash lets the agent think in programs**.
+
+With bash, the agent writes a Python script that reads a file, applies all fixes, and writes it back. That's one tool call expressing a complete plan. With structured tools, the agent calls `file_edit` five times — each call is one fix, each fix is one turn, each turn re-sends the full context.
+
+The per-call content: bash sends 896 chars/call (multi-line scripts). Structured tools send 50 chars/call (one old_string/new_string pair). Bash packs 18× more work per round-trip.
+
+But — the principle instruction (I) achieves the same efficiency without bash. "Understand before editing" makes the agent plan all fixes *before* making any edits, then execute them efficiently. The agent's natural reasoning, constrained to plan first, produces the same batching that bash produces structurally.
+
+### The ratchet's two products
+
+The grade lattice has two axes: world coupling (W — what tools are available) and decision surface (d_reachable — which paths through the computation the agent takes).
+
+The ratchet operates on both:
+- **Tool artifacts** change W (new tools, better tools, batch tools)
+- **Strategy artifacts** change d_reachable (instructions, principles, CLAUDE.md guidance)
+
+We ratcheted W (built batch tools, improved tool descriptions) and it hurt (+30%). We ratcheted d_reachable (one sentence) and it helped more than any tool change (-32%). **The strategy product of the ratchet is more valuable than the tool product.**
+
+This doesn't mean tools don't matter. It means tools are necessary but not sufficient. The right tools with the wrong strategy (H: $1.86) are worse than the basic tools with the right strategy (I: $0.97). And the right tools with the right strategy should be better still — but we haven't tested I's principle with D's bash, which is the next experiment.
+
+### Implications for the framework
+
+**1. The hierarchy: model < tools < strategy.** The industry focuses on model selection and tool configuration. Strategy — how the agent uses what it has — is the most leveraged layer and the cheapest to change.
+
+**2. d_reachable is a function of context content, not context length.** Post 6 defines `d_reachable = f(d_total, |context|)`. The experiment shows that 6 tokens of instruction change d_reachable more than adding or removing entire tool sets. The content of the context — not its length — determines which paths through the weights activate.
+
+**3. The ratchet's "teach" step.** The ratchet cycle (explore → capture → crystallize → exploit) needs a step between crystallize and exploit: **teach** — provide the strategy for using the crystallized tool. Without it, the tool is deployed but underused. `file_edit_batch` was available in H but never called. The agent needed the principle, not the tool.
+
+**4. Bash's advantage is cognitive, not computational.** Bash forces program-writing, which IS planning. Structured tools allow edit-by-edit exploration without planning. The principle "understand before editing" reimplements bash's cognitive forcing function without the computation channel.
+
+**5. run_tests is a ratchet anti-pattern.** It crystallized a bash pattern (running pytest) that didn't need crystallizing. The bash version was already simple, and the agent's judgment about *how* to invoke pytest (which flags, which tests, pipe to tail) was part of the debugging workflow. Specifying it away removed useful flexibility and added round-trip overhead.
+
+### What the three claims look like now
+
+**Claim 1 (security without cost):** SUPPORTED by I. Structured tools with the right principle ($0.97) beat bash ($1.05). The 27% cost penalty from A was a strategy problem, not a tool problem. With the right strategy, structured tools are both safer AND cheaper.
+
+**Claim 2 (structured tools are better):** CONDITIONALLY SUPPORTED. Structured tools + principle (I: $0.97) beat bash (D: $1.05). Structured tools alone (A: $1.43) are worse. The tools aren't better on their own — they're better with the right strategy.
+
+**Claim 3 (the ratchet justification):** SUPPORTED but REFINED. The ratchet works, but its most valuable product is strategy (one sentence: -32%), not tools (batch tools: +30%). The revised ratchet: explore → capture → crystallize tools AND strategy → teach → exploit.
+
+---
+
+*Findings updated 2026-03-21 with complete factorial (A-F, n=5 each), Experiments G, H, I, and the full analysis. B/C refresh and G still completing.*
