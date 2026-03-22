@@ -44,8 +44,9 @@ CONDITION_TOOLS = {
 }
 
 # Tools are tagged by capability group:
-#   "file_tools"     - file_read, file_search, file_glob, file_list, file_edit, file_write,
-#                      file_read_batch, file_search_context, file_count
+#   "file_tools"     - file_read, file_search, file_glob, file_list, file_edit,
+#                      file_edit_batch, file_write, file_read_batch,
+#                      file_search_context, file_count
 #   "run_tests"      - run_tests (structured pytest wrapper)
 #   "bash_readonly"  - bash_readonly (read-only commands in bwrap)
 #   "bash_sandboxed" - bash_sandboxed (any command in bwrap)
@@ -170,8 +171,13 @@ def _validate_bash_readonly(command: str) -> bool:
 server = FastMCP(
     "Experiment Server",
     instructions=(
-        "This server provides tools for working with code. "
-        "Use the available tools to read, search, edit, and write files."
+        "This server provides tools for working with code.\n\n"
+        "Efficiency tips:\n"
+        "- Use file_glob to find files by pattern (e.g. '**/*.py') instead of listing directories one at a time.\n"
+        "- Use file_read_batch to read multiple files in one call.\n"
+        "- Use file_edit_batch to apply multiple edits to one or more files in a single call.\n"
+        "- Use file_search or file_search_context to find code patterns across the codebase.\n"
+        "- Use run_tests to verify your changes (if available).\n"
     ),
 )
 
@@ -312,6 +318,63 @@ def file_edit(path: str, old_string: str, new_string: str) -> str:
         err = f"Error: {e}"
         _log_call("file_edit", {"path": path}, err, False, (time.monotonic() - t0) * 1000)
         return err
+
+
+@server.tool(tags={"group:file_tools"})
+def file_edit_batch(edits: list[dict]) -> str:
+    """Apply multiple edits across one or more files in a single call.
+    Much more efficient than calling file_edit repeatedly.
+
+    Each edit is a dict with: path, old_string, new_string.
+    Edits are applied in order. Each old_string must be unique in its file
+    (at the time that edit is applied — earlier edits in the batch may
+    change the file content).
+
+    Args:
+        edits: List of {"path": "...", "old_string": "...", "new_string": "..."}
+    """
+    t0 = time.monotonic()
+    results = []
+    errors = []
+    files_modified = set()
+
+    for i, edit in enumerate(edits):
+        path = edit.get("path", "")
+        old_string = edit.get("old_string", "")
+        new_string = edit.get("new_string", "")
+
+        if not path or not old_string:
+            errors.append(f"Edit {i}: missing path or old_string")
+            continue
+
+        try:
+            resolved = _resolve_path(path)
+            content = resolved.read_text()
+            count = content.count(old_string)
+            if count == 0:
+                errors.append(f"Edit {i} ({path}): old_string not found")
+                continue
+            if count > 1:
+                errors.append(f"Edit {i} ({path}): old_string found {count} times (must be unique)")
+                continue
+            new_content = content.replace(old_string, new_string, 1)
+            resolved.write_text(new_content)
+            results.append(f"Edit {i} ({path}): OK")
+            files_modified.add(path)
+        except Exception as e:
+            errors.append(f"Edit {i} ({path}): {e}")
+
+    for path in files_modified:
+        _sandbox_commit("file_edit_batch", path)
+
+    summary = f"Applied {len(results)}/{len(edits)} edits across {len(files_modified)} files"
+    if errors:
+        summary += f"\nErrors:\n" + "\n".join(f"  {e}" for e in errors)
+
+    success = len(errors) == 0
+    _log_call("file_edit_batch", {"edit_count": len(edits), "files": list(files_modified)},
+              summary, success, (time.monotonic() - t0) * 1000)
+    return summary
 
 
 @server.tool(tags={"group:file_tools"})
