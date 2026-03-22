@@ -55,15 +55,23 @@ So we told the structured-tools agent the same thing: "Do not start editing unti
 
 Six tokens. One sentence. No new tools. No bash.
 
-| Condition | Cost | Change from baseline |
-|---|---|---|
-| A (structured, no guidance) | $1.43 | — |
-| D (bash only) | $1.05 | -27% |
-| **I (structured + six tokens)** | **$0.97** | **-32%** |
+We also tried the opposite: a detailed four-phase strategy prescription telling the agent exactly which tools to use in which order. And batch tools with improved tool descriptions teaching the agent about efficient patterns.
 
-I beat bash. Same structured tools as A. Same pass rate. 32% cheaper than the baseline, 8% cheaper than bash. The six-token instruction reimplemented bash's cognitive forcing function — "plan before you act" — without the computation channel.
+| Condition | Instruction | Cost | Change from baseline | Output tokens |
+|---|---|---|---|---|
+| **G** (four-phase strategy) | Detailed prescription | **$2.06** | **+44%** | 90,702 |
+| **H** (batch tools + guidance) | Tool-specific guidance | $1.86 | +30% | 75,919 |
+| A (structured, no guidance) | Generic | $1.43 | — | 50,170 |
+| D (bash only) | Generic | $1.05 | -27% | 30,739 |
+| **I (structured + six tokens)** | **"Understand first"** | **$0.97** | **-32%** | **30,445** |
 
-Flip it: omitting those six tokens costs 47% more per run. Every blank line in your CLAUDE.md has a price.
+The spectrum runs from $2.06 (most instruction) to $0.97 (least instruction that works). More instruction produced more output tokens — the agent wrote detailed phase-by-phase analysis because we asked for it, and all that writing was overhead. G generated 3× the output tokens of I for the same outcome.
+
+The detailed prescription didn't just fail to help. It was the most expensive condition in the entire experiment — worse than bash, worse than no guidance at all. Over-specification constrains the agent into a rigid workflow and generates verbose compliance with the prescription instead of efficient problem-solving.
+
+I beat everything. Same structured tools as A. Same pass rate. 32% cheaper than the baseline. 53% cheaper than the detailed strategy. 8% cheaper than bash. The six-token instruction reimplemented bash's cognitive forcing function — "plan before you act" — without the computation channel and without the overhead of detailed instructions.
+
+Flip it: omitting those six tokens costs 47% more per run. Adding sixty tokens of detailed strategy costs 112% more. Every blank line in your CLAUDE.md has a price. So does every unnecessary line.
 
 ## What we actually found
 
