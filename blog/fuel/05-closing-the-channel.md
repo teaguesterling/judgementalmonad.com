@@ -395,6 +395,8 @@ The revised ratchet turn, complete:
 
 Step 4 is cheap — it's text, not code. A sentence in CLAUDE.md. A principle in the system prompt. A mode instruction that says "in debug mode, read everything before proposing fixes." But it's the step that makes the difference between a tool that costs more than bash and a tool that costs less.
 
+Think of it the other way: what does *omitting* the strategy cost? In our experiments, every run without the six-token principle burned an extra $0.46 in wasted exploration — a 47% overhead from not saying something. Every blank line in your CLAUDE.md is an implicit decision to let the agent figure it out on its own. The experiment measured what that decision costs.
+
 ---
 
 ## The generalization

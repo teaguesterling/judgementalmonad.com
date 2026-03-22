@@ -490,6 +490,10 @@ Same model (Sonnet), same task (fix 13 bugs in 600-line Python codebase), 100% p
 
 ### The three-tier finding
 
+**The cost of omission.** Flip the question. Instead of "the instruction saved 32%," ask: "what did omitting it cost?" Without the principle, every run burns an extra $0.46 in wasted exploration — a 47% overhead from *not saying something*. Six tokens omitted. $0.46 per run. At 100 runs/day, that's $46/day in inference budget spent on paths the agent wouldn't have taken if someone had written one sentence in the CLAUDE.md.
+
+Every blank line in your system prompt is an implicit decision to let the agent figure it out on its own. This experiment measured what that decision costs.
+
 **Tier 1: Strategy (d_reachable) is the dominant variable.**
 
 I and A have identical tools. The only difference is one sentence: "Do not start editing until you understand the full picture." That sentence reduces cost by 32%. It reduces output tokens by 39% (50K → 30K). Same capabilities, fewer wasted paths through the decision surface.

@@ -37,7 +37,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 - **Ratchet Fuel series** — Eleven posts published. The practitioner companion to the Ma series, covering failure streams, the two-stage turn, placement, mode control, tool building, data platform case studies, organizational patterns, and metrics.
 - **Coordination Is Not Control** — Companion essay filling the System 3 gap in the Ma framework. World decoupling, named modes, the snapshot-seal-funnel pattern, and the failure-driven controller.
 - **External evidence** — Nate Crandall's [harness comparison](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made): the same model scored 78% in one harness and 42% in another. The infrastructure determines the outcome, not the model.
-- **Experimental findings** — Controlled experiments across six tool configurations show: structured tools with one sentence of strategy guidance ("understand before editing") cost 32% less than any other configuration — including bash. The ratchet has two products: tools and strategy. Strategy is the more valuable one.
+- **Experimental findings** — Controlled experiments across six tool configurations show: structured tools with one sentence of strategy guidance ("understand before editing") cost 32% less than any other configuration — including bash. Flip it: omitting those six tokens costs 47% more per run. Every blank line in your CLAUDE.md has a price. The ratchet has two products: tools and strategy. Strategy is the more valuable one.
 
 ---
 
