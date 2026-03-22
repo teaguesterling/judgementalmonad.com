@@ -31,3 +31,12 @@ Want the theory? Start with [The Ma of Multi-Agent Systems](../ma/00-intro).
 
 ratchet-detect
 ```
+
+## Proposed Skills
+
+```{toctree}
+:maxdepth: 1
+:caption: Proposed Skills
+
+proposals/index
+```
