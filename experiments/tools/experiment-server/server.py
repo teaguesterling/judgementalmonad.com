@@ -41,6 +41,8 @@ CONDITION_TOOLS = {
     "D": {"bash_sandboxed"},                                   # Bash only
     "E": {"file_tools", "bash_sandboxed"},                     # File tools + bash, no run_tests
     "F": {"run_tests", "bash_sandboxed"},                      # run_tests + bash, no file tools
+    # Minimal conditions (J+): reduced tool set for weaker models
+    "J": {"batch_tools", "run_tests"},                         # Batch-only file tools + run_tests
 }
 
 # Tools are tagged by capability group:
@@ -239,7 +241,7 @@ def file_search(pattern: str, path: str = ".", glob_filter: str = "") -> str:
         return err
 
 
-@server.tool(tags={"group:file_tools"})
+@server.tool(tags={"group:file_tools", "group:batch_tools"})
 def file_glob(pattern: str, path: str = ".") -> str:
     """Find files matching a glob pattern.
 
@@ -320,7 +322,7 @@ def file_edit(path: str, old_string: str, new_string: str) -> str:
         return err
 
 
-@server.tool(tags={"group:file_tools"})
+@server.tool(tags={"group:file_tools", "group:batch_tools"})
 def file_edit_batch(edits: list[dict]) -> str:
     """Apply multiple edits across one or more files in a single call.
     Much more efficient than calling file_edit repeatedly.
@@ -377,7 +379,7 @@ def file_edit_batch(edits: list[dict]) -> str:
     return summary
 
 
-@server.tool(tags={"group:file_tools"})
+@server.tool(tags={"group:file_tools", "group:batch_tools"})
 def file_write(path: str, content: str) -> str:
     """Write content to a file (creates or overwrites).
 
@@ -402,7 +404,7 @@ def file_write(path: str, content: str) -> str:
 
 # --- Enhanced data channel tools (all conditions) ---
 
-@server.tool(tags={"group:file_tools"})
+@server.tool(tags={"group:file_tools", "group:batch_tools"})
 def file_read_batch(paths: list[str], limit_per_file: int = 200) -> str:
     """Read multiple files in a single call. Returns each file's contents
     with a header showing the path.
@@ -767,7 +769,7 @@ def bash_sandboxed(command: str) -> str:
 # ---------------------------------------------------------------------------
 
 ALL_GROUPS = {
-    "file_tools", "run_tests",
+    "file_tools", "batch_tools", "run_tests",
     "bash_readonly", "bash_sandboxed",
 }
 
@@ -793,7 +795,7 @@ def main():
     global _condition, _task_id, _log_dir, _workspace, _allowed_dirs
 
     parser = argparse.ArgumentParser(description="Experiment MCP Server")
-    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F"], required=True,
+    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J"], required=True,
                         help="Experimental condition (A=file+tests, B=A+readonly-bash, C=A+bash, D=bash-only, E=file+readonly-bash, F=tests+bash)")
     parser.add_argument("--task-id", required=True,
                         help="Task identifier (e.g. '01', 'task-03-condition-A')")

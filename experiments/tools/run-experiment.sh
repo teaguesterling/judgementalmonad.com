@@ -101,7 +101,7 @@ if [[ -z "$CONDITION" || -z "$TASK_ID" || -z "$TASK_FILE" || -z "$REPO" ]]; then
     exit 1
 fi
 
-[[ "$CONDITION" =~ ^[A-F]$ ]] || { echo "Condition must be A, B, C, D, E, or F"; exit 1; }
+[[ "$CONDITION" =~ ^[A-FJ]$ ]] || { echo "Condition must be A-F or J"; exit 1; }
 [[ -f "$TASK_FILE" ]]         || { echo "Task file not found: $TASK_FILE"; exit 1; }
 [[ -d "$REPO" ]]              || { echo "Repo not found: $REPO"; exit 1; }
 
