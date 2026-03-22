@@ -32,9 +32,10 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 ## Recent
 
+- **[Proposed Skills](blog/fuel/proposals/index)** — Four annotated skill proposals grounded in ratchet-detect data: [ratchet-review](blog/fuel/proposals/skill-ratchet-review), [git-workflow](blog/fuel/proposals/skill-git-workflow), [build-query](blog/fuel/proposals/skill-build-query), [codebase-explore](blog/fuel/proposals/skill-codebase-explore). Each closes a computation channel with a structured alternative.
+- **[ratchet-detect](blog/fuel/ratchet-detect)** — CLI tool that analyzes your Claude Code conversation logs and finds your ratchet candidates. One command, thirty seconds, actionable report.
 - **Ratchet Fuel series** — Eleven posts published. The practitioner companion to the Ma series, covering failure streams, the two-stage turn, placement, mode control, tool building, data platform case studies, organizational patterns, and metrics.
 - **Coordination Is Not Control** — Companion essay filling the System 3 gap in the Ma framework. World decoupling, named modes, the snapshot-seal-funnel pattern, and the failure-driven controller.
-- **The Residual Framework** — Companion essay decomposing *ma* into three components: dishonesty, side effects, and partiality. Interface enumerability replaces the monad morphism preorder for practical purposes.
 - **External evidence** — Nate Crandall's [harness comparison](https://natesnewsletter.substack.com/p/same-model-78-vs-42-the-harness-made): the same model scored 78% in one harness and 42% in another. The infrastructure determines the outcome, not the model.
 
 ---
