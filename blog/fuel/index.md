@@ -22,3 +22,12 @@ Want the theory? Start with [The Ma of Multi-Agent Systems](../ma/00-intro).
 09-the-organizational-star
 10-ratchet-metrics
 ```
+
+## Tools
+
+```{toctree}
+:maxdepth: 1
+:caption: Tools
+
+ratchet-detect
+```

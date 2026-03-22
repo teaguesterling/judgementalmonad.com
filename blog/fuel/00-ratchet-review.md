@@ -122,6 +122,8 @@ Want to build? [Keep reading](01-fuel.md).
 
 Want the theory? [The Ma of Multi-Agent Systems](../ma/00-intro.md) develops the formal framework — nine posts of lattice theory, a formal companion with proofs, and case studies. Everything here has a formal treatment there.
 
+Want to see what's in your logs right now? **[ratchet-detect](ratchet-detect.md)** analyzes your Claude Code conversation history and tells you which bash patterns to promote, where your failures are, and what to build next. One command, thirty seconds, actionable report.
+
 Now go build something.
 
 ---
