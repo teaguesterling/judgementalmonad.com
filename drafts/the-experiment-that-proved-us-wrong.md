@@ -1,12 +1,16 @@
 # The Experiment That Proved Us Wrong
 
-*We set out to prove structured tools beat bash. We were wrong — then we found something better.*
+*We tried to lock down a coding agent without increasing costs. We failed — then six tokens changed everything.*
 
 ---
 
-## The hypothesis
+## The question
 
-The framework predicts that restriction has superlinear returns. Replace a computation channel (bash — level 4, Turing-complete) with data channel tools (structured read, edit, search — levels 0-2), and the system should become cheaper to regulate, easier to audit, and at least as productive. The specified band should expand. The grade should drop. The ratchet should turn.
+This started as a security exercise.
+
+The configuration ratchet claims that you can lock down a system — replace computation channels with data channels, close the specified band, make every operation characterizable — without sacrificing quality or increasing costs. We wanted to test that claim on the most common coding activity: an agent fixing bugs in a codebase. Can we remove bash, replace it with structured tools the Harness can fully characterize, and get the same work done?
+
+The framework predicts yes. Restriction should have superlinear returns. Replace a computation channel (bash — level 4, Turing-complete) with data channel tools (structured read, edit, search — levels 0-2), and the system should become cheaper to regulate, easier to audit, and at least as productive. The specified band should expand. The grade should drop. The ratchet should turn.
 
 We built the tools. We ran the experiment. We measured.
 
@@ -73,6 +77,16 @@ I beat everything. Same structured tools as A. Same pass rate. 32% cheaper than 
 
 Flip it: omitting those six tokens costs 47% more per run. Adding sixty tokens of detailed strategy costs 112% more. Every blank line in your CLAUDE.md has a price. So does every unnecessary line.
 
+## Which six tokens
+
+Six tokens are cheap to deploy. Knowing *which* six tokens required the full experiment.
+
+We didn't start with "understand first." We started with "close the computation channel" — the security exercise. That failed on cost (A: +36%). So we analyzed *why* bash was cheaper and discovered the cognitive forcing function. Then we tried to replicate it with a detailed prescription (G: +44% — the most expensive condition). Then we stripped the prescription back to its core principle (I: -32%).
+
+The discovery path was: ratchet theory → observation → characterization → security improvement → experiment → cognitive insight → strategy distillation. Each step depended on the previous. The six tokens are the residue of that entire process.
+
+This matters because "just add a principle instruction" is the wrong takeaway. The right takeaway is: the ratchet's observation phase — watching how the agent works, not just what it does — is where the value is created. The six tokens are what you extract. The observation is what tells you which six tokens to extract. G proves that guessing wrong about the strategy costs more than having no strategy at all.
+
 ## What we actually found
 
 We set out to test whether closing the computation channel improves outcomes. The answer is nuanced:
@@ -83,15 +97,44 @@ We set out to test whether closing the computation channel improves outcomes. Th
 
 **Six tokens restore what the channel provided.** The principle "understand before editing" changes d_reachable without changing W. The agent has exactly the same tools. It takes fewer paths through the same space. The paths it takes are the ones that bash would have induced — read everything, diagnose everything, then act. The principle is a specified substitute for the computation channel's cognitive side effect.
 
-## The security bonus
+**The axes are coupled.** Post 6 argues that d_reachable is downstream of W — the tools you provide shape the paths the agent takes. This experiment shows the mechanism: tool interfaces are cognitive forcing functions. Bash's "give me a program" induces planning. `file_edit`'s "give me a replacement" induces incrementalism. Strategy instructions reshape the paths without changing the tools. You can't optimize W and d_reachable independently — and the [revised Rule 7](../ma/09-building-with-ma) develops the practical implications.
 
-And here's the part we didn't expect: the six-token version is also the most *secure* configuration.
+## Back to security
 
-Condition D (bash) needs bubblewrap sandboxing, shell metacharacter filtering, a command allowlist, PID namespace isolation, and network lockdown. Every tool call passes through a Turing-complete interpreter where Rice's theorem applies. The Harness pattern-matches on command strings and hopes.
+Remember: we started with a security question. Can we lock down a coding activity without sacrificing quality or increasing costs? The answer turns out to be yes — but not the way we expected.
 
-Condition I (structured + principle) needs none of that. Every tool call is structured, typed, and logged. The Harness can enumerate every possible operation. The attack surface is characterizable — prompt injection and path traversal are still possible, but the Harness can reason about them. Test execution runs inside bwrap (sandboxing the *consequences* of what the agent wrote), but the agent itself never touches a shell.
+The six-token version is also the most *secure* configuration.
 
-Cheaper, simpler, more auditable, characterizable attack surface. Not by adding more infrastructure — by adding six tokens and removing bash.
+Condition D (bash) is a level 7 computation channel. The agent writes a bash command, the shell executes it. That single tool call can: read any file in the workspace, write any file, execute arbitrary Python, spawn background processes that outlive the tool call, and create new executable scripts. The Harness receives the command string, pattern-matches on it, and hopes. Rice's theorem applies — non-trivial semantic properties of the command are undecidable.
+
+Condition I is a level 3 system. The agent *writes* code (via `file_edit` — level 3, mutation) and *verifies* it (via `run_tests` — level 1 interface, sandboxed execution). The critical structural property: **the agent cannot close the write-execute loop on its own.** It writes through one tool (structured, logged, auditable) and the only execution path goes through a sandbox it doesn't control.
+
+```
+D (bash):    write + execute in one opaque tool call     → level 7
+I (struct):  write (file_edit) | execute (run_tests)     → level 3
+                                    ↑
+                            sandboxed: read-only workspace,
+                            no network, isolated processes
+```
+
+The separation is what keeps I below level 4. Level 4 is "the agent generates executable specification and the tool executes it." In I, the agent generates code, but the execution goes through `run_tests` — a fixed program (pytest) that the agent can't configure, running in a sandbox the agent can't escape. The agent doesn't choose the interpreter, the flags, the sandbox bounds, or whether child processes are allowed. It submits a structured query ("run the tests") and gets a structured result ("13 failed, 35 passed").
+
+The analogy: a SQL query is level 1. The database engine is Turing-complete. But the interface is structured and the effects are bounded by access controls. The engine's internal complexity doesn't leak through the interface. `run_tests` is a query over the test suite. Pytest's internal complexity is bounded by the sandbox.
+
+What the Harness can decide about each condition's tool calls *before execution*:
+
+| Property | Condition I | Condition D |
+|---|---|---|
+| What files will be read? | Yes (path in args) | Undecidable |
+| What files will be written? | Yes (path in args) | Undecidable |
+| Will it access the network? | No (by construction) | No (bwrap) |
+| Will it spawn subprocesses? | No (run_tests is sandboxed) | Undecidable |
+| Will it terminate? | Yes (timeout) | Yes (timeout) |
+| What are the effects? | Enumerable | Uncharacterizable |
+
+I is characterizable on every dimension. D is characterizable only on the bwrap-guaranteed dimensions (network, termination). The difference isn't a matter of degree — it's the difference between decidable and undecidable properties. The Harness can write an exhaustive policy for I. It structurally cannot for D.
+
+Cheaper, simpler, more auditable, and provably lower grade. Not by adding more infrastructure — by separating write from execute and sandboxing the execute path.
 
 ## The two products of the ratchet
 
