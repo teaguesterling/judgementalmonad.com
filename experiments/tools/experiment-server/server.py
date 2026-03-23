@@ -965,16 +965,39 @@ ALL_GROUPS = {
 
 
 def _apply_condition(condition: str):
-    """Disable tool groups not in the specified condition.
+    """Disable tools not in the specified condition.
 
-    Each tool is tagged with a group (e.g. "group:file_tools").
-    The CONDITION_TOOLS dict specifies which groups are active per condition.
-    All other groups are disabled.
+    Uses name-based disabling to avoid the multi-tag problem where
+    disabling group:file_tools would also disable tools that have
+    both group:file_tools AND group:batch_tools.
     """
     active_groups = CONDITION_TOOLS.get(condition, set())
-    for group in ALL_GROUPS:
-        if group not in active_groups:
-            server.disable(tags={f"group:{group}"})
+
+    # Build the set of tool names that should be active
+    # by checking each tool's tags against the active groups
+    group_to_tools = {
+        "file_tools": {"file_read", "file_search", "file_glob", "file_list",
+                       "file_edit", "file_edit_batch", "file_write",
+                       "file_read_batch", "file_search_context", "file_count"},
+        "batch_tools": {"file_glob", "file_read_batch", "file_edit_batch", "file_write"},
+        "simple_tools": {"file_read", "file_edit", "file_glob", "file_write"},
+        "run_tests": {"run_tests"},
+        "semantic_tools": {"find_definitions", "find_callers", "code_structure", "find_imports"},
+        "bash_readonly": {"bash_readonly"},
+        "bash_sandboxed": {"bash_sandboxed"},
+    }
+
+    active_tools = set()
+    for group in active_groups:
+        active_tools.update(group_to_tools.get(group, set()))
+
+    all_tools = set()
+    for tools in group_to_tools.values():
+        all_tools.update(tools)
+
+    inactive_tools = all_tools - active_tools
+    if inactive_tools:
+        server.disable(names=inactive_tools)
 
 
 # ---------------------------------------------------------------------------
