@@ -46,6 +46,7 @@ CONDITION_TOOLS = {
     "K": {"simple_tools", "run_tests"},                        # Simple file tools only + run_tests
     # Semantic conditions: AST-aware tools via sitting_duck/DuckDB
     "L": {"simple_tools", "run_tests", "semantic_tools"},      # Simple tools + semantic + run_tests
+    "M": {"file_tools", "run_tests", "semantic_tools"},        # All file tools + semantic + run_tests
 }
 
 # Tools are tagged by capability group:
@@ -1008,7 +1009,7 @@ def main():
     global _condition, _task_id, _log_dir, _workspace, _allowed_dirs
 
     parser = argparse.ArgumentParser(description="Experiment MCP Server")
-    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J", "K", "L"], required=True,
+    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J", "K", "L", "M"], required=True,
                         help="Experimental condition (A=file+tests, B=A+readonly-bash, C=A+bash, D=bash-only, E=file+readonly-bash, F=tests+bash)")
     parser.add_argument("--task-id", required=True,
                         help="Task identifier (e.g. '01', 'task-03-condition-A')")
