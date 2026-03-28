@@ -490,7 +490,7 @@ Same model (Sonnet), same task (fix 13 bugs in 600-line Python codebase), 100% p
 
 ### The three-tier finding
 
-**The cost of omission.** Flip the question. Instead of "the instruction saved 32%," ask: "what did omitting it cost?" Without the principle, every run burns an extra $0.46 in wasted exploration — a 47% overhead from *not saying something*. Six tokens omitted. $0.46 per run. At 100 runs/day, that's $46/day in inference budget spent on paths the agent wouldn't have taken if someone had written one sentence in the CLAUDE.md.
+**The cost of omission.** Flip the question. Instead of "the instruction saved 32%," ask: "what did omitting it cost?" Without the principle, every run burns an extra $0.46 in wasted exploration — a 47% overhead from *not saying something*. ~50 tokens omitted. $0.46 per run. At 100 runs/day, that's $46/day in inference budget spent on paths the agent wouldn't have taken if someone had written one sentence in the CLAUDE.md.
 
 Every blank line in your system prompt is an implicit decision to let the agent figure it out on its own. This experiment measured what that decision costs.
 
@@ -576,7 +576,7 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 
 ### What the three claims look like now
 
-**Claim 1 (security without cost):** SUPPORTED by I — and stronger than "without cost." The cost comparison (I: $0.97 vs D: $1.05, -8%) is empirically suggestive but not significant at n=5. The *grade* comparison is structural and doesn't need statistics: I operates at level 3 (structured mutation + sandboxed verification), D at level 7 (subprocess spawning within a read-write sandbox). That's a 4-level gap in the computation taxonomy — decidable properties vs undecidable, auditable tool calls vs opaque bash scripts. The Harness can write an exhaustive policy for I's tools. It structurally cannot for D's. The write/execute separation in I (file_edit writes, run_tests executes in a read-only sandbox) prevents the agent from closing the computation channel loop that bash opens by default. The 27% cost penalty from A was a strategy problem, not a security tax — six tokens fixed it.
+**Claim 1 (security without cost):** SUPPORTED by I — and stronger than "without cost." The cost comparison (I: $0.97 vs D: $1.05, -8%) is empirically suggestive but not significant at n=5. The *grade* comparison is structural and doesn't need statistics: I operates at level 3 (structured mutation + sandboxed verification), D at level 7 (subprocess spawning within a read-write sandbox). That's a 4-level gap in the computation taxonomy — decidable properties vs undecidable, auditable tool calls vs opaque bash scripts. The Harness can write an exhaustive policy for I's tools. It structurally cannot for D's. The write/execute separation in I (file_edit writes, run_tests executes in a read-only sandbox) prevents the agent from closing the computation channel loop that bash opens by default. The 27% cost penalty from A was a strategy problem, not a security tax — ~50 tokens fixed it.
 
 **Claim 2 (structured tools are better):** NUANCED. Structured tools alone (A: $1.32) cost significantly more than bash (D: $1.03, p<0.05). Structured tools + principle (I: $1.08) close most of the gap but I vs D is not significant (d=0.15). Structured tools + bash (E: $0.98) is the cheapest — but E has a level 4 computation channel. **The security-efficiency tradeoff is real: I (level 3) costs ~10% more than E (level 4).** That 10% buys characterizability — every tool call is decidable. Whether that's worth it depends on the deployment context.
 
@@ -597,7 +597,7 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 | D (bash only) | bash | No | **60%** | $0.54 |
 | **I (structured + principle)** | 9 tools + run_tests | **Yes** | **100%** | $0.66 |
 
-**The principle is a capability enabler for weaker models.** Haiku/I passes 100% — the only Haiku condition that reliably completes the task. Without the principle, Haiku fails 40-60% of the time regardless of tool configuration. The six tokens aren't a cost optimization for Haiku — they're the difference between a working system and a broken one.
+**The principle is a capability enabler for weaker models.** Haiku/I passes 100% — the only Haiku condition that reliably completes the task. Without the principle, Haiku fails 40-60% of the time regardless of tool configuration. The ~50 tokens aren't a cost optimization for Haiku — they're the difference between a working system and a broken one.
 
 **More tools hurt Haiku.** E (file tools + bash, 40%) is no better than A (structured only, 40%) — and both are worse than D (bash only, 60%). For Sonnet, E was the most efficient configuration. For Haiku, additional tools increase the decision surface beyond what the model can navigate efficiently. Haiku wastes turns choosing between tools rather than solving the problem.
 

@@ -32,7 +32,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 ## Recent
 
-- **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We built structured tools to replace bash. They cost 36% more. Then six tokens of strategy instruction made them cost 32% less — cheaper than bash, simpler, and fully auditable. The ratchet has two products: tools and strategy. We forgot one. The one we forgot was worth more.
+- **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We tried to lock down a coding agent without increasing costs. Structured tools cost 22% more than bash. A 50-token strategy instruction closed most of the gap (-16%). But the cheapest configuration was one we didn't design — the agent selecting its own tool mix. The real finding: a 13% cost premium buys you a fully characterizable system. Whether that's worth it depends on your deployment context.
 - **[Proposed Skills](blog/fuel/proposals/index)** — Four annotated skill proposals grounded in ratchet-detect data: [ratchet-review](blog/fuel/proposals/skill-ratchet-review), [git-workflow](blog/fuel/proposals/skill-git-workflow), [build-query](blog/fuel/proposals/skill-build-query), [codebase-explore](blog/fuel/proposals/skill-codebase-explore). Each closes a computation channel with a structured alternative.
 - **[ratchet-detect](blog/fuel/ratchet-detect)** — CLI tool that analyzes your Claude Code conversation logs and finds your ratchet candidates. One command, thirty seconds, actionable report.
 - **Ratchet Fuel series** — Eleven posts published. The practitioner companion to the Ma series, covering failure streams, the two-stage turn, placement, mode control, tool building, data platform case studies, organizational patterns, and metrics.
@@ -47,7 +47,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 **If you want the theory:** [The Ma of Multi-Agent Systems](blog/ma/00-intro) — start at the beginning. Each post builds on the previous.
 
-**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it — but *how the agent uses those tools* matters even more, and six tokens of strategy instruction can outperform any tool configuration change you make.
+**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it — and agents sometimes find better tool compositions than their designers, but the security cost of letting them is measurable and the tradeoff is real.
 
 ```{toctree}
 :hidden:

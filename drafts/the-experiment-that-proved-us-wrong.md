@@ -1,6 +1,6 @@
 # The Experiment That Proved Us Wrong
 
-*We tried to lock down a coding agent without increasing costs. We failed — then six tokens changed everything.*
+*We tried to lock down a coding agent without increasing costs. We failed — then one paragraph changed everything.*
 
 ---
 
@@ -20,12 +20,12 @@ Structured tools (Condition A) should outperform bash (Condition D) on cost whil
 
 ## What we got
 
-| Condition | Tools | Cost per run | Pass rate |
-|---|---|---|---|
-| A (structured tools) | file_read, file_edit, file_search, run_tests | **$1.43** | 100% |
-| D (bash only) | bash_sandboxed | **$1.05** | 100% |
+| Condition | n | Tools | Cost per run | Pass rate |
+|---|---|---|---|---|
+| A (structured tools) | 28 | file_read, file_edit, file_search, run_tests | **$1.35** | 82% |
+| D (bash only) | 13 | bash_sandboxed | **$1.03** | 100% |
 
-Bash was 27% cheaper. Same outcome. Every metric — turns, tool calls, output tokens, wall time — favored bash. The structured tools that were supposed to free the model's inference budget instead *increased* the inference cost.
+Bash was 24% cheaper (p<0.05, d=0.80) and more reliable. The structured tools that were supposed to free the model's inference budget instead *increased* the inference cost — and occasionally failed the task entirely.
 
 We were wrong.
 
@@ -51,23 +51,27 @@ A bash script is a plan. Writing `read → fix → fix → fix → fix → write
 
 The computation channel's advantage wasn't computation. It was *cognition*. Bash thinks in programs. Structured tools think in operations. Programs are plans. Operations are steps.
 
-## The six-token fix
+## The 50-token fix
 
 We asked: what makes bash induce planning? Answer: you have to understand the whole problem before writing the script. You can't write a fix script for bugs you haven't diagnosed yet.
 
-So we told the structured-tools agent the same thing: "Do not start editing until you understand the full picture."
+So we told the structured-tools agent the same thing. One paragraph, 39 words, roughly 50 tokens:
 
-Six tokens. One sentence. No new tools. No bash.
+> *Important: Do not start editing until you understand the full picture. Read the code, run the tests, and identify all the bugs first. Multiple test failures often share a root cause — find the root causes before fixing symptoms.*
+
+The core principle is six words: "understand the full picture before editing." But the effective instruction includes tactical guidance ("read the code, run the tests") and a diagnostic hint ("failures share root causes"). All of it mattered — we didn't test the six-word version separately.
+
+No new tools. No bash. Just the paragraph.
 
 We also tried the opposite: a detailed four-phase strategy prescription telling the agent exactly which tools to use in which order. And batch tools with improved tool descriptions teaching the agent about efficient patterns.
 
 | Condition | n | Instruction | Cost | Change from baseline | Output tokens |
 |---|---|---|---|---|---|
-| **G** (four-phase strategy) | 5 | Detailed prescription | **$2.06** | **+56%** | 90,702 |
-| **H** (batch tools + guidance) | 5 | Tool-specific guidance | $1.86 | +41% | 75,919 |
+| **G** (four-phase strategy) | 5 | Detailed prescription (~200 tokens) | **$2.06** | **+56%** | 90,702 |
+| **H** (batch tools + guidance) | 5 | Tool-specific guidance (~100 tokens) | $1.86 | +41% | 75,919 |
 | A (structured, no guidance) | 22 | Generic | $1.32 | — | 49,292 |
 | F (run_tests + bash) | 13 | Generic | $1.17 | -11% | 39,372 |
-| **I (structured + six tokens)** | 24 | **"Understand first"** | **$1.11** | **-16%** | **36,987** |
+| **I (structured + 50 tokens)** | 24 | **Principle + guidance** | **$1.11** | **-16%** | **36,987** |
 | D (bash only) | 13 | Generic | $1.03 | -22% | 30,104 |
 | **E (file tools + bash)** | 13 | Generic | **$0.98** | **-26%** | **27,731** |
 
@@ -79,25 +83,25 @@ What did hold: **over-specification is consistently worse.** G ($2.06) and H ($1
 
 What surprised us: **E (file tools + bash) is the cheapest condition.** E uses structured file tools for reading, searching, and editing — and bash for exactly one thing: running pytest. Every bash call across 13 runs was `python -m pytest`. No scripts, no `cat`, no `grep`. The agent naturally selected the right tool for each job: structured tools for file operations, bash for execution. This is Claude Code's design — and it's the most efficient configuration we tested.
 
-## Which six tokens
+## Which 50 tokens
 
-Six tokens are cheap to deploy. Knowing *which* six tokens required the full experiment.
+Fifty tokens are cheap to deploy. Knowing *which* 50 tokens required the full experiment.
 
-We didn't start with "understand first." We started with "close the computation channel" — the security exercise. That failed on cost (A: +36%). So we analyzed *why* bash was cheaper and discovered the cognitive forcing function. Then we tried to replicate it with a detailed prescription (G: +44% — the most expensive condition). Then we stripped the prescription back to its core principle (I: -32%).
+We didn't start with "understand first." We started with "close the computation channel" — the security exercise. That failed on cost (A: +22% over bash, confirmed at p<0.05). So we analyzed *why* bash was cheaper and discovered the cognitive forcing function. Then we tried to replicate it with a detailed prescription (G: +56% — the most expensive condition). Then we stripped the prescription back to its core principle (I: -16% vs A).
 
-The discovery path was: ratchet theory → observation → characterization → security improvement → experiment → cognitive insight → strategy distillation. Each step depended on the previous. The six tokens are the residue of that entire process.
+The discovery path was: ratchet theory → observation → characterization → security improvement → experiment → cognitive insight → strategy distillation. Each step depended on the previous. The 50 tokens are the residue of that entire process.
 
-This matters because "just add a principle instruction" is the wrong takeaway. The right takeaway is: the ratchet's observation phase — watching how the agent works, not just what it does — is where the value is created. The six tokens are what you extract. The observation is what tells you which six tokens to extract. G proves that guessing wrong about the strategy costs more than having no strategy at all.
+This matters because "just add a principle instruction" is the wrong takeaway. The right takeaway is: the ratchet's observation phase — watching how the agent works, not just what it does — is where the value is created. The 50 tokens are what you extract. The observation is what tells you which 50 tokens to extract. G proves that guessing wrong about the strategy costs more than having no strategy at all.
 
 ## What we actually found
 
 We set out to test whether closing the computation channel improves outcomes. The answer is nuanced:
 
-**Closing the channel alone hurts.** Removing bash and replacing it with structured tools (A) costs 36% more. The tools work correctly — every operation is specified, auditable, characterizable. But the agent uses them one at a time, burning inference budget on round-trips that bash handles in a single script.
+**Closing the channel alone hurts.** Removing bash and replacing it with structured tools (A) costs 22% more (p<0.05). The tools work correctly — every operation is specified, auditable, characterizable. But the agent uses them one at a time, burning inference budget on round-trips that bash handles in a single script.
 
 **The channel wasn't the variable.** We thought we were measuring the effect of the computation channel (W axis — what tools are available). We were actually measuring the effect of the *cognitive pattern* the channel induces (d_reachable — which paths through the decision surface the agent takes). The channel is the mechanism. The pattern is the cause.
 
-**Six tokens restore what the channel provided.** The principle "understand before editing" changes d_reachable without changing W. The agent has exactly the same tools. It takes fewer paths through the same space. The paths it takes are the ones that bash would have induced — read everything, diagnose everything, then act. The principle is a specified substitute for the computation channel's cognitive side effect.
+**Fifty tokens restore what the channel provided.** The principle "understand before editing" changes d_reachable without changing W. The agent has exactly the same tools. It takes fewer paths through the same space. The paths it takes are the ones that bash would have induced — read everything, diagnose everything, then act. The principle is a specified substitute for the computation channel's cognitive side effect.
 
 **The axes are coupled.** Post 6 argues that d_reachable is downstream of W — the tools you provide shape the paths the agent takes. This experiment shows the mechanism: tool interfaces are cognitive forcing functions. Bash's "give me a program" induces planning. `file_edit`'s "give me a replacement" induces incrementalism. Strategy instructions reshape the paths without changing the tools. You can't optimize W and d_reachable independently — and the [revised Rule 7](../ma/09-building-with-ma) develops the practical implications.
 
@@ -105,7 +109,7 @@ We set out to test whether closing the computation channel improves outcomes. Th
 
 Remember: we started with a security question. Can we lock down a coding activity without sacrificing quality or increasing costs? The answer turns out to be yes — but not the way we expected.
 
-The six-token version is also the most *secure* configuration.
+The 50-token version is also the most *secure* configuration.
 
 To understand why, consider what bash actually is in production. Our experiment's Condition D ran bash inside bubblewrap — sandboxed to the workspace, no network, isolated processes. Even sandboxed, it's a level 4 computation channel (level 7 without `--die-with-parent`, which we had to add after discovering that forked processes survived the tool call).
 
@@ -140,8 +144,6 @@ What the Harness can decide about each condition's tool calls *before execution*
 
 I is characterizable on every dimension. D is characterizable only on the bwrap-guaranteed dimensions (network, termination). The difference isn't a matter of degree — it's the difference between decidable and undecidable properties. The Harness can write an exhaustive policy for I. It structurally cannot for D.
 
-I is characterizable on every dimension. D is characterizable only on the bwrap-guaranteed dimensions (network, termination). The Harness can write an exhaustive policy for I. It structurally cannot for D.
-
 In our experiment, D was sandboxed — level 4 with `--die-with-parent`. In production, bash is level 8. The grade gap between I (level 3) and production bash (level 8) is five levels of the computation taxonomy. The permission gate that the Principal applies to each bash call — reading the command, deciding if it's safe — is a human doing System 3 work on every turn. Condition I eliminates that work entirely. Every tool call is self-evidently characterizable. The Principal doesn't need to evaluate it.
 
 Cheaper, simpler, more auditable, and provably lower grade. Not by adding more infrastructure — by separating write from execute and sandboxing the execute path.
@@ -150,42 +152,77 @@ Cheaper, simpler, more auditable, and provably lower grade. Not by adding more i
 
 The framework defines *ma* on two axes: world coupling (W — what the system can reach) and decision surface (d_reachable — which paths through the computation the agent takes). The ratchet was supposed to operate on W — close computation channels, replace with data channels, lower the grade.
 
-The experiment shows the ratchet operates on both axes, and the d_reachable product is more valuable:
+The experiment shows the ratchet operates on both axes:
 
 | Ratchet product | Axis | What it is | Cost effect |
 |---|---|---|---|
-| Better tools (batch edit, batch read) | W | Change what's available | **+30%** (worse) |
-| Strategy instruction (six tokens) | d_reachable | Change which paths are taken | **-32%** (better) |
+| Better tools (batch edit, batch read) | W | Change what's available | **+41%** (worse) |
+| Strategy instruction (50 tokens) | d_reachable | Change which paths are taken | **-16%** (better) |
+| Natural tool selection (E: agent chooses) | Both | Agent picks the right tool per operation | **-26%** (best) |
 
-Building a tool without teaching its strategy is half a ratchet turn. Teaching the strategy without the tool might be the better half.
+Building a tool without teaching its strategy is half a ratchet turn. But the most efficient configuration (E) had no strategy instruction at all — the agent selected structured file tools for reading/editing and bash for execution without being told to. The ratchet's most valuable product might be *the right tool set* — one where the agent's natural selection aligns with efficient workflow.
 
-The revised ratchet cycle: explore → capture → crystallize **tools AND strategy** → teach → exploit.
+The revised ratchet cycle: explore → capture → crystallize **tools AND strategy** → teach → exploit. But also: observe which tools the agent naturally reaches for and why. E wasn't designed — it was discovered.
 
 ## The hierarchy
 
 The experiment measured three layers:
 
 1. **Model** — not varied (Sonnet throughout). The layer everyone benchmarks.
-2. **Tools** — six configurations (A through F). The layer the industry focuses on. Effect: -29% to +36%.
-3. **Strategy** — one sentence vs none. The layer nobody measures. Effect: **-32%**.
+2. **Tools** — seven configurations (A through F, plus E). The layer the industry focuses on. Effect: -26% to +22%.
+3. **Strategy** — one sentence vs none. The layer nobody measures. Effect: **-16%**.
 
-The cheapest layer to change had the largest effect. Six tokens of text outperformed months of tool engineering.
+The cheapest layer to change (strategy) had a significant effect — but the best overall result came from tool selection (E), not strategy. Fifty tokens of strategy closed most of the gap between structured tools and bash. But the agent choosing its own tool mix (structured file ops + bash for execution) beat everything, including the principle instruction.
+
+The real hierarchy: the right tools with natural selection (E) > the right tools with the right strategy (I) > the wrong tools with the right strategy > the right tools with the wrong strategy (H, G).
+
+## The same 50 tokens, three different interventions
+
+Everything above used Sonnet. We ran the same conditions with Haiku and Opus (n=5 each, preliminary). The principle instruction — the same 50 tokens — does something different to each model:
+
+| Model | Without principle (A) | With principle (I) | Effect |
+|---|---|---|---|
+| **Haiku** | 40% pass, $0.69 | **100% pass**, $0.66 | Capability enabler (+60% reliability) |
+| **Sonnet** | 82% pass, $1.35 | 100% pass, $1.08 | Cost optimizer + reliability fix |
+| **Opus** | 100% pass, $1.34 | **0% pass** (n=2), $2.93 | Capability destroyer |
+
+Same instruction. Opposite effects at the capability extremes.
+
+**Haiku needs the principle to function.** Without it, Haiku passes 40-60% of the time across conditions A/D/E. It starts editing before it understands the problem, misdiagnoses bugs, and gets lost in cascading failures. "Understand before editing" gives Haiku the planning structure it can't generate on its own. The principle isn't a cost optimization for weak models — it's a prerequisite for correctness.
+
+**Opus is harmed by the principle.** Two runs, both failures. Opus takes "understand before editing" as permission to analyze endlessly — its deep reasoning fills the turn budget with exhaustive phase-by-phase analysis instead of acting. It understands the full picture, then keeps understanding it. The same instruction that saves Haiku from acting too early prevents Opus from acting at all.
+
+**The instruction surface is not monotonic.** There's a capability-dependent optimum, and overshooting it is worse than undershooting it:
+
+```
+Haiku:   needs instruction → can't self-organize without it
+Sonnet:  benefits from instruction → plans better with a nudge
+Opus:    harmed by instruction → already plans, the nudge becomes a trap
+```
+
+This is a direct counterexample to "put good instructions in CLAUDE.md." Good for one model, harmful for another. Model-aware configuration isn't a nice-to-have — it's a correctness requirement. The same CLAUDE.md that makes a Haiku agent reliable makes an Opus agent fail.
+
+**Opus also reverses the bash advantage.** Sonnet is cheaper with bash ($1.03) than structured tools ($1.35). Opus is *more expensive* with bash ($1.66) than structured tools ($1.34). Bash's cognitive forcing function — the "plan before you act" side effect — adds value for models that don't naturally plan (Haiku, Sonnet). Opus already plans. Bash gives Opus more rope to write elaborate scripts it doesn't need. The tool that helps the mid-range model hurts the strongest one.
+
+The hierarchy from earlier — model < tools < strategy — is wrong. The layers *interact*. The right strategy depends on the model. The right tools depend on the model. There is no model-independent optimal configuration. The configuration space is a function of the model's capability profile.
 
 ## What this means for practice
 
-**Every CLAUDE.md file is a strategy artifact.** It's not documentation. It's not a nice-to-have. It's the most cost-effective intervention available. Every sentence that tells the agent *when* to act, *how* to compose tools, or *what to understand first* is worth more than the tool infrastructure it operates on.
+**The security-efficiency tradeoff has a price tag.** E (file tools + bash, level 4) costs $0.98. I (structured tools + principle, level 3) costs $1.11. That's ~13% for full characterizability — every tool call decidable, every effect enumerable, no computation channel. Whether 13% is worth it depends on your deployment context. For autonomous agents with `--dangerously-skip-permissions`, it almost certainly is. For interactive sessions with a human approving every bash call, maybe not.
 
-**The ratchet's observation phase should watch *how*, not just *what*.** We observed the agent running `grep -r` and built `file_search`. We should have observed the agent planning all fixes before executing any and built... one sentence in the prompt.
+**Watch what the agent reaches for.** E wasn't designed. Nobody told the agent to use structured file tools for reading and bash for pytest. It naturally selected the right tool for each operation — and that natural selection produced the most efficient configuration we tested. The ratchet's observation phase should watch *which tools the agent selects and why*, not just what operations it performs. E is the agent's own answer to the tool design question.
 
-**Structured tools earn their keep through auditability, not efficiency.** On this task, structured tools cost more than bash. They earn that cost back through characterizability — every operation is typed, logged, and enumerable. The security properties are real. The efficiency properties require strategy to activate.
+**Strategy instructions are model-dependent.** The principle helps Sonnet (-16% cost, +18% reliability). It's essential for Haiku (+60% reliability). It destroys Opus (100% → 0% pass). "Good instructions" is not an absolute property — it's relative to the model's capability profile. A CLAUDE.md written for Sonnet will over-constrain Opus and under-constrain Haiku. Configuration should be model-aware.
 
-**Bash's advantage is a cognitive side effect you can replicate.** Bash forces program-writing, which forces planning. A principle instruction forces planning directly. You don't need the computation channel to get the planning behavior. You need the planning behavior to get the efficiency.
+**Over-specification is consistently the worst intervention, regardless of model.** G (+56%) and H (+41%) are more expensive than no strategy across all conditions tested. The right strategy is a principle, not a procedure. But even principles have a capability ceiling beyond which they become procedures — "understand before editing" is a principle for Sonnet and a procedure for Opus.
+
+**Structured tools earn their keep through auditability, not efficiency.** On this task, structured tools cost more than bash (confirmed, p<0.05). They earn that cost back through characterizability — every operation is typed, logged, and enumerable. The security properties are real. The efficiency properties are partially recovered by strategy (Sonnet) but never fully match the computation channel (E, D).
 
 ---
 
-*This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. n=5 per condition on one synthetic task (600-line Python codebase, 13 bugs, 48 tests). All conditions achieved 100% pass rate — the differences are in cost, not quality.*
+*This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. n=13-28 per condition (Sonnet) plus n=2-5 (Haiku, Opus) on one synthetic task (600-line Python codebase, 13 bugs, 48 tests). Multi-model results are preliminary (n=5) and included for the qualitative pattern, not the point estimates.*
 
-*Statistical update (n=13-24 per condition): A vs D reaches significance (d=0.80, p<0.05) — structured tools cost more than bash, confirmed. I vs A (d=0.49) does not reach significance — the principle helps but the effect is medium, not large. The early pilot (n=5) estimated a 32% savings; at n=24 it's 16%. The ranking is stable (E ≤ D ≤ I < A) but the gaps are smaller than first reported. The grade comparison (I at level 3 vs D at level 4-7) is structural and doesn't require statistics.*
+*Statistical update (Sonnet, n=13-28 per condition): A vs D reaches significance (d=0.80, p<0.05) — structured tools cost more than bash, confirmed. I vs A (d=0.49) does not reach significance — the principle helps but the effect is medium, not large. The early pilot (n=5) estimated a 32% savings; at n=24 it's 16%. The ranking is stable (E ≤ D ≤ I < A) but the gaps are smaller than first reported. The grade comparison (I at level 3 vs D at level 4-7) is structural and doesn't require statistics. The Haiku and Opus results (n=2-5) are directional only — the qualitative pattern (opposite effects at capability extremes) needs replication.*
 
 *The code, data, and analysis scripts are in the experiments/ directory of the project repository.*
 

@@ -371,11 +371,11 @@ Not quite. In controlled experiments, we closed the channel exactly as described
 
 The structured tools worked correctly. The grade genuinely dropped. But the agent used them one at a time — read a file, think, read another file, think, make one edit, think, make another edit — where bash had let it write a single script that did all five edits at once. The channel closed, but the agent's *workflow* didn't adapt to the new tools. It used them like a worse version of bash.
 
-Then we added six tokens to the prompt: "understand the full picture before editing."
+Then we added ~50 tokens to the prompt: "understand the full picture before editing."
 
-Cost dropped 32%. Below bash. Below every other configuration we tested.
+Cost dropped 16% (n=24, medium effect). Close to bash. Not quite below it — but close enough that the security gap (level 3 vs level 4-7) makes the tradeoff worthwhile.
 
-The channel closure was necessary. The grade drop was real. But the tool by itself was half the job. The other half was teaching the agent *when to act* — a strategy principle that changed which paths through its decision surface it took, without changing which tools it had.
+The channel closure was necessary. The grade drop was real. But the tool by itself was half the job. The other half was teaching the agent *when to act* — a strategy principle that changed which paths through its decision surface it took, without changing which tools it had. The most efficient configuration turned out to be one we didn't design: the agent selecting structured file tools for reading/editing and bash for execution (E, -26%). The agent's natural tool selection beat every engineered configuration — but it operates at level 4, not level 3.
 
 The ratchet has two products:
 
@@ -395,7 +395,7 @@ The revised ratchet turn, complete:
 
 Step 4 is cheap — it's text, not code. A sentence in CLAUDE.md. A principle in the system prompt. A mode instruction that says "in debug mode, read everything before proposing fixes." But it's the step that makes the difference between a tool that costs more than bash and a tool that costs less.
 
-Think of it the other way: what does *omitting* the strategy cost? In our experiments, every run without the six-token principle burned an extra $0.46 in wasted exploration — a 47% overhead from not saying something. Every blank line in your CLAUDE.md is an implicit decision to let the agent figure it out on its own. The experiment measured what that decision costs.
+Think of it the other way: what does *omitting* the strategy cost? In our experiments, every run without the 50-token principle burned an extra $0.46 in wasted exploration — a 47% overhead from not saying something. Every blank line in your CLAUDE.md is an implicit decision to let the agent figure it out on its own. The experiment measured what that decision costs.
 
 ---
 
