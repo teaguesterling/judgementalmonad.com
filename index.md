@@ -14,7 +14,7 @@ The name comes from *ma* (間), the Japanese concept that the space between thin
 
 ---
 
-## Two series, one framework
+## Three series, one framework
 
 ### [The Ma of Multi-Agent Systems](blog/ma/index)
 
@@ -27,6 +27,10 @@ Supplementary essays develop the configuration ratchet, world decoupling, the fa
 *The practice.* Eleven posts for people who build with AI agents, data platforms, and organizations. Every failed tool call is data about where your configuration doesn't match the task. Capture those failures. Crystallize them into tools. The system gets more trustworthy with use — not because the model improved, but because the configuration layer accumulated evidence.
 
 Code ships in every post: DuckDB queries over conversation logs, a prototype mode controller, a complete structured tool, a segment builder, an access control layer, and a metrics dashboard.
+
+### [The Collar Collection](blog/patterns/index)
+
+*The patterns.* Eight design patterns that emerged from controlled experiments comparing tool configurations across three models. Each pattern is a collar — a design that transmits capability without choking it. The Quartermaster selects tools per task. The Strategy Instruction reshapes behavior with ~50 tokens. Write/Execute Separation keeps the system characterizable. Tool-Call Combinators compose operations without crossing the computation channel boundary. Each pattern includes experimental evidence, grade analysis, and implementation.
 
 ---
 
