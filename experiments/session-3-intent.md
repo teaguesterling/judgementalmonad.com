@@ -35,6 +35,12 @@ Reference: `drafts/tool-call-combinators.md` has the theoretical design. Task 2 
 - `drafts/the-two-products.md` — W/D coupling (tools shape cognitive patterns)
 - This session's conversation log (for Task 1 analysis)
 
+### Open question: thinking tokens
+
+Extended thinking (Sonnet, Opus) may be an uncontrolled confound. The `claude -p` usage data doesn't report thinking tokens separately — they may be in `output_tokens` or uncounted. The Opus/I failure pattern (51 turns, 6 tool calls, high cost) could be Opus spending its budget on extended thinking rather than tool use. The principle instruction may trigger more thinking in models that already think deeply.
+
+Check: does `claude -p --output-format json` report thinking tokens? Can we set `--thinking-budget` or equivalent? If thinking varies across conditions or models, our cost comparisons are confounded.
+
 ## The meta-point
 
 We are the experiment. The same model (Claude), the same tools (Fledgling, blq, jetsam, bash), the same finding (bash wins on cognitive fit). The ratchet should turn on our own infrastructure, not just on synthetic codebases.
