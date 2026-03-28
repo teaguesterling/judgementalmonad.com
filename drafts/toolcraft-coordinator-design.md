@@ -378,6 +378,314 @@ toolcraft install
 # }
 ```
 
+## Plugin architecture: tool-aware interception
+
+The coordinator isn't just hooks — it's a plugin system where each tool (blq, jetsam, Fledgling) registers what bash patterns it can handle and what it offers instead.
+
+### How plugins work
+
+Each plugin declares:
+- **Triggers**: bash command patterns it recognizes
+- **Intercept**: what it suggests or does instead
+- **Mode**: observe (log only), suggest (inform agent), redirect (deny bash, offer alternative)
+
+```python
+from dataclasses import dataclass, field
+from typing import Optional
+from enum import Enum
+
+class InterceptMode(Enum):
+    OBSERVE = "observe"    # allow bash, log the suggestion (ratchet data)
+    SUGGEST = "suggest"    # allow bash, inject suggestion into context
+    REDIRECT = "redirect"  # deny bash, agent must use the alternative
+
+@dataclass
+class Suggestion:
+    tool: str                          # the structured alternative
+    reason: str                        # why it's better
+    grade_before: Optional[str] = None # e.g. "level 4"
+    grade_after: Optional[str] = None  # e.g. "level 1"
+
+@dataclass
+class Plugin:
+    name: str
+    triggers: list[str]                # bash patterns to match
+    mode: InterceptMode = InterceptMode.SUGGEST
+
+    def intercept(self, tool_name: str, tool_input: dict) -> Optional[Suggestion]:
+        """Check if this plugin can handle the tool call. Return suggestion or None."""
+        raise NotImplementedError
+```
+
+### The plugins
+
+```python
+class BlqPlugin(Plugin):
+    """Intercepts build/test commands, offers blq structured capture."""
+
+    name = "blq"
+    triggers = ["pytest", "python -m pytest", "make", "npm test",
+                "cargo test", "go test", "gradle test"]
+
+    def intercept(self, tool_name, tool_input):
+        if tool_name != "Bash":
+            return None
+        cmd = tool_input.get("command", "")
+
+        for trigger in self.triggers:
+            if trigger in cmd:
+                return Suggestion(
+                    tool=f"blq run test",
+                    reason="Captures structured output — errors queryable via blq errors, "
+                           "results persisted across sessions, diffable over time",
+                    grade_before="level 4 (arbitrary bash)",
+                    grade_after="level 1 (structured query over captured output)",
+                )
+        return None
+
+
+class JetsamPlugin(Plugin):
+    """Intercepts git commands, offers jetsam workflow operations."""
+
+    name = "jetsam"
+    triggers = ["git add", "git commit", "git push", "git stash",
+                "git checkout", "git branch", "git diff", "git log"]
+
+    def intercept(self, tool_name, tool_input):
+        if tool_name != "Bash":
+            return None
+        cmd = tool_input.get("command", "")
+
+        if "git add" in cmd and "git commit" in cmd:
+            return Suggestion(
+                tool="jetsam save 'description'",
+                reason="Atomic save with plan tracking, confirmation step, "
+                       "and automatic branch management",
+                grade_before="level 4",
+                grade_after="level 2 (structured workflow operation)",
+            )
+        if "git push" in cmd:
+            return Suggestion(
+                tool="jetsam sync",
+                reason="Syncs with remote, handles rebasing, "
+                       "requires confirmation before pushing",
+            )
+        if "git diff" in cmd:
+            return Suggestion(
+                tool="jetsam diff",
+                reason="Structured diff with plan context",
+            )
+        if "git log" in cmd:
+            return Suggestion(
+                tool="jetsam log",
+                reason="Commit history with plan annotations",
+            )
+        return None
+
+
+class FledglingPlugin(Plugin):
+    """Intercepts code search/navigation, offers semantic alternatives."""
+
+    name = "fledgling"
+    triggers = ["grep -r", "grep -rn", "find . -name", "find . -type f"]
+
+    def intercept(self, tool_name, tool_input):
+        if tool_name != "Bash":
+            return None
+        cmd = tool_input.get("command", "")
+
+        # Detect searching for definitions
+        if ("grep" in cmd and
+            any(kw in cmd for kw in ["def ", "class ", "function ", "fn "])):
+            return Suggestion(
+                tool="FindDefinitions(name_pattern='...')",
+                reason="AST-aware search — understands scope, type, and nesting. "
+                       "Finds the definition, not just text matches",
+                grade_before="level 4 (bash grep)",
+                grade_after="level 0 (structured query over parsed AST)",
+            )
+
+        # Detect searching for file structure
+        if "find" in cmd and ("-name" in cmd or "-type" in cmd):
+            pattern = ""  # extract from cmd if possible
+            return Suggestion(
+                tool=f"CodeStructure(file_pattern='**/*.py')",
+                reason="Shows classes, functions, and nesting — "
+                       "not just file names but code organization",
+                grade_before="level 4",
+                grade_after="level 0",
+            )
+
+        # Detect reading files for understanding
+        if "cat" in cmd and cmd.count("cat") >= 2:
+            return Suggestion(
+                tool="ReadLines with multiple files",
+                reason="Structured multi-file read with line numbers "
+                       "and context windowing",
+            )
+
+        return None
+```
+
+### The interception hook
+
+The PreToolUse hook runs all plugins against every Bash call:
+
+```python
+#!/usr/bin/env python3
+"""plugin_interceptor.py — Route bash commands to structured alternatives."""
+
+import json
+import sys
+from pathlib import Path
+
+# Load plugins (in practice, imported from the extension package)
+plugins = [BlqPlugin(), JetsamPlugin(), FledglingPlugin()]
+
+# Load interception mode from config
+config_file = Path(".toolcraft/config.toml")
+default_mode = InterceptMode.SUGGEST  # start with suggest, graduate to redirect
+
+def run():
+    hook_input = json.loads(sys.stdin.read())
+    tool_name = hook_input.get("tool_name", "")
+    tool_input = hook_input.get("tool_input", {})
+
+    # Only intercept Bash calls
+    if tool_name != "Bash":
+        return
+
+    # Check each plugin
+    suggestions = []
+    for plugin in plugins:
+        suggestion = plugin.intercept(tool_name, tool_input)
+        if suggestion:
+            suggestions.append((plugin, suggestion))
+
+    if not suggestions:
+        return  # no plugin matches, allow the bash call
+
+    # Use the first matching suggestion (could rank by grade_reduction)
+    plugin, suggestion = suggestions[0]
+
+    mode = plugin.mode  # or override from config
+
+    if mode == InterceptMode.OBSERVE:
+        # Log the suggestion but allow bash
+        log_entry = {
+            "bash_command": tool_input.get("command", "")[:200],
+            "suggested_tool": suggestion.tool,
+            "reason": suggestion.reason,
+            "plugin": plugin.name,
+        }
+        log_file = Path(".toolcraft/intercept.log")
+        log_file.parent.mkdir(exist_ok=True)
+        with open(log_file, "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+        return  # allow
+
+    elif mode == InterceptMode.SUGGEST:
+        # Allow bash but inject the suggestion into context
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "additionalContext": (
+                    f"[toolcraft] {plugin.name} suggests: {suggestion.tool}\n"
+                    f"Reason: {suggestion.reason}"
+                    + (f"\nGrade: {suggestion.grade_before} → {suggestion.grade_after}"
+                       if suggestion.grade_before else "")
+                ),
+            }
+        }))
+        return  # allow, but with suggestion in context
+
+    elif mode == InterceptMode.REDIRECT:
+        # Deny bash, provide the alternative
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": (
+                    f"A structured alternative is available: {suggestion.tool}\n"
+                    f"{suggestion.reason}"
+                    + (f"\nThis reduces the grade from {suggestion.grade_before} to {suggestion.grade_after}."
+                       if suggestion.grade_before else "")
+                ),
+            }
+        }))
+        return
+
+if __name__ == "__main__":
+    run()
+```
+
+### The three modes: the ratchet applied to interception
+
+```
+OBSERVE → SUGGEST → REDIRECT
+```
+
+Start in **observe**: log every bash command that has a structured alternative. This builds the ratchet data — which commands are candidates for promotion.
+
+After reviewing the logs and confirming the alternatives work, graduate to **suggest**: the agent sees "jetsam save is available" in its context alongside the bash call. It can choose either.
+
+After confirming the agent follows suggestions reliably, graduate to **redirect**: bash calls with structured alternatives are denied. The agent must use the structured tool.
+
+Each graduation is a ratchet turn. The mode can be set per-plugin:
+
+```toml
+[plugins.blq]
+mode = "redirect"          # tests must go through blq (mature)
+
+[plugins.jetsam]
+mode = "suggest"           # git workflow suggestions (learning)
+
+[plugins.fledgling]
+mode = "observe"           # code navigation alternatives (new, gathering data)
+```
+
+### PostToolUse validation plugins
+
+The same plugin architecture works for PostToolUse — validating results:
+
+```python
+class BlqPostPlugin(Plugin):
+    """After blq run test, check for new failures."""
+
+    def validate(self, tool_name, tool_input, tool_result):
+        if tool_name == "blq_run" or "pytest" in str(tool_input):
+            # Parse test results, update failure counter
+            failures = parse_test_failures(tool_result)
+            if failures > previous_failures:
+                return PostAction(
+                    type="warn",
+                    message=f"New failures introduced: {failures - previous_failures}. "
+                            f"Consider reverting the last edit.",
+                )
+            if failures == 0 and previous_failures > 0:
+                return PostAction(
+                    type="celebrate",
+                    message=f"All tests passing! {previous_failures} failures fixed.",
+                )
+
+class FledglingPostPlugin(Plugin):
+    """After file_edit, check if the agent should read related files."""
+
+    def validate(self, tool_name, tool_input, tool_result):
+        if tool_name in ("Edit", "file_edit"):
+            edited_file = tool_input.get("file_path", "")
+            # Query Fledgling for files that import from the edited file
+            related = query_fledgling(
+                f"SELECT file FROM imports WHERE imported_module LIKE '%{edited_file}%'"
+            )
+            if related:
+                return PostAction(
+                    type="suggest",
+                    message=f"You edited {edited_file}. These files import from it: "
+                            f"{', '.join(related)}. Consider checking they still work.",
+                )
+```
+
 ## Grade of the coordinator
 
 The coordinator is level 1 — specified mutations over structured data:
