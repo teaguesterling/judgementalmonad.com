@@ -47,6 +47,8 @@ CONDITION_TOOLS = {
     # Semantic conditions: AST-aware tools via sitting_duck/DuckDB
     "L": {"simple_tools", "run_tests", "semantic_tools"},      # Simple tools + semantic + run_tests
     "M": {"file_tools", "run_tests", "semantic_tools"},        # All file tools + semantic + run_tests
+    # Minimal semantic conditions
+    "N": {"core_tools", "run_tests", "semantic_tools"},        # read/edit/write + semantic + run_tests (no glob/search)
 }
 
 # Tools are tagged by capability group:
@@ -190,7 +192,7 @@ server = FastMCP(
 
 # --- File tools (all conditions) ---
 
-@server.tool(tags={"group:file_tools", "group:simple_tools"})
+@server.tool(tags={"group:file_tools", "group:simple_tools", "group:core_tools"})
 def file_read(path: str, offset: int = 0, limit: int = 0) -> str:
     """Read a file's contents. Returns the file text with line numbers.
 
@@ -292,7 +294,7 @@ def file_list(path: str = ".") -> str:
         return err
 
 
-@server.tool(tags={"group:file_tools", "group:simple_tools"})
+@server.tool(tags={"group:file_tools", "group:simple_tools", "group:core_tools"})
 def file_edit(path: str, old_string: str, new_string: str) -> str:
     """Edit a file by replacing an exact string match.
 
@@ -383,7 +385,7 @@ def file_edit_batch(edits: list[dict]) -> str:
     return summary
 
 
-@server.tool(tags={"group:file_tools", "group:batch_tools", "group:simple_tools"})
+@server.tool(tags={"group:file_tools", "group:batch_tools", "group:simple_tools", "group:core_tools"})
 def file_write(path: str, content: str) -> str:
     """Write content to a file (creates or overwrites).
 
@@ -960,7 +962,7 @@ def bash_sandboxed(command: str) -> str:
 # ---------------------------------------------------------------------------
 
 ALL_GROUPS = {
-    "file_tools", "batch_tools", "simple_tools", "run_tests",
+    "file_tools", "batch_tools", "simple_tools", "core_tools", "run_tests",
     "semantic_tools", "bash_readonly", "bash_sandboxed",
 }
 
@@ -982,6 +984,7 @@ def _apply_condition(condition: str):
                        "file_read_batch", "file_search_context", "file_count"},
         "batch_tools": {"file_glob", "file_read_batch", "file_edit_batch", "file_write"},
         "simple_tools": {"file_read", "file_edit", "file_glob", "file_write"},
+        "core_tools": {"file_read", "file_edit", "file_write"},
         "run_tests": {"run_tests"},
         "semantic_tools": {"find_definitions", "find_callers", "code_structure", "find_imports"},
         "bash_readonly": {"bash_readonly"},
@@ -1009,7 +1012,7 @@ def main():
     global _condition, _task_id, _log_dir, _workspace, _allowed_dirs
 
     parser = argparse.ArgumentParser(description="Experiment MCP Server")
-    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J", "K", "L", "M"], required=True,
+    parser.add_argument("--condition", choices=["A", "B", "C", "D", "E", "F", "J", "K", "L", "M", "N"], required=True,
                         help="Experimental condition (A=file+tests, B=A+readonly-bash, C=A+bash, D=bash-only, E=file+readonly-bash, F=tests+bash)")
     parser.add_argument("--task-id", required=True,
                         help="Task identifier (e.g. '01', 'task-03-condition-A')")
