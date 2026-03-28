@@ -212,7 +212,7 @@ The hierarchy from earlier — model < tools < strategy — needs a caveat. The 
 
 **Watch what the agent reaches for.** E wasn't designed. Nobody told the agent to use structured file tools for reading and bash for pytest. It naturally selected the right tool for each operation — and that natural selection produced the most efficient configuration we tested. The ratchet's observation phase should watch *which tools the agent selects and why*, not just what operations it performs. E is the agent's own answer to the tool design question.
 
-**Strategy instructions are model-dependent.** The principle helps Sonnet (-16% cost, +18% reliability). It's essential for Haiku (+60% reliability). It destroys Opus (100% → 0% pass). "Good instructions" is not an absolute property — it's relative to the model's capability profile. A CLAUDE.md written for Sonnet will over-constrain Opus and under-constrain Haiku. Configuration should be model-aware.
+**Strategy instructions are model-dependent.** The principle is essential for Haiku (+60% reliability), helpful for Sonnet (-20% cost, +18% reliability), and unnecessary for Opus (no measurable effect). The value is inversely proportional to the model's built-in planning capacity. A CLAUDE.md written for Haiku adds overhead Opus doesn't need. Configuration should be model-aware.
 
 **Over-specification is consistently the worst intervention, regardless of model.** G (+56%) and H (+41%) are more expensive than no strategy across all conditions tested. The right strategy is a principle, not a procedure. But even principles have a capability ceiling beyond which they become procedures — "understand before editing" is a principle for Sonnet and a procedure for Opus.
 
@@ -222,7 +222,7 @@ The hierarchy from earlier — model < tools < strategy — needs a caveat. The 
 
 *This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. n=13-28 per condition (Sonnet) plus n=2-5 (Haiku, Opus) on one synthetic task (600-line Python codebase, 13 bugs, 48 tests). Multi-model results are preliminary (n=5) and included for the qualitative pattern, not the point estimates.*
 
-*Statistical update (Sonnet, n=13-28 per condition): A vs D reaches significance (d=0.80, p<0.05) — structured tools cost more than bash, confirmed. I vs A (d=0.49) does not reach significance — the principle helps but the effect is medium, not large. The early pilot (n=5) estimated a 32% savings; at n=24 it's 16%. The ranking is stable (E ≤ D ≤ I < A) but the gaps are smaller than first reported. The grade comparison (I at level 3 vs D at level 4-7) is structural and doesn't require statistics. The Haiku and Opus results (n=2-5) are directional only — the qualitative pattern (opposite effects at capability extremes) needs replication.*
+*Statistical update (final): Sonnet A vs D reaches significance (d=0.80, p<0.05) — structured tools cost more than bash. Sonnet I vs A (d=0.49) does not reach significance — the principle helps but the effect is medium. The early pilot (n=5) estimated 32% savings; at n=24 it's 16%. Haiku (n=5): principle is essential (40% → 100%). Opus (n=10-16, crash-period data excluded): principle has no effect (100% → 100%, same cost). The grade comparison (I at level 3 vs D at level 4) is structural and doesn't require statistics.*
 
 *The code, data, and analysis scripts are in the experiments/ directory of the project repository.*
 

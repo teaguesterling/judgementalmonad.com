@@ -11,7 +11,7 @@ Every agent system gives the agent a fixed tool set. The agent receives the same
 Our experiments showed this matters:
 - Haiku with 9 tools: 40% pass. With 5 tools + principle: 100%. More tools overwhelms a weaker model.
 - Sonnet with file tools + bash: $0.98. With structured tools only: $1.35. The right mix matters.
-- Opus with the strategy instruction: 85% pass, $1.67. Without it: 100% pass, $1.15. The wrong instruction hurts a strong model.
+- Opus with or without the strategy instruction: 100% pass, ~$1.62. The instruction has no effect — Opus plans naturally.
 
 A universal configuration is suboptimal for every model and every task. The Quartermaster selects the right configuration per task.
 
@@ -41,7 +41,7 @@ The Quartermaster needs a model of model capabilities:
 
 - **Haiku**: Needs focus. Fewer tools, clearer strategy. Wastes turns on tool selection when given too many options. Needs tools with simple interfaces — one operation, simple arguments. Benefits dramatically from the strategy instruction.
 - **Sonnet**: Good tool selection. Naturally picks the right tool per operation. Handles larger tool sets. Benefits moderately from strategy. Can compose multi-step operations.
-- **Opus**: Plans deeply on its own. May not need strategy instructions — it front-loads understanding naturally. More tools and more instruction can trigger over-analysis. Works best with minimal configuration.
+- **Opus**: Plans deeply on its own. Strategy instructions have no measurable effect — Opus front-loads understanding naturally. Additional tools don't hurt but don't help. Works the same across most configurations.
 
 These profiles can be hardcoded, learned from experimental data, or discovered via the Calibration Probe pattern.
 
@@ -68,7 +68,7 @@ We tested nine tool configurations across three models. The Quartermaster's job 
 |---|---|---|---|---|
 | **Haiku** | Simple tools + run_tests + principle (I) | **100%** | $0.66 | Focus. Fewer tools, clear principle. |
 | **Sonnet** | File tools + bash (E) | **100%** | $0.98 | Natural selection. Agent picks the right tool per operation. |
-| **Opus** | Structured tools, no principle (A) | **100%** | $1.15 | Minimal config. Opus plans naturally. |
+| **Opus** | Structured tools (A) — with or without principle | **100%** | $1.62 | Opus plans naturally. Principle has no effect. |
 
 ### The worst configurations (empirical)
 
