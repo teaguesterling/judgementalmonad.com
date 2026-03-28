@@ -309,7 +309,30 @@ def file_edit(path: str, old_string: str, new_string: str) -> str:
         content = resolved.read_text()
         count = content.count(old_string)
         if count == 0:
+            # Find the closest match to help the agent correct its attempt
+            import difflib
+            lines = content.splitlines(keepends=True)
+            old_lines = old_string.splitlines(keepends=True)
+            best_ratio = 0
+            best_line_num = 0
+            best_context = ""
+            # Search for the best matching region
+            for i in range(len(lines)):
+                chunk = "".join(lines[i:i + len(old_lines)])
+                ratio = difflib.SequenceMatcher(None, old_string, chunk).ratio()
+                if ratio > best_ratio:
+                    best_ratio = ratio
+                    best_line_num = i + 1
+                    # Show context: 2 lines before and after the match region
+                    start = max(0, i - 2)
+                    end = min(len(lines), i + len(old_lines) + 2)
+                    best_context = "".join(
+                        f"  {start + j + 1:>4} | {lines[start + j]}"
+                        for j in range(end - start)
+                    )
             err = f"Error: old_string not found in {path}"
+            if best_ratio > 0.4:
+                err += f"\nClosest match ({best_ratio:.0%} similar) near line {best_line_num}:\n{best_context}"
             _log_call("file_edit", {"path": path, "old_string": old_string[:100]}, err, False, (time.monotonic() - t0) * 1000)
             return err
         if count > 1:
@@ -360,7 +383,19 @@ def file_edit_batch(edits: list[dict]) -> str:
             content = resolved.read_text()
             count = content.count(old_string)
             if count == 0:
-                errors.append(f"Edit {i} ({path}): old_string not found")
+                import difflib
+                lines = content.splitlines(keepends=True)
+                old_lines = old_string.splitlines(keepends=True)
+                best_ratio = 0
+                best_line = 0
+                for li in range(len(lines)):
+                    chunk = "".join(lines[li:li + len(old_lines)])
+                    ratio = difflib.SequenceMatcher(None, old_string, chunk).ratio()
+                    if ratio > best_ratio:
+                        best_ratio = ratio
+                        best_line = li + 1
+                hint = f" (closest match: {best_ratio:.0%} similar near line {best_line})" if best_ratio > 0.4 else ""
+                errors.append(f"Edit {i} ({path}): old_string not found{hint}")
                 continue
             if count > 1:
                 errors.append(f"Edit {i} ({path}): old_string found {count} times (must be unique)")
