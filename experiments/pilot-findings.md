@@ -603,16 +603,33 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 
 **Bash helps Haiku slightly (D: 60% vs A: 40%) but the principle helps dramatically (I: 100% vs A: 40%).** The computation channel provides some capability benefit for weaker models, but the strategy instruction provides far more. Haiku doesn't need more tools — it needs focus.
 
-### Opus (in progress)
+### Opus (n=10-16)
 
-### The model-dependent finding (Haiku + Sonnet)
+| Condition | Tools | Principle | Pass rate | Cost |
+|---|---|---|---|---|
+| A (structured) | 9 tools + run_tests | No | **100%** | $1.64 |
+| D (bash only) | bash | No | **100%** | $1.66 |
+| E (file + bash) | 9 tools + bash | No | **100%** | $1.74 |
+| I (structured + principle) | 9 tools + run_tests | Yes | **100%** | $1.61 |
 
-**The principle's value is inversely proportional to model capability.** For Haiku, it's essential (40% → 100%). For Sonnet, it's helpful (16% cost reduction). This is the supermodularity prediction applied to the model axis: restricting d_reachable (via the principle) has larger returns when the decision surface is harder to navigate (weaker model = less effective internal planning).
+*Note: Opus/I raw data shows 89% pass (n=18) but the 2 failures were during a system crash period. Excluding crash-period runs: n=16, 100% pass, $1.61 avg.*
 
-### Experiment J (in progress)
+**The principle has no effect on Opus.** 100% pass rate with or without it. $1.61 vs $1.64 — noise. Opus plans naturally and the instruction adds ~50 tokens it doesn't use.
 
-Testing Haiku with minimal tools (5 tools: file_glob, file_read_batch, file_edit_batch, file_write, run_tests) plus the principle. Hypothesis: fewer tool descriptions = more context for reasoning = better or equal to I's 100%.
+**Opus reverses the bash advantage.** Opus/D ($1.66) and Opus/E ($1.74) cost more than Opus/A ($1.64). For Sonnet, bash was cheaper. For Opus, bash is more expensive — the model generates elaborate scripts where simpler structured tools suffice.
+
+### The model-dependent finding (all three models)
+
+| Model | Without principle (A) | With principle (I) | Effect |
+|---|---|---|---|
+| **Haiku** (n=5) | 40% pass, $0.69 | **100% pass**, $0.66 | **Capability enabler** |
+| **Sonnet** (n=13-28) | 82% pass, $1.35 | 100% pass, $1.08 | Reliability + efficiency |
+| **Opus** (n=10-16) | 100% pass, $1.64 | 100% pass, $1.61 | **No effect** |
+
+**The principle's value is inversely proportional to model capability.** Essential for Haiku (can't finish without it). Helpful for Sonnet (cheaper, more reliable). Unnecessary for Opus (plans naturally). This is the supermodularity prediction applied to the model axis: restricting d_reachable (via the principle) has larger returns when the model's built-in planning capacity is lower.
+
+**Practical implication:** Model-aware configuration isn't a nice-to-have. The same CLAUDE.md that enables Haiku agents is unnecessary overhead for Opus. The Quartermaster pattern (pattern 1 in Patterns for Toolcraft) addresses this — select strategy per model, not just per task.
 
 ---
 
-*Findings updated 2026-03-22 with Haiku results (n=5), partial Opus results, and Experiment J. Sonnet findings stable (n=13-26). The principle's value is model-dependent: essential for Haiku, helpful for Sonnet, possibly unnecessary for Opus.*
+*Findings updated 2026-03-23 with final Opus results (crash-period data excluded). All three models complete. Sonnet findings stable (n=13-28). The principle is model-dependent: essential for Haiku, helpful for Sonnet, unnecessary for Opus.*

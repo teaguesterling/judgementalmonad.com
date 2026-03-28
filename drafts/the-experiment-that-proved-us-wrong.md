@@ -176,35 +176,35 @@ The cheapest layer to change (strategy) had a significant effect — but the bes
 
 The real hierarchy: the right tools with natural selection (E) > the right tools with the right strategy (I) > the wrong tools with the right strategy > the right tools with the wrong strategy (H, G).
 
-## The same 50 tokens, three different interventions
+## The same 50 tokens, three models
 
-Everything above used Sonnet. We ran the same conditions with Haiku and Opus (n=5 each, preliminary). The principle instruction — the same 50 tokens — does something different to each model:
+Everything above used Sonnet. We ran the same conditions with Haiku (n=5) and Opus (n=10-16). The principle instruction — the same ~50 tokens — does something different to each model:
 
 | Model | Without principle (A) | With principle (I) | Effect |
 |---|---|---|---|
-| **Haiku** | 40% pass, $0.69 | **100% pass**, $0.66 | Capability enabler (+60% reliability) |
-| **Sonnet** | 82% pass, $1.35 | 100% pass, $1.08 | Cost optimizer + reliability fix |
-| **Opus** | 100% pass, $1.34 | **0% pass** (n=2), $2.93 | Capability destroyer |
-
-Same instruction. Opposite effects at the capability extremes.
+| **Haiku** (n=5) | 40% pass, $0.69 | **100% pass**, $0.66 | **Capability enabler** |
+| **Sonnet** (n=13-28) | 82% pass, $1.35 | 100% pass, $1.08 | Cost optimizer + reliability fix |
+| **Opus** (n=10-16) | 100% pass, $1.64 | 100% pass, $1.61 | **No effect** |
 
 **Haiku needs the principle to function.** Without it, Haiku passes 40-60% of the time across conditions A/D/E. It starts editing before it understands the problem, misdiagnoses bugs, and gets lost in cascading failures. "Understand before editing" gives Haiku the planning structure it can't generate on its own. The principle isn't a cost optimization for weak models — it's a prerequisite for correctness.
 
-**Opus is harmed by the principle.** Two runs, both failures. Opus takes "understand before editing" as permission to analyze endlessly — its deep reasoning fills the turn budget with exhaustive phase-by-phase analysis instead of acting. It understands the full picture, then keeps understanding it. The same instruction that saves Haiku from acting too early prevents Opus from acting at all.
+**Opus doesn't need the principle at all.** Opus passes 100% with or without the instruction, at essentially the same cost ($1.61 vs $1.64). It plans naturally — the instruction adds ~50 tokens to the prompt that Opus doesn't use. It's not harmful, just unnecessary. Opus already does what the principle asks.
 
-**The instruction surface is not monotonic.** There's a capability-dependent optimum, and overshooting it is worse than undershooting it:
+**The principle's value is inversely proportional to model capability.** Essential for Haiku (can't complete the task without it). Helpful for Sonnet (completes the task either way, but cheaper and more reliable with it). Unnecessary for Opus (makes no difference). The weaker the model's built-in planning, the more the instruction helps.
 
 ```
 Haiku:   needs instruction → can't self-organize without it
 Sonnet:  benefits from instruction → plans better with a nudge
-Opus:    harmed by instruction → already plans, the nudge becomes a trap
+Opus:    doesn't need instruction → already plans naturally
 ```
 
-This is a direct counterexample to "put good instructions in CLAUDE.md." Good for one model, harmful for another. Model-aware configuration isn't a nice-to-have — it's a correctness requirement. The same CLAUDE.md that makes a Haiku agent reliable makes an Opus agent fail.
+This is the supermodularity prediction applied to the model axis. Restricting d_reachable (via the principle) has larger returns when the model's planning capacity is lower. Haiku has the largest d_reachable (explores everything, plans nothing). Opus has the smallest d_reachable naturally (plans deeply before acting). The principle constrains what Haiku wastes but constrains nothing Opus would have wasted.
 
-**Opus also reverses the bash advantage.** Sonnet is cheaper with bash ($1.03) than structured tools ($1.35). Opus is *more expensive* with bash ($1.66) than structured tools ($1.34). Bash's cognitive forcing function — the "plan before you act" side effect — adds value for models that don't naturally plan (Haiku, Sonnet). Opus already plans. Bash gives Opus more rope to write elaborate scripts it doesn't need. The tool that helps the mid-range model hurts the strongest one.
+The practical implication: a model-aware system needs different CLAUDE.md instructions per model. The same instruction file that makes a Haiku agent reliable is unnecessary overhead for Opus. This is the Quartermaster pattern — select the strategy per model, not per task alone.
 
-The hierarchy from earlier — model < tools < strategy — is wrong. The layers *interact*. The right strategy depends on the model. The right tools depend on the model. There is no model-independent optimal configuration. The configuration space is a function of the model's capability profile.
+**Opus also reverses the bash advantage.** Sonnet is cheaper with bash ($1.03) than structured tools ($1.35). Opus is *more expensive* with bash ($1.66) than structured tools ($1.64). Bash's cognitive forcing function adds value for models that don't naturally plan. Opus already plans. Bash gives Opus more tools to compose elaborate approaches it doesn't need.
+
+The hierarchy from earlier — model < tools < strategy — needs a caveat. The layers *interact*. The right strategy depends on the model. The right tools depend on the model. There may not be a model-independent optimal configuration — but there is a model-independent *approach*: match the configuration to the model's capability profile. That's the Quartermaster.
 
 ## What this means for practice
 
