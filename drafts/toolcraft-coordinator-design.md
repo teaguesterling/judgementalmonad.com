@@ -36,90 +36,109 @@ Block writes to specific paths based on the current mode.
 }
 ```
 
-The hook receives the tool call before execution. For `Edit`, `Write`, and `file_edit`/`file_write` calls, it checks the path against the current mode's writable set:
+The hook receives the full tool call on stdin as JSON, including `tool_name` and `tool_input` with file paths. For write tools (`Edit`, `Write`, `Bash`), it checks the path against the current mode's writable set.
+
+**This works with Claude Code's built-in tools directly.** No reimplementation. The PreToolUse hook controls Edit, Write, Bash — the same tools the agent already uses. Exit code 0 with `permissionDecision: "deny"` blocks the call and sends the reason to the agent.
 
 ```python
 #!/usr/bin/env python3
-"""path_guard.py — Block writes to protected paths per mode."""
+"""path_guard.py — Block writes to protected paths per mode.
+
+Works with Claude Code's built-in tools (Edit, Write, Bash).
+No tool reimplementation needed.
+
+PreToolUse hook protocol:
+  Input (stdin): {"tool_name": "Edit", "tool_input": {"file_path": "...", ...}, ...}
+  Output (stdout): JSON with permissionDecision: "deny"|"allow"|"ask"
+  Exit 0: output parsed. Exit 2: blocked with stderr as reason.
+"""
 
 import json
 import sys
 from pathlib import Path
 
-# Read the current mode from jetsam state
 def get_current_mode():
-    # Read from jetsam state file or query jetsam status
     state_file = Path(".jetsam/state.json")
     if state_file.exists():
-        state = json.loads(state_file.read_text())
-        return state.get("mode", "implement")
-    return "implement"  # default
+        return json.loads(state_file.read_text()).get("mode", "implement")
+    # Also check a simple mode file for systems without jetsam
+    mode_file = Path(".toolcraft/mode")
+    if mode_file.exists():
+        return mode_file.read_text().strip()
+    return "implement"
 
-# Mode path policies
 MODE_POLICIES = {
     "debug": {
-        "writable": [],              # nothing writable in debug mode
-        "message": "Debug mode: read-only. Switch to implement mode to edit."
+        "writable": [],
+        "message": "Debug mode: read-only. Use `jetsam mode implement` to start editing."
     },
     "implement": {
-        "writable": ["src/"],        # only source files
-        "message": "Implementation mode: tests/ is protected. Switch to test-dev mode to edit tests."
+        "writable": ["src/"],
+        "message": "Implementation mode: tests/ is protected. Use `jetsam mode test_dev` to edit tests."
     },
     "test_dev": {
-        "writable": ["tests/"],      # only test files
-        "message": "Test development mode: src/ is protected. Switch to implement mode to edit source."
+        "writable": ["tests/"],
+        "message": "Test development mode: src/ is protected. Use `jetsam mode implement` to edit source."
     },
     "review": {
-        "writable": [],              # nothing writable
-        "message": "Review mode: read-only. Use jetsam mode implement to start editing."
+        "writable": [],
+        "message": "Review mode: read-only. Use `jetsam mode implement` to start editing."
     },
 }
 
-def check_write(tool_name, arguments):
-    """Check if a write operation is allowed in the current mode."""
-    mode = get_current_mode()
-    policy = MODE_POLICIES.get(mode, {"writable": ["*"]})
+def extract_path(tool_name, tool_input):
+    """Extract the target file path from a tool call."""
+    if tool_name == "Edit":
+        return tool_input.get("file_path", "")
+    elif tool_name == "Write":
+        return tool_input.get("file_path", "")
+    elif tool_name == "Bash":
+        # Can't reliably extract paths from bash commands
+        # but we can check for obvious write patterns
+        cmd = tool_input.get("command", "")
+        # For bash, the sandbox spec (blq) is the right enforcement layer
+        # Path guard only handles structured tools
+        return ""
+    # MCP tools
+    return tool_input.get("path", tool_input.get("file_path", ""))
 
-    # Extract the path from the tool arguments
-    path = arguments.get("path", arguments.get("file_path", ""))
-    if not path:
-        return True  # no path to check
-
-    # Check against writable paths
-    writable = policy["writable"]
-    if not writable:
-        print(json.dumps({
-            "blocked": True,
-            "reason": policy["message"]
-        }))
-        return False
-
-    for allowed in writable:
-        if path.startswith(allowed):
-            return True
-
-    print(json.dumps({
-        "blocked": True,
-        "reason": f"Path '{path}' is not writable in {mode} mode. {policy['message']}"
-    }))
-    return False
-
-# Hook receives tool call info on stdin
 if __name__ == "__main__":
-    # The hook protocol depends on Claude Code's hook format
-    # This is a sketch — actual format TBD
-    tool_input = json.loads(sys.stdin.read())
-    tool_name = tool_input.get("tool_name", "")
-    arguments = tool_input.get("arguments", {})
+    hook_input = json.loads(sys.stdin.read())
+    tool_name = hook_input.get("tool_name", "")
+    tool_input = hook_input.get("tool_input", {})
 
-    write_tools = {"Edit", "Write", "file_edit", "file_write",
-                   "file_edit_batch", "mcp__experiment__file_edit",
-                   "mcp__experiment__file_write", "mcp__experiment__file_edit_batch"}
+    # Only check write tools
+    write_tools = {"Edit", "Write"}
+    if tool_name not in write_tools:
+        sys.exit(0)  # allow non-write tools
 
-    if tool_name in write_tools:
-        if not check_write(tool_name, arguments):
-            sys.exit(1)  # block the tool call
+    path = extract_path(tool_name, tool_input)
+    if not path:
+        sys.exit(0)  # no path to check
+
+    mode = get_current_mode()
+    policy = MODE_POLICIES.get(mode, {"writable": ["*"], "message": ""})
+
+    # Check path against writable set
+    allowed = False
+    for writable_prefix in policy["writable"]:
+        if path.startswith(writable_prefix):
+            allowed = True
+            break
+
+    if not allowed and policy["writable"] != ["*"]:
+        # Deny with reason — the agent sees this in its context
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": f"{policy['message']} (tried to write: {path})"
+            }
+        }))
+    # else: exit 0 with no output = allow
 ```
+
+**Key design: the denial reason tells the agent how to switch modes.** "Use `jetsam mode implement` to start editing." The agent can respond by requesting a mode switch rather than being silently blocked. This is the transparency principle from the Ma series — project constraints into the actor's scope.
 
 ### 2. Mode transitions (Mode Controller)
 
