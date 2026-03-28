@@ -1,14 +1,14 @@
-# The Collar Collection
+# Patterns for Toolcraft
 
-*Design patterns for agent systems that transmit capability without choking it.*
+*Design patterns for equipping agents with the right tools, the right focus, and the right constraints for the job.*
 
 ---
 
-In 1800, the collar harness replaced the throat harness. Same horse. Different connector. The throat harness placed straps across the horse's windpipe — the harder it pulled, the more it choked itself. The collar routes force through the skeletal system: padded oval around the shoulders, traces attached at the sides, airway completely free. A single horse with a collar could pull what two horses with the old harness couldn't.
+A carpenter doesn't carry every tool to every job. They assess the work, select the right kit, and the specialization enables focus. The craft isn't just knowing how to use a chisel — it's knowing when the chisel is the right tool and when it isn't.
 
-Every pattern in this collection is a collar. A design that connects an agent's capability to useful work without the connector degrading the capability. Each pattern emerged from controlled experiments comparing tool configurations, strategy instructions, and execution environments across three models.
+Agent toolcraft is the same discipline. Which tools should the agent see? What strategy instruction focuses its attention? How should the execution environment be bounded? When should the configuration change? Each pattern in this series addresses one of these questions, grounded in experimental data from ~200 runs across three models.
 
-The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is in [Ratchet Fuel](../fuel/index). These patterns are the recurring shapes that appear when you apply the theory to real systems.
+The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is in [Ratchet Fuel](../fuel/index). These patterns are the recurring designs that emerge when you apply the theory to real systems — the craft of making and selecting tools that enable agents to do their best work.
 
 ---
 

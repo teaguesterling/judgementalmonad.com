@@ -28,9 +28,9 @@ Supplementary essays develop the configuration ratchet, world decoupling, the fa
 
 Code ships in every post: DuckDB queries over conversation logs, a prototype mode controller, a complete structured tool, a segment builder, an access control layer, and a metrics dashboard.
 
-### [The Collar Collection](blog/patterns/index)
+### [Patterns for Toolcraft](blog/patterns/index)
 
-*The patterns.* Eight design patterns that emerged from controlled experiments comparing tool configurations across three models. Each pattern is a collar — a design that transmits capability without choking it. The Quartermaster selects tools per task. The Strategy Instruction reshapes behavior with ~50 tokens. Write/Execute Separation keeps the system characterizable. Tool-Call Combinators compose operations without crossing the computation channel boundary. Each pattern includes experimental evidence, grade analysis, and implementation.
+*The patterns.* Eight design patterns for equipping agents with the right tools for the job. Each emerged from controlled experiments across three models. The Quartermaster selects tools per task. The Strategy Instruction reshapes behavior with ~50 tokens. Write/Execute Separation keeps the system characterizable. Sandbox Specifications make the grade explicit. Each pattern includes experimental evidence, grade analysis, and implementation.
 
 ---
 
