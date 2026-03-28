@@ -21,6 +21,7 @@ Want the theory? Start with [The Ma of Multi-Agent Systems](../ma/00-intro).
 08-teaching-without-theory
 09-the-organizational-star
 10-ratchet-metrics
+11-sandbox-specs
 ```
 
 ## Tools
