@@ -1,6 +1,6 @@
-# Toolcraft Extension: Build Prompt
+# Kibitzer: Build Prompt
 
-*Prompt for spinning up an agent to build the Toolcraft coordinator extension.*
+*Prompt for spinning up an agent to build the Kibitzer extension.*
 
 ---
 
@@ -47,10 +47,10 @@ Read these files, in order:
 ## Extension structure
 
 ```
-toolcraft/
+kibitzer/
 ├── __init__.py
 ├── config.py              # Load config.toml, mode policies, plugin modes
-├── state.py               # Read/write mode state (.toolcraft/state.json)
+├── state.py               # Read/write mode state (.kibitzer/state.json)
 ├── hooks/
 │   ├── pre_tool_use.py    # Main PreToolUse hook entry point
 │   ├── post_tool_use.py   # Main PostToolUse hook entry point
@@ -93,7 +93,7 @@ toolcraft/
 
 ### State management
 
-All state in `.toolcraft/state.json`:
+All state in `.kibitzer/state.json`:
 ```json
 {
     "mode": "implement",

@@ -62,7 +62,7 @@ def get_current_mode():
     if state_file.exists():
         return json.loads(state_file.read_text()).get("mode", "implement")
     # Also check a simple mode file for systems without jetsam
-    mode_file = Path(".toolcraft/mode")
+    mode_file = Path(".kibitzer/mode")
     if mode_file.exists():
         return mode_file.read_text().strip()
     return "implement"
@@ -305,12 +305,12 @@ fi
 echo "[quartermaster] Configured: model=$MODEL kit=$FLEDGLING_KIT mode=$TASK_TYPE"
 ```
 
-## The extension: `toolcraft`
+## The extension: `kibitzer`
 
 All four hooks package into a single extension:
 
 ```
-toolcraft/
+kibitzer/
 ├── path_guard.py          # PreToolUse: path protection per mode
 ├── mode_controller.py     # PostToolUse: failure-driven transitions
 ├── coach.py               # PostToolUse (every N): efficiency suggestions
@@ -322,7 +322,7 @@ toolcraft/
 ### Configuration
 
 ```toml
-# toolcraft/config.toml
+# kibitzer/config.toml
 
 [modes.debug]
 writable = []
@@ -363,17 +363,17 @@ opus_kit = "diagnose"
 
 ```bash
 # Install the extension
-toolcraft install
+kibitzer install
 
 # This adds to .claude/settings.json:
 # {
 #   "hooks": {
-#     "PreToolUse": ["python3 toolcraft/path_guard.py"],
+#     "PreToolUse": ["python3 kibitzer/path_guard.py"],
 #     "PostToolUse": [
-#       "python3 toolcraft/mode_controller.py",
-#       "python3 toolcraft/coach.py"
+#       "python3 kibitzer/mode_controller.py",
+#       "python3 kibitzer/coach.py"
 #     ],
-#     "SessionStart": ["bash toolcraft/quartermaster.sh"]
+#     "SessionStart": ["bash kibitzer/quartermaster.sh"]
 #   }
 # }
 ```
@@ -543,7 +543,7 @@ from pathlib import Path
 plugins = [BlqPlugin(), JetsamPlugin(), FledglingPlugin()]
 
 # Load interception mode from config
-config_file = Path(".toolcraft/config.toml")
+config_file = Path(".kibitzer/config.toml")
 default_mode = InterceptMode.SUGGEST  # start with suggest, graduate to redirect
 
 def run():
@@ -578,7 +578,7 @@ def run():
             "reason": suggestion.reason,
             "plugin": plugin.name,
         }
-        log_file = Path(".toolcraft/intercept.log")
+        log_file = Path(".kibitzer/intercept.log")
         log_file.parent.mkdir(exist_ok=True)
         with open(log_file, "a") as f:
             f.write(json.dumps(log_entry) + "\n")
