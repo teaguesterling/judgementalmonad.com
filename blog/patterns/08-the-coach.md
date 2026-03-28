@@ -118,6 +118,103 @@ The coach IS the ratchet's observation phase, running continuously. Every sugges
 
 The coach feeds the Quartermaster: "agents working on bug-fix tasks use file_search 3x more than find_callers, even when find_callers is available." The Quartermaster's next kit revision promotes find_callers to the default set and adds a strategy hint.
 
+## Integration architecture
+
+The Coach connects the tool ecosystem. Each tool provides observation data; the Coach synthesizes and suggests.
+
+```
+Fledgling (code intelligence)
+  ├─ ChatToolUsage → which tools the agent used
+  ├─ CodeStructure → what code the agent should be reading
+  ├─ FindDefinitions → semantic alternatives to grep
+  └─ ChatSearch → what the agent was looking for
+
+blq (build/test intelligence)
+  ├─ events → build failures, test results
+  ├─ errors → structured error data
+  └─ output → raw logs for pattern detection
+
+jetsam (workflow intelligence)
+  ├─ status → current git state
+  ├─ diff → what's changed
+  └─ log → commit history
+
+Coach (synthesis layer)
+  ├─ observes all three via their query interfaces
+  ├─ pattern-matches against known inefficiency patterns
+  ├─ suggests via Claude Code hooks
+  └─ logs suggestions + whether agent followed them (ratchet data)
+```
+
+### Example integration flows
+
+**Agent searching inefficiently:**
+```
+Agent calls: file_search("def get_user", path="src/")
+Agent calls: file_search("def get_user", path="src/models/")
+Agent calls: file_search("def get_user", path="src/services/")
+
+Coach observes (via Fledgling ChatToolUsage):
+  3 sequential searches for the same function name
+
+Coach suggests:
+  "find_definitions(name_pattern='get_user') searches all files
+  at once and returns the definition with its file, line, and type."
+```
+
+**Agent editing without testing:**
+```
+Agent calls: file_edit("src/auth.py", ...)
+Agent calls: file_edit("src/models.py", ...)
+Agent calls: file_edit("src/routes.py", ...)
+... (no run_tests for 8 edits)
+
+Coach observes (via blq event stream):
+  8 edits since last test run
+
+Coach suggests:
+  "You've edited 3 files without running tests.
+  Consider: blq run test (or run_tests) to verify."
+```
+
+**Agent working on stale context:**
+```
+Agent reads: src/auth.py (20 turns ago)
+Agent edits: src/models.py (references auth.py)
+
+Coach observes (via jetsam diff):
+  auth.py changed on disk since the agent last read it
+  (another process or a previous edit changed it)
+
+Coach suggests:
+  "src/auth.py has changed since you last read it (turn 12).
+  You're editing models.py which imports from auth.
+  Consider re-reading auth.py for current state."
+```
+
+## Self-improvement: the meta-ratchet
+
+The Coach logs every suggestion and tracks whether the agent followed it:
+
+```sql
+-- Coach effectiveness over time
+SELECT suggestion_type,
+       count(*) as times_suggested,
+       sum(CASE WHEN followed THEN 1 ELSE 0 END) as times_followed,
+       round(avg(CASE WHEN followed THEN 1.0 ELSE 0.0 END), 2) as follow_rate
+FROM coach_suggestions
+GROUP BY suggestion_type
+ORDER BY follow_rate DESC;
+```
+
+Suggestions with high follow rates are good — they become candidates for the Strategy Instruction pattern (bake them into the prompt). Suggestions with low follow rates are either wrong (remove them) or correct but ignored (escalate to the Mode Controller).
+
+This is the ratchet applied to the Coach itself:
+1. **Observe**: Log all suggestions and outcomes
+2. **Capture**: Identify which suggestions work
+3. **Crystallize**: High-follow-rate suggestions become strategy instructions or kit defaults
+4. **Teach**: The Coach gets better at knowing when to suggest what
+
 ## The anti-pattern: the backseat driver
 
 A coach that fires on every tool call, provides long explanations, or second-guesses the agent's decisions adds noise without value. The agent stops reading the suggestions. The output tokens increase. The cost goes up.
@@ -127,3 +224,15 @@ The coach should be:
 - **Brief**: One or two lines, not a paragraph
 - **Specific**: Name the tool and the pattern, not general advice
 - **Ignorable**: A suggestion, not a requirement
+
+## The model-dependent coach
+
+The Coach should adjust its behavior per model, just like the Strategy Instruction:
+
+| Model | Coach behavior | Why |
+|---|---|---|
+| **Haiku** | More frequent (every 3-5 calls), simpler suggestions | Haiku benefits from guidance and needs it more often |
+| **Sonnet** | Standard frequency (every 5-10 calls), full suggestions | Sonnet follows good suggestions and ignores bad ones |
+| **Opus** | Rare (every 10-15 calls), action-oriented only | Opus over-analyzes. Coach suggestions about "understanding" make it worse. Only suggest action: "run tests now" not "consider reading X" |
+
+This connects to the Quartermaster: the Quartermaster configures the Coach's aggressiveness alongside the tool set and strategy instruction. The Coach is part of the kit.

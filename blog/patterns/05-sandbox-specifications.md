@@ -90,11 +90,100 @@ Full design: `~/Projects/lq/main/docs/design/design-sandbox-specs.md`
 
 The sandbox spec integrates with blq's command registry — every registered command has a declared sandbox spec, logged alongside its output, queryable by DuckDB.
 
-## The ratchet connection
+## From our experiments: what D actually is
 
-The sandbox spec tightens over time:
-1. Start with `sandbox = "unrestricted"` (observe resource usage)
-2. After 100 runs that never exceed 300MB: tighten to `memory = "512m"`
-3. After 1000 runs: tighten to `memory = "400m"`
+We assumed our sandboxed bash (Condition D) was level 4. It was level 7.
 
-Each tightening is a ratchet turn — the grade drops, characterizability improves, regulatory cost decreases. The spec IS the ratchet artifact for execution environments.
+We tested empirically: a forked process inside bwrap survived after the tool call completed. The parent process exited, the bwrap container terminated, but the child process persisted on the host. The fold model broke — there was computation happening that the Harness didn't invoke and couldn't observe.
+
+Adding `--die-with-parent` to bwrap fixed it — all children are killed when bwrap exits. One flag changed D from level 7 to level 4. That's the sandbox spec doing its job: making the grade explicit so you can reason about it.
+
+```
+D without --die-with-parent:  (scoped-rw, level 7)  — can spawn persistent processes
+D with --die-with-parent:     (scoped-rw, level 4)  — can write + execute, no spawning
+I (separated write/execute):  (scoped, level 3)     — structured write, sandboxed verify
+Production bash (no sandbox): (open, level 8)        — unrestricted
+```
+
+Without the sandbox spec, you don't know your system's grade. With it, you can see that one bwrap flag is the difference between level 4 and level 7.
+
+## Integration with blq
+
+The sandbox spec integrates with blq's command registry. Every registered command has a declared sandbox spec:
+
+```toml
+# blq command with sandbox spec
+[commands.test]
+cmd = "python -m pytest tests/"
+sandbox = "test"  # preset: readonly + no network + 60s + 512m
+
+[commands.build]
+cmd = "make -j8"
+sandbox = "build"  # preset: workspace_only + no network + 5m + 2g
+```
+
+blq logs the spec alongside every run:
+
+```sql
+-- What grade is each command?
+SELECT command, sandbox_preset, effects_ceiling
+FROM blq_commands
+ORDER BY effects_ceiling DESC;
+
+-- Were any bounds hit?
+SELECT run_id, command, violation_type
+FROM blq_sandbox_violations
+ORDER BY timestamp DESC;
+```
+
+The sandbox spec makes the grade queryable. You can ask "what's the highest-grade command in my system?" and get a precise answer.
+
+## The monitoring-before-enforcing workflow
+
+You don't start with enforcement. You start with observation:
+
+### Phase 0: Monitor (no enforcement)
+
+```toml
+[commands.test]
+cmd = "python -m pytest tests/"
+sandbox = "monitor"  # log resource usage, don't enforce limits
+```
+
+blq captures: actual memory usage, actual CPU time, actual network activity, actual filesystem writes. After 100 runs, you know what the command *actually does*.
+
+### Phase 1: Declare (spec, no enforcement)
+
+```toml
+[commands.test]
+cmd = "python -m pytest tests/"
+sandbox.network = "none"       # declare: this command shouldn't need network
+sandbox.filesystem = "readonly" # declare: this command shouldn't write
+# enforcement = false (still monitoring)
+```
+
+blq warns if the command violates its declaration — but doesn't block. You're building confidence that the spec matches reality.
+
+### Phase 2: Enforce
+
+```toml
+[commands.test]
+cmd = "python -m pytest tests/"
+sandbox.network = "none"
+sandbox.filesystem = "readonly"
+sandbox.timeout = "60s"
+sandbox.memory = "512m"
+# enforcement = true (bwrap wraps the command)
+```
+
+Now violations are blocked, not just logged. The spec is backed by bwrap.
+
+### Phase 3: Tighten
+
+After 1000 runs at 512m with actual usage never exceeding 300m:
+
+```toml
+sandbox.memory = "400m"  # tightened with margin
+```
+
+Each phase is a ratchet turn. The grade drops. The characterizability improves. The spec becomes more precise — and more valuable as documentation of what the command actually needs.

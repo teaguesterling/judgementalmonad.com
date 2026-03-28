@@ -58,14 +58,129 @@ echo "$TASK_DESCRIPTION\n\n$STRATEGY" | claude -p --model $TARGET_MODEL \
     --mcp-config $SELECTED_TOOLS --max-turns 50
 ```
 
+## What the experiments actually showed
+
+We tested nine tool configurations across three models. The Quartermaster's job is to predict which configuration works best — without running nine experiments per task.
+
+### The optimal configurations (empirical)
+
+| Model | Best config | Pass | Cost | Why it works |
+|---|---|---|---|---|
+| **Haiku** | Simple tools + run_tests + principle (I) | **100%** | $0.66 | Focus. Fewer tools, clear principle. |
+| **Sonnet** | File tools + bash (E) | **100%** | $0.98 | Natural selection. Agent picks the right tool per operation. |
+| **Opus** | Structured tools, no principle (A) | **100%** | $1.15 | Minimal config. Opus plans naturally. |
+
+### The worst configurations (empirical)
+
+| Model | Worst config | Pass | Cost | Why it fails |
+|---|---|---|---|---|
+| **Haiku** | File tools + bash (E) | **40%** | $0.62 | Too many choices. Haiku wastes turns selecting. |
+| **Sonnet** | Four-phase strategy (G) | 100% | **$2.06** | Over-specification. Verbose compliance, not problem-solving. |
+| **Opus** | Structured tools + principle (I) | **85%** | $1.67 | Over-analysis. The principle amplifies Opus's natural tendency to plan. |
+
+The optimal for one model is the worst for another. Universal configuration is always wrong for at least one model.
+
+## Kit manifests
+
+The Quartermaster selects from pre-defined kits. Each kit specifies tools, strategy, and constraints:
+
+### Bug diagnosis kit
+
+```yaml
+name: diagnose-bugs
+tools:
+  core: [file_read, file_edit, file_glob, file_write, run_tests]
+  extended: [file_read_batch, file_edit_batch, file_search, file_search_context]
+  semantic: [find_definitions, find_callers, code_structure]
+strategy:
+  haiku: "Do not start editing until you understand the full picture. Read the code, run the tests, and identify all the bugs first. Multiple test failures often share a root cause — find the root causes before fixing symptoms."
+  sonnet: null  # Sonnet selects efficiently without guidance
+  opus: null    # Opus plans naturally. Adding strategy hurts.
+model_config:
+  haiku:
+    use: core                    # 5 tools. Simple interfaces only.
+    strategy_required: true      # Essential — 40% → 100% pass rate.
+  sonnet:
+    use: core + extended         # 9 tools. Agent self-selects.
+    strategy_required: false     # Helpful (-16% cost) but not essential.
+    include_bash: true           # Sonnet's cheapest config uses bash for pytest.
+  opus:
+    use: core                    # Minimal. Opus doesn't need help.
+    strategy_required: false     # Harmful — causes over-analysis.
+```
+
+### Code review kit
+
+```yaml
+name: code-review
+tools:
+  core: [file_read, file_glob, file_search]
+  semantic: [code_structure, find_definitions, find_callers, find_imports]
+strategy:
+  all: "Read the full change set before forming an opinion."
+model_config:
+  haiku:
+    use: core
+    strategy_required: true
+  sonnet:
+    use: core + semantic
+  opus:
+    use: core + semantic
+constraints:
+  write_access: none             # Review is read-only
+```
+
+## The output format
+
+The Quartermaster produces a JSON configuration that the runner consumes:
+
+```json
+{
+  "tool_groups": ["simple_tools", "run_tests"],
+  "strategy": "Do not start editing until you understand the full picture...",
+  "constraints": {
+    "protected_paths": ["tests/"],
+    "max_turns": 50
+  },
+  "reasoning": "Haiku with a bug-fix task: use simple tools (fewer choices), add the principle instruction (essential for reliability), protect test files."
+}
+```
+
+The runner translates this to MCP server configuration:
+- `tool_groups` → `--condition` flag or dynamic tool enabling
+- `strategy` → prepended to the task prompt
+- `constraints` → sandbox spec and path protection
+- `reasoning` → logged for audit
+
+## The three-layer architecture
+
+```
+Layer 1: Quartermaster (before task)
+  Input: task description + model name + available kits
+  Output: selected kit + strategy + constraints
+  Runs once. Uses Haiku (fast, cheap). 1-2 turns.
+
+Layer 2: Mode Controller (during task)
+  Input: tool call stream + failure counters
+  Output: mode transitions (debug → implement → verify)
+  Runs continuously. Specified rules, no LLM.
+
+Layer 3: Calibration Probe (when uncertain)
+  Input: first 3-5 tool calls of a new model
+  Output: behavioral classification → profile update
+  Runs when the Quartermaster's profiles are stale.
+```
+
+The Quartermaster configures. The Controller adapts. The Probe learns. Each operates at a different timescale: per-task, per-phase, per-model-version.
+
 ## The anti-pattern: universal configuration
 
-A single CLAUDE.md with strategy instructions for all models. Works for the model it was tuned for, hurts the others. Our strategy instruction helped Haiku (+60% reliability) and Sonnet (-16% cost) but hurt Opus (-15% reliability, +45% cost). Universal instructions are the throat harness — they constrain everything the same way regardless of what's pulling.
+A single CLAUDE.md with strategy instructions for all models. Works for the model it was tuned for, hurts the others. Our strategy instruction helped Haiku (+60% reliability) and Sonnet (-16% cost) but hurt Opus (-15% reliability, +45% cost). Universal instructions constrain everything the same way regardless of what's pulling.
+
+The fix isn't "no instructions." It's "the right instructions for the model." The Quartermaster is the component that makes this selection — and the experimental data is what tells it which selection to make.
 
 ## Connection to Skills
 
 The Quartermaster is a meta-skill. Each kit it selects IS a Skill — a named configuration with tools, strategy, and constraints. The Skills system in Claude Code already loads tools on demand. The Quartermaster adds model-aware selection: which skill to invoke depends on the model, not just the task.
 
-## What's next
-
-The Quartermaster needs the Calibration Probe (pattern 3) for unknown models and the Mode Controller (pattern 7) for mid-task reconfiguration. Together they form a three-layer system: configure before (Quartermaster), monitor during (Controller), probe when uncertain (Calibration).
+Fledgling's modules map to kits: Code Navigation, Bug Diagnosis, Change Analysis, Refactoring. Each module is a Skill with a curated tool subset and model-aware strategy. See `~/Projects/source-sextant/main/docs/plans/skill-modules-from-experiments.md` for the full mapping.
