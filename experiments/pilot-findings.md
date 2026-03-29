@@ -632,4 +632,46 @@ This doesn't mean tools don't matter. It means tools are necessary but not suffi
 
 ---
 
-*Findings updated 2026-03-23 with final Opus results (crash-period data excluded). All three models complete. Sonnet findings stable (n=13-28). The principle is model-dependent: essential for Haiku, helpful for Sonnet, unnecessary for Opus.*
+## 12. Semantic Tools and Final Configurations (L, M, N)
+
+### The experiment
+
+Tested whether AST-aware semantic tools (find_definitions, find_callers, code_structure, find_imports via sitting_duck/DuckDB) add value on top of file tools.
+
+### Results
+
+| Condition | Sonnet | Haiku | What it adds |
+|---|---|---|---|
+| K (simple + principle) | 100% / $0.97 | 50% / $0.66 | Baseline simple tools |
+| **N (core + semantic + principle)** | **100% / $0.91** | 70% / $0.80 | Semantic discovery replaces glob/search |
+| L (simple + semantic + principle) | 100% / $1.97 | 80% / $0.73 | Semantic + simple (too many tools) |
+| M (all + semantic + principle) | 100% / $2.03 | 40% / $0.95 | Everything (way too many tools) |
+| I (all + principle) | 100% / $1.08 | 100% / $0.66 | All file tools, no semantic |
+
+### Key findings
+
+**Sonnet/N ($0.91) is the cheapest 100%-pass configuration across all models and conditions.** Three core file tools + four semantic tools + run_tests + principle. No bash, no grep, no glob. Level 3. Fully characterizable. Cheaper than E ($0.98, level 4 with bash).
+
+**Semantic tools help Sonnet but not Haiku.** Haiku made zero semantic tool calls across all L runs (n=5). With the semantic-focused principle (N), Haiku called find_definitions once per run — but still failed 30% of the time. Haiku's failures are caused by bad `file_edit` old_strings (whitespace mismatches), not by poor code discovery.
+
+**More tools = worse for both models.** L ($1.97) and M ($2.03) for Sonnet are the most expensive passing configs. Adding semantic tools to the *full* file tool set causes deliberation overhead — the agent reasons about which tool to use instead of using any of them.
+
+**N works because it has only what it needs.** Semantic discovery (find_definitions), basic operations (read, edit, write), verification (run_tests), and a principle. No redundant tools. The agent uses find_definitions for discovery, file_read for detail, file_edit for fixes, run_tests for verification. Clean workflow, minimal turns.
+
+### The optimal configurations (final)
+
+| Model | Best config | Pass | Cost | Grade | Tools |
+|---|---|---|---|---|---|
+| **Haiku** | I (all + principle) | **100%** | **$0.66** | Level 3 | 10 file tools + run_tests |
+| **Sonnet** | N (core + semantic + principle) | **100%** | **$0.91** | Level 3 | 3 file + 4 semantic + run_tests |
+| **Opus** | A (structured) | **100%** | **$1.64** | Level 3 | 10 file tools + run_tests |
+
+Each model has a different optimal kit. The Quartermaster selects per model.
+
+### Diagnostic error messages (N-improved, Haiku only)
+
+Added closest-match context to `file_edit` error messages. Haiku/N improved runs (r6-r10): 3/5 pass (60%) vs original 4/5 (80%). The hints help individual recoveries (runs with ≤3 failed edits pass) but don't reduce the failure rate. Haiku's core problem is generating bad old_strings, not recovering from them.
+
+---
+
+*Findings updated 2026-03-29 with semantic tool experiments (L, M, N) and diagnostic error messages. Sonnet/N ($0.91, 100%, level 3) is the cheapest fully-characterizable configuration. ~300 total runs across 14 conditions and 3 models.*

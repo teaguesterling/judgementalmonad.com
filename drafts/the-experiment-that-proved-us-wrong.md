@@ -71,17 +71,17 @@ We also tried the opposite: a detailed four-phase strategy prescription telling 
 | **H** (batch tools + guidance) | 5 | Tool-specific guidance (~100 tokens) | $1.86 | +41% | 75,919 |
 | A (structured, no guidance) | 22 | Generic | $1.32 | — | 49,292 |
 | F (run_tests + bash) | 13 | Generic | $1.17 | -11% | 39,372 |
-| **I (structured + 50 tokens)** | 24 | **Principle + guidance** | **$1.11** | **-16%** | **36,987** |
+| I (structured + 50 tokens) | 24 | Principle + guidance | $1.11 | -16% | 36,987 |
 | D (bash only) | 13 | Generic | $1.03 | -22% | 30,104 |
-| **E (file tools + bash)** | 13 | Generic | **$0.98** | **-26%** | **27,731** |
+| E (file tools + bash) | 13 | Generic | $0.98 | -26% | 27,731 |
+| K (simple tools + 50 tokens) | 5 | Principle + guidance | $0.97 | -27% | — |
+| **N (core + semantic + 50 tokens)** | 5 | **Semantic principle** | **$0.91** | **-31%** | — |
 
-The spectrum: more instruction = more cost. G (detailed prescription, $2.06) is the most expensive. E (file tools + bash, no instructions about strategy, $0.98) is the cheapest. The principle instruction (I, $1.11) lands between bash (D, $1.03) and the baseline (A, $1.32) — a 16% improvement over A, roughly tied with D.
+The spectrum has a twist. The cheapest condition isn't the one with the most tools (A) or the most familiar tools (E/bash). It's **N** — three core file tools (read, edit, write) plus four semantic tools (find_definitions, find_callers, code_structure, find_imports) plus run_tests, with a principle instruction that nudges toward semantic discovery. $0.91, 100% pass, level 3. No bash, no grep, no glob.
 
-The early pilot (n=5) suggested I was 32% cheaper than A. At n=24, it's 16%. The effect is real — d=0.49, medium — but smaller than the pilot indicated. The pattern held: the principle helps. The magnitude didn't.
+The semantic tools replaced text search with AST-aware queries. `find_definitions` in one call gives the agent the codebase map that takes 3-4 `file_read` or `grep` calls to build. The tools that provide capabilities bash *can't express* save more than the tools that replicate what bash already does.
 
-What did hold: **over-specification is consistently worse.** G ($2.06) and H ($1.86) are the two most expensive conditions — worse than having no strategy at all. The detailed prescription generated 3× the output tokens of I because the agent wrote verbose phase-by-phase analysis. The principle told the agent *when* to act. The prescription told it *how*, and the how was overhead.
-
-What surprised us: **E (file tools + bash) is the cheapest condition.** E uses structured file tools for reading, searching, and editing — and bash for exactly one thing: running pytest. Every bash call across 13 runs was `python -m pytest`. No scripts, no `cat`, no `grep`. The agent naturally selected the right tool for each job: structured tools for file operations, bash for execution. This is Claude Code's design — and it's the most efficient configuration we tested.
+Over-specification is consistently the worst intervention. G ($2.06) and H ($1.86) are the most expensive conditions. L ($1.97) and M ($2.03) — which add semantic tools to *full* tool sets — are equally expensive. The problem: too many tools + too much instruction = the agent deliberates instead of working. N works because it has *only* what it needs: semantic discovery, basic file operations, test verification, and a principle.
 
 ## Which 50 tokens
 
