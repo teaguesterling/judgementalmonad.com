@@ -36,6 +36,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 ## Recent
 
+- **[CSS Selectors for Code](blog/sitting-duck-css-selectors)** — sitting_duck now supports CSS selectors over ASTs. `.function:has(.call#execute):not(:has(try_statement))` does what it looks like. 27 languages. Bootstrapped — the extension parses its own query language using its CSS grammar.
 - **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We built structured tools to replace bash. They cost 22% more (p<0.05). A ~50-token strategy instruction closed most of the gap. But the cheapest config was one we didn't design — the agent selecting its own tool mix. The instruction's value is model-dependent: essential for Haiku (40% → 100%), helpful for Sonnet (-20% cost), unnecessary for Opus. ~200 runs, 3 models, 9 conditions.
 - **[Patterns for Toolcraft](blog/patterns/index)** — Eight design patterns from the experiments. The Quartermaster selects tools per model. The Strategy Instruction reshapes behavior with ~50 tokens. Write/Execute Separation keeps the system at level 3. The Coach watches and suggests. Each pattern includes evidence, grade analysis, and implementation.
 - **[Proposed Skills](blog/fuel/proposals/index)** — Four annotated skill proposals grounded in ratchet-detect data: [ratchet-review](blog/fuel/proposals/skill-ratchet-review), [git-workflow](blog/fuel/proposals/skill-git-workflow), [build-query](blog/fuel/proposals/skill-build-query), [codebase-explore](blog/fuel/proposals/skill-codebase-explore). Each closes a computation channel with a structured alternative.
@@ -63,4 +64,5 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 blog/ma/index
 blog/fuel/index
 blog/patterns/index
+blog/sitting-duck-css-selectors
 ```

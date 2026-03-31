@@ -283,8 +283,9 @@ Each tool provides one dimension. pluckit is the surface where they all meet.
 *This is the first post in the pluckit series. Next: the selector language — how CSS selectors map to AST queries, and why DuckDB makes it fast.*
 
 ```{seealso}
+- [CSS Selectors for Code](../../sitting-duck-css-selectors) — How sitting_duck implements CSS selectors over ASTs
 - [Closing the Channel](../05-closing-the-channel) — Where structured tools come from
-- [The Round-Trip Tax](lackey/01-the-round-trip-tax) — Why composition matters
-- [The Lackpy Gambit](lackey/02-the-lackpy-gambit) — The micro-inferencer that generates pluckit chains
-- [The Tool That Teaches Itself to Disappear](lackey/03-the-tool-that-teaches-itself-to-disappear) — Template crystallization from traces
+- [The Round-Trip Tax](../lackey/01-the-round-trip-tax) — Why composition matters
+- [The Lackpy Gambit](../lackey/02-the-lackpy-gambit) — The micro-inferencer that generates pluckit chains
+- [The Tool That Teaches Itself to Disappear](../lackey/03-the-tool-that-teaches-itself-to-disappear) — Template crystallization from traces
 ```
