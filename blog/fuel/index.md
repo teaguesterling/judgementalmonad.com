@@ -24,6 +24,24 @@ Want the theory? Start with [The Ma of Multi-Agent Systems](../ma/00-intro).
 11-sandbox-specs
 ```
 
+## The Lackey Papers
+
+```{toctree}
+:maxdepth: 1
+:caption: The Lackey Papers
+
+lackey/index
+```
+
+## pluckit
+
+```{toctree}
+:maxdepth: 1
+:caption: pluckit
+
+pluckit/index
+```
+
 ## Tools
 
 ```{toctree}
