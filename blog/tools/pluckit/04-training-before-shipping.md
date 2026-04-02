@@ -139,7 +139,7 @@ Not all generated pairs are good training data. Filter:
     "messages": [
         {
             "role": "system",
-            "content": "You are a Jupyter notebook cell generator. Write a single cell using ONLY the pre-loaded kernel namespace below.\n\nKernel namespace:\n  select(selector) -> Selection\n  source(glob) -> Source\n  ..."
+            "content": "Generate a pluckit chain. Use the pre-loaded namespace:\n  select(selector), source(glob), blq.event(id), blq.run(id)\n  .find(), .filter(), .containing(), .at_line(), .ancestor()\n  .replaceWith(), .addParam(), .prepend(), .append(), .wrap()\n  .rename(), .extract(), .move_to(), .guard()\n  .test(), .black(), .ruff_fix(), .save()\n  .callers(), .callees(), .similar(), .isolate()\nOutput ONLY the chain, no explanation."
         },
         {
             "role": "user",
@@ -147,13 +147,15 @@ Not all generated pairs are good training data. Filter:
         },
         {
             "role": "assistant",
-            "content": "fns = select('.fn:exported')\nfns.addParam('timeout: int = 30')\nfns.body().prepend('# TODO: implement timeout logic')\nfns.test()\nfns.save('feat: add timeout parameter')"
+            "content": "select('.fn:exported')\n    .addParam('timeout: int = 30')\n    .test()\n    .save('feat: add timeout parameter')"
         }
     ]
 }
 ```
 
-The system prompt is the lackpy Jupyter cell prompt, with the pluckit API as the kernel namespace. The user message is the intent. The assistant message is the chain.
+The system prompt lists the pluckit namespace including the new methods (`.containing()`, `.at_line()`, `.ancestor()`) and blq entry points (`blq.event()`, `blq.run()`). The model generates chains that look like the jQuery it's been trained on millions of times — a ~200-line purpose-built chain DSL parser interprets the JS-style syntax and maps it to Python execution. No Node.js runtime needed.
+
+The user message is the intent. The assistant message is the chain.
 
 ### Training configuration
 
@@ -202,6 +204,41 @@ The two sources are complementary:
 | Real (from traces) | Team idioms, common workflows, natural intent phrasing | Low initially, grows | High — validated by execution |
 
 Over time, the real data dominates. The synthetic data is scaffolding. The model learns your team's dialect of pluckit the same way it would learn any codebase's conventions — from examples.
+
+---
+
+## Error fingerprint training
+
+A new category of training data: error event → fix chain.
+
+```json
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": "Fix build error: TypeError in validate_token at line 47, expected str got None"
+        },
+        {
+            "role": "assistant",
+            "content": "blq.event('build:42:error_123')\n    .select()\n    .replaceWith('return None', 'raise ValueError(\"invalid\")')\n    .test('tests/test_auth.py')\n    .save('fix: validate_token raises')"
+        }
+    ]
+}
+```
+
+This is the training data that enables the error-fixes-itself ratchet:
+
+```
+Error event (blq/duck_hunt)
+    → compound selector (auto from event metadata)
+    → pluckit chain (lackpy, 1.5B, local, $0)
+    → execution (select → replace → test → save)
+    → trace (event_id + chain + diff + test_result)
+    → Riggs fingerprint (error pattern → fix pattern)
+    → next occurrence: Tier 0 (no model, no human)
+```
+
+The error fingerprint is the trigger. The pluckit chain is the response. The model learns to translate error descriptions into event-selector + fix chains. The second time the same error pattern occurs, it's fixed automatically — the [next post](05-the-error-that-fixes-itself) develops this fully.
 
 ---
 
