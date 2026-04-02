@@ -183,9 +183,15 @@ What if the generator didn't have those habits?
 
 ## The micro-inferencer
 
-A 1.5B parameter model doesn't have habits. It has reflexes.
+A small parameter model doesn't have habits. It has reflexes.
 
-Qwen 2.5 Coder 1.5B {cite}`qwen25coder` is a code generation model small enough to run on a laptop CPU. It doesn't plan. It doesn't deliberate. It doesn't reason about architecture. Given a prompt that says "here's a namespace, write a Jupyter cell," it produces the cell. The output is short, syntactically competent, and structurally simple — because the model isn't capable of the complex flourishes that make frontier models fight the restrictions.
+Qwen 2.5 Coder 3B {cite}`qwen25coder` is a code generation model small enough to run on a laptop CPU. It doesn't plan. It doesn't deliberate. It doesn't reason about architecture. Given a prompt that says "here's a namespace, write a Jupyter cell," it produces the cell. The output is short, syntactically competent, and structurally simple — because the model isn't capable of the complex flourishes that make frontier models fight the restrictions.
+
+```{note}
+An earlier version of this post specified 1.5B as the target size. In practice, 1.5B models struggle to respect the restriction instructions — they generate valid Python but not valid *lackpy*, because they can't reliably internalize the AST whitelist constraints from the prompt alone. 3B models can. 7B models do it comfortably. The sandbox remains the backstop — the AST validator catches what the model misses — but the retry rate at 1.5B made it impractical as a default.
+
+We're also exploring a multi-stage approach: generate unrestricted Python, identify violations via the AST validator, then ask the model to revise only the violation points. Three calls, each simpler than one shot at restricted generation. The validation stage is fully specified (level 0). This echoes a finding from the [experimental program](../../drafts/the-experiment-that-proved-us-wrong): model capability determines which tool abstraction is effective. The 1.5B/3B boundary for lackpy parallels the Haiku/Sonnet boundary for structured tools.
+```
 
 The prompt uses Jupyter cell framing:
 
@@ -241,7 +247,7 @@ lackpy MCP server
     ├─ Inference pipeline (priority-ordered):
     │   ├─ Templates   → pattern match against known intents
     │   ├─ Rules       → keyword → program (deterministic)
-    │   ├─ Ollama      → Qwen 2.5 Coder 1.5B (local, $0)
+    │   ├─ Ollama      → Qwen 2.5 Coder 3B (local, $0)
     │   └─ Anthropic   → Haiku fallback (API, ~$0.001)
     │
     ├─ Validation: AST whitelist → namespace check → grade computation

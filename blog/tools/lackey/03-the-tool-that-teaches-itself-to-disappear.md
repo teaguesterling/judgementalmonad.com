@@ -28,7 +28,7 @@ Lackpy's inference pipeline isn't an arbitrary priority list. It's a prediction 
 |------|----------|-------------------|------|-------------|
 | 0 | Templates | Level 1 (pattern match) | $0, <1ms | Regex match on intent, instantiate stored program |
 | 1 | Rules | Level 1 (deterministic) | $0, <1ms | Keyword → program mapping |
-| 2 | Ollama | Level 3 (local inference) | $0, ~3-8s | 1.5B model generates program |
+| 2 | Ollama | Level 3 (local inference) | $0, ~3-8s | 3B model generates program |
 | 3 | Anthropic | Level 3 (API inference) | ~$0.001, ~1-2s | Haiku fallback |
 
 The system tries Tier 0 first. If it matches, no model runs. If it doesn't, Tier 1. Then Tier 2. Then Tier 3. The progression is a ratchet: entries arrive at Tier 3 (expensive, slow, uncertain), get validated through use, and promote toward Tier 0 (free, instant, certain).

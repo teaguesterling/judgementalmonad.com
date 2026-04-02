@@ -157,9 +157,9 @@ The system prompt is the lackpy Jupyter cell prompt, with the pluckit API as the
 
 ### Training configuration
 
-**Base model:** Qwen 2.5 Coder 1.5B (same model lackpy uses for general code generation).
+**Base model:** Qwen 2.5 Coder 3B (same model lackpy uses for general code generation).
 
-**Dataset size:** 5,000-10,000 synthetic pairs is likely sufficient for a 1.5B model learning a small API. The space of valid chains is constrained enough that coverage doesn't require millions of examples.
+**Dataset size:** 5,000-10,000 synthetic pairs is likely sufficient for a 3B model learning a small API. The space of valid chains is constrained enough that coverage doesn't require millions of examples.
 
 **Fine-tuning method:** LoRA or QLoRA (fits in consumer GPU memory). Full fine-tuning is overkill for teaching a small API to a model that already understands Python.
 
@@ -169,7 +169,7 @@ The system prompt is the lackpy Jupyter cell prompt, with the pluckit API as the
 
 ### What the fine-tuned model learns
 
-The base Qwen 2.5 Coder 1.5B already knows Python syntax, function calls, chaining. Fine-tuning teaches it:
+The base Qwen 2.5 Coder 3B already knows Python syntax, function calls, chaining. Fine-tuning teaches it:
 
 1. **The vocabulary.** `.fn`, `.cls`, `:exported`, `:has()`, `#name` — these are pluckit-specific strings that don't appear in general Python training data.
 2. **The composition rules.** `.filter()` chains after `.find()`, `.test()` is terminal, `.addParam()` chains with other mutations. The model learns which sequences are valid.
@@ -212,7 +212,7 @@ The fine-tuning pipeline connects every piece:
 ```
 pluckit API spec                              (this post)
     → synthetic training pairs                (chain generation)
-    → fine-tuned Qwen 2.5 Coder 1.5B        (LoRA)
+    → fine-tuned Qwen 2.5 Coder 3B          (LoRA)
     → lackpy Tier 2 provider                  (Ollama, local, $0)
     → pluckit chains from intent              (runtime)
     → execution traces                        (observation)
