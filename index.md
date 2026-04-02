@@ -14,7 +14,7 @@ The name comes from *ma* (間), the Japanese concept that the space between thin
 
 ---
 
-## Three series, one framework
+## Two series, one framework
 
 ### [The Ma of Multi-Agent Systems](blog/ma/index)
 
@@ -28,17 +28,11 @@ Supplementary essays develop the configuration ratchet, world decoupling, the fa
 
 Code ships in every post: DuckDB queries over conversation logs, a prototype mode controller, a complete structured tool, a segment builder, an access control layer, and a metrics dashboard.
 
-### [Patterns for Toolcraft](blog/patterns/index)
-
-*The patterns.* Eight design patterns for equipping agents with the right tools for the job. Each emerged from controlled experiments across three models. The Quartermaster selects tools per task. The Strategy Instruction reshapes behavior with ~50 tokens. Write/Execute Separation keeps the system characterizable. Sandbox Specifications make the grade explicit. Each pattern includes experimental evidence, grade analysis, and implementation.
-
 ---
 
 ## Recent
 
-- **[CSS Selectors for Code](blog/sitting-duck-css-selectors)** — sitting_duck now supports CSS selectors over ASTs. `.function:has(.call#execute):not(:has(try_statement))` does what it looks like. 27 languages. Bootstrapped — the extension parses its own query language using its CSS grammar.
-- **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We built structured tools to replace bash. They cost 22% more (p<0.05). A ~50-token strategy instruction closed most of the gap. But the cheapest config was one we didn't design — the agent selecting its own tool mix. The instruction's value is model-dependent: essential for Haiku (40% → 100%), helpful for Sonnet (-20% cost), unnecessary for Opus. ~200 runs, 3 models, 9 conditions.
-- **[Patterns for Toolcraft](blog/patterns/index)** — Eight design patterns from the experiments. The Quartermaster selects tools per model. The Strategy Instruction reshapes behavior with ~50 tokens. Write/Execute Separation keeps the system at level 3. The Coach watches and suggests. Each pattern includes evidence, grade analysis, and implementation.
+- **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We built structured tools to replace bash. They cost 28% more (p < 0.05). Then six tokens of strategy instruction closed the gap entirely — matching bash's cost with full auditability and no computation channel. A detailed strategy prescription made things 56% worse (p < 0.05). The ratchet has two products: tools and strategy. Getting strategy wrong costs more than getting tools wrong.
 - **[Proposed Skills](blog/fuel/proposals/index)** — Four annotated skill proposals grounded in ratchet-detect data: [ratchet-review](blog/fuel/proposals/skill-ratchet-review), [git-workflow](blog/fuel/proposals/skill-git-workflow), [build-query](blog/fuel/proposals/skill-build-query), [codebase-explore](blog/fuel/proposals/skill-codebase-explore). Each closes a computation channel with a structured alternative.
 - **[ratchet-detect](blog/fuel/ratchet-detect)** — CLI tool that analyzes your Claude Code conversation logs and finds your ratchet candidates. One command, thirty seconds, actionable report.
 - **Ratchet Fuel series** — Eleven posts published. The practitioner companion to the Ma series, covering failure streams, the two-stage turn, placement, mode control, tool building, data platform case studies, organizational patterns, and metrics.
@@ -53,9 +47,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 **If you want the theory:** [The Ma of Multi-Agent Systems](blog/ma/00-intro) — start at the beginning. Each post builds on the previous.
 
-**If you want the patterns:** [Patterns for Toolcraft](blog/patterns/index) — eight designs for equipping agents with the right tools. Start with [The Strategy Instruction](blog/patterns/02-the-strategy-instruction) — one paragraph that changes how an agent works.
-
-**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it — and agents sometimes find better tool compositions than their designers, but the security cost of letting them is measurable and the tradeoff is real.
+**If you want one sentence:** The tools you give an agent define a harder problem than the model you choose to solve it — but *how the agent uses those tools* matters even more, and getting strategy wrong costs more than getting tools wrong.
 
 ```{toctree}
 :hidden:
@@ -63,6 +55,4 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 blog/ma/index
 blog/fuel/index
-blog/patterns/index
-blog/sitting-duck-css-selectors
 ```
