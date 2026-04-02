@@ -2,7 +2,7 @@
 
 *What happens when you apply the Ma framework at micro scale.*
 
-A sub-series of [Ratchet Fuel](../index) exploring tool-call composition, restricted code generation, and the surprising prediction that the framework's most interesting implications are about 1.5B models on laptops, not frontier models on clusters.
+A sub-series of [Ratchet Fuel](../../fuel/index) exploring tool-call composition, restricted code generation, and the surprising prediction that the framework's most interesting implications are about 1.5B models on laptops, not frontier models on clusters.
 
 ```{toctree}
 :maxdepth: 1

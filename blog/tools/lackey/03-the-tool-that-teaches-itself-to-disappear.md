@@ -158,8 +158,8 @@ The most interesting predictions aren't about frontier models on clusters. They'
 - [The Lackpy Gambit](02-the-lackpy-gambit) — The language design and the 1.5B model twist
 - [The Configuration Ratchet](../../ma/the-configuration-ratchet) — The ratchet mechanism in full
 - [The Quartermaster](../../patterns/01-the-quartermaster) — Model-aware dispatch at every scale
-- [Ratchet Metrics](../10-ratchet-metrics) — Measuring the turn
-- [The Organizational Star](../09-the-organizational-star) — The star topology in Beer's VSM
+- [Ratchet Metrics](../../fuel/10-ratchet-metrics) — Measuring the turn
+- [The Organizational Star](../../fuel/09-the-organizational-star) — The star topology in Beer's VSM
 ```
 
 <!-- No additional references beyond what Posts 1 and 2 established. -->

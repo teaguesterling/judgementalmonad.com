@@ -339,6 +339,6 @@ The file was never the right unit. It was just the only one we had.
 ```{seealso}
 - [Code as a Queryable Material](01-code-as-queryable-material) — The vision and the architecture
 - [CSS Selectors for Code](../../sitting-duck-css-selectors) — The selector engine underneath
-- [Closing the Channel](../05-closing-the-channel) — Replacing bash patterns with structured tools
+- [Closing the Channel](../../fuel/05-closing-the-channel) — Replacing bash patterns with structured tools
 - [The Lackpy Gambit](../lackey/02-the-lackpy-gambit) — Generating pluckit chains from natural language
 ```

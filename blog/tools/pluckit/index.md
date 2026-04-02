@@ -2,7 +2,7 @@
 
 *jQuery for source code. Code as a queryable, four-dimensional material.*
 
-A sub-series of [Ratchet Fuel](../index) on treating source code as something you query, filter, mutate, and test — not something you edit file by file.
+A sub-series of [Ratchet Fuel](../../fuel/index) on treating source code as something you query, filter, mutate, and test — not something you edit file by file.
 
 ```{toctree}
 :maxdepth: 1

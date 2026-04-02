@@ -44,7 +44,7 @@ Fifteen calls. Twenty-eight turns (the model thinks between calls). Each turn re
 
 Bash escapes part of this tax by packing more work into each call. A Python one-liner that reads three files, extracts the relevant functions, and prints them is one turn instead of three. The model generates fewer output tokens because it expresses the same operations more compactly. Bash is a compression format for tool composition.
 
-But bash is Level 4. The Harness can't characterize what `python -c "import ast; ..."` will do without running it. We showed this in [Closing the Channel](../05-closing-the-channel) — the computation channel's type is honestly `IO String`, and narrowing it without lying requires building a structured replacement.
+But bash is Level 4. The Harness can't characterize what `python -c "import ast; ..."` will do without running it. We showed this in [Closing the Channel](../../fuel/05-closing-the-channel) — the computation channel's type is honestly `IO String`, and narrowing it without lying requires building a structured replacement.
 
 So we're stuck: structured tools are expensive because of the round-trip tax, and bash is cheap but uncharacterizable.
 
@@ -160,8 +160,8 @@ That's the theory. Next: what happens when we build it, and who — or what — 
 *Next: [The Lackpy Gambit](02-the-lackpy-gambit) — Take Python, subtract the dangerous parts. Then subtract the model.*
 
 ```{seealso}
-- [Closing the Channel](../05-closing-the-channel) — The grade analysis for replacing bash with structured tools
-- [Sandbox Specs](../11-sandbox-specs) — Bounding effects at the execution layer
+- [Closing the Channel](../../fuel/05-closing-the-channel) — The grade analysis for replacing bash with structured tools
+- [Sandbox Specs](../../fuel/11-sandbox-specs) — Bounding effects at the execution layer
 - [The Specified Band](../../ma/08-the-specified-band) — Why decidability matters
 - [Computation Channels](../../ma/05-computation-channels) — The level taxonomy
 ```
