@@ -25,6 +25,40 @@ This is the gap. Not between bad tools and good tools. Between describing a patt
 
 ---
 
+## But also: the bug you're fixing right now
+
+The mass refactoring is the dramatic case. Here's the everyday one.
+
+A traceback gives you a file, a function, a line number, and an error message. That's four pieces of information. You open the file. You scroll to the line. You read the function. You figure out the fix. You make the edit. You switch to the terminal. You run the tests. You switch back. You commit.
+
+Five context switches. One fix.
+
+```javascript
+source('src/auth/tokens.py')
+    .find('.fn#validate_token')
+    .at_line(47)
+    .replaceWith('return None', 'raise ValueError("invalid")')
+    .test('tests/test_auth.py')
+    .save('fix: validate_token raises instead of returning None')
+```
+
+One chain. The traceback's information IS the selector. grep + editor + terminal + pytest + git = five context switches. pluckit = one chain that compresses the workflow, not just the edit.
+
+---
+
+## When to use what
+
+Be honest about when pluckit is overkill:
+
+- **One function, you know which file:** Use your editor. You're already there.
+- **Rename a symbol:** Use your IDE's rename. It's built for this.
+- **A pattern across 10+ files:** pluckit. One selector, N applications.
+- **A structural condition grep can't express:** pluckit. "Functions that return None inside a try block" isn't a regex.
+- **Edit + test + commit as one atomic operation:** pluckit. The chain either succeeds completely or rolls back.
+- **A cross-dimensional query** (structure × history × behavior × relationships): pluckit. No alternative exists.
+
+---
+
 ## Code is a tree. You already know this.
 
 Every programmer knows it in the abstract. Source code parses to an AST. Compilers work on trees. Tree-sitter parses 27 languages into trees.
@@ -38,8 +72,8 @@ The DOM is a tree. CSS selectors address nodes. jQuery provides chainable operat
 $('#sidebar a').css('color', 'red')
 ```
 
-```python
-# Source: find all return-None statements in validate, replace them
+```javascript
+// Source: find all return-None statements in validate, replace them
 select('.fn#validate .ret:has(.none)').replaceWith('raise ValueError("invalid")')
 ```
 
@@ -54,6 +88,18 @@ The mapping is direct:
 | Descendant selector | `.cls#Auth .fn` — functions inside the Auth class |
 | Cross-document | `source('src/**/*.py').find('.fn:exported')` |
 
+And for developers who think in the keywords they see in their code, not in AST node types:
+
+```javascript
+// Instead of remembering tree-sitter node types...
+select('.function_definition:has(.try_statement:not(:has(.finally_clause)))')
+
+// ...write what you see:
+select('def:has(try:not(:has(finally)))')
+```
+
+`def`, `try`, `finally` — the keywords resolve to the right AST node types per language. A full selector taxonomy covers all 27 supported languages.
+
 This isn't a metaphor. It's an implementation. [sitting_duck](https://github.com/teague/sitting-duck) already implements CSS selectors over tree-sitter ASTs, backed by DuckDB. The selector engine exists. The AST tables exist. The query performance is there — DFS ordering over node tables means containment queries are range scans, not tree walks.
 
 ---
@@ -62,19 +108,19 @@ This isn't a metaphor. It's an implementation. [sitting_duck](https://github.com
 
 Start small. Select and read:
 
-```python
+```javascript
 select('.fn#validate_token').text()
 ```
 
 Select and replace:
 
-```python
+```javascript
 select('.fn#validate .ret:has(.none)').replaceWith('raise ValueError("invalid")')
 ```
 
 Select and wrap:
 
-```python
+```javascript
 select('.call#database_query').wrap(
     'try:',
     'except DatabaseError:\n    log.error("query failed")\n    raise'
@@ -85,15 +131,41 @@ These feel like jQuery because they are. Selector → selection → operation. O
 
 Now chain:
 
-```python
-source('src/**/*.py') \
-    .find('.fn:exported') \
-    .filter(fn: fn.params().length > 3) \
-    .addParam('log_level: str | None = None') \
+```javascript
+source('src/**/*.py')
+    .find('.fn:exported')
+    .filter(fn => fn.params().length > 3)
+    .addParam('log_level: str | None = None')
     .body().prepend('if log_level:\n    logging.setLevel(log_level)')
 ```
 
 Read it aloud: across all Python files in src, find all exported functions with more than 3 parameters, add a `log_level` parameter to each, and prepend a conditional logging block to each body.
+
+### Three ways in
+
+Developers find code differently depending on context. pluckit meets you where you are:
+
+| How you found the code | Selector | Method |
+|---|---|---|
+| A traceback gave a line number | `:line(47)` | `.at_line(47)` |
+| grep found the text | `:contains("return None")` | `.containing("return None")` |
+| You know the structure | `.fn#validate_token .ret:has(.none)` | `.find()` |
+| An error event has an ID | `blq.event('build:42:error_123').select()` | — |
+
+All four flow into the same chain. The selector provides scope. The operation provides intent.
+
+### Select broadly, replace precisely
+
+The two-argument `.replaceWith()` is the on-ramp for grep users:
+
+```javascript
+// You don't need to navigate to the exact AST node.
+// Select the function, then do a text replace inside it.
+select('.fn#validate_token')
+    .replaceWith('return None', 'raise ValueError("invalid")')
+```
+
+The selector is imprecise on purpose — selecting the whole function is easy. The string match is precise — targeting exactly what to change. Together they're as precise as a structural selector, but neither alone requires deep AST knowledge.
 
 One chain. No loops. No file-by-file iteration. The chain builds a query lazily — it doesn't execute three separate passes over the codebase. It builds a plan and executes once, the same way a SQL query planner does.
 
@@ -107,13 +179,13 @@ HTML elements don't have call sites. Functions do. This is where source code as 
 
 When you add a parameter to `validate_token`, every function that calls it and already has `log_level` should pass it through:
 
-```python
+```javascript
 fn = select('.fn#validate_token')
 fn.addParam('log_level: str | None = None')
 
-fn.callers() \
-    .filter(caller: caller.parent('.fn').has('.arg#log_level')) \
-    .update(call: call.addArg('log_level=log_level'))
+fn.callers()
+    .filter(caller => caller.parent('.fn').has('.arg#log_level'))
+    .update(call => call.addArg('log_level=log_level'))
 ```
 
 This requires the call graph (who calls what) combined with structural queries (does the caller have this parameter) combined with mutation (add the argument). Three capabilities — relationships, structure, and mutation — composed in one chain.
@@ -122,12 +194,12 @@ This requires the call graph (who calls what) combined with structural queries (
 
 Point at ANY block of code — not a function, just a `for` loop — and make it runnable:
 
-```python
+```javascript
 loop = select('.fn#process_data .for:first')
 cell = loop.isolate()
-# Detects: reads [items, threshold] from enclosing scope
-#          writes [filtered]
-# Generates: runnable wrapper with those as parameters
+// Detects: reads [items, threshold] from enclosing scope
+//          writes [filtered]
+// Generates: runnable wrapper with those as parameters
 
 cell.test({'items': [1, 2, 3], 'threshold': 0.7})
 ```
@@ -138,7 +210,7 @@ The scope detection comes from sitting_duck's flag system — a single byte per 
 
 ### .guard() — context-aware error handling
 
-```python
+```javascript
 select('.call#database_query').guard('DatabaseError', 'log and reraise')
 ```
 
@@ -146,14 +218,14 @@ select('.call#database_query').guard('DatabaseError', 'log and reraise')
 
 ### .similar() — the clone detector that fixes itself
 
-```python
+```javascript
 select('.fn#validate_token').similar(0.8)
-# → [validate_session (82%), validate_api_key (76%)]
+// → [validate_session (82%), validate_api_key (76%)]
 
 select('.fn#validate_token').similar(0.8).refactor('validate_credential')
-# → generates parameterized function
-# → generates call-site replacements
-# → tests behavioral equivalence against original test suites
+// → generates parameterized function
+// → generates call-site replacements
+// → tests behavioral equivalence against original test suites
 ```
 
 Structural similarity, not text similarity. Two functions with different variable names but identical control flow register as clones. The refactoring extracts the common pattern, parameterizes what varies, replaces all instances, and verifies the result.
@@ -175,22 +247,22 @@ A source code block isn't just its current text. It's four things:
 
 No existing tool queries across all four simultaneously. pluckit does:
 
-```python
-# "Which function is most likely to cause the next production incident?"
-select('.fn') \
-    .filter(fn: fn.complexity() > 10) \
-    .filter(fn: fn.coverage() < 0.5) \
-    .filter(fn: fn.history().last_month().count() > 3) \
-    .filter(fn: fn.failures().count() > 0) \
-    .sort(fn: fn.dependents().count())
+```javascript
+// "Which function is most likely to cause the next production incident?"
+select('.fn')
+    .filter(fn => fn.complexity() > 10)
+    .filter(fn => fn.coverage() < 0.5)
+    .filter(fn => fn.history().last_month().count() > 3)
+    .filter(fn => fn.failures().count() > 0)
+    .sort(fn => fn.dependents().count())
 ```
 
 That query combines cyclomatic complexity (structure), code coverage (behavior), change frequency (history), failure rate (behavior), and dependency count (relationships). Five data sources. One chain. Currently, answering this question requires a human analyst combining five different tools and synthesizing the results mentally.
 
 ### Time travel
 
-```python
-# What changed that broke the tests?
+```javascript
+// What changed that broke the tests?
 select('.fn#validate_token').diff(
     select('.fn#validate_token').at('last_green_build')
 )
@@ -198,19 +270,19 @@ select('.fn#validate_token').diff(
 
 Structural diff against the last version where CI passed. Not a text diff — an AST diff. Formatting changes don't show up. Only semantic changes.
 
-```python
-# When did this function get complicated?
-select('.fn#validate_token').history() \
-    .map(v: {'sha': v.sha, 'complexity': v.complexity()})
+```javascript
+// When did this function get complicated?
+select('.fn#validate_token').history()
+    .map(v => {'sha': v.sha, 'complexity': v.complexity()})
 ```
 
 Complexity over time. See exactly which commit introduced the complexity.
 
-```python
-# Find dead code that USED to be called
-select('.fn:exported') \
-    .filter(fn: fn.callers().count() == 0) \
-    .filter(fn: fn.callers().at('6_months_ago').count() > 0)
+```javascript
+// Find dead code that USED to be called
+select('.fn:exported')
+    .filter(fn => fn.callers().count() == 0)
+    .filter(fn => fn.callers().at('6_months_ago').count() > 0)
 ```
 
 Nobody calls this function now. But six months ago, someone did. That's dead code you can safely remove — with the git history to prove it.
@@ -241,13 +313,13 @@ The architecture has three layers, and the fluent API hides the dispatch between
 
 A single chain can cross all three layers:
 
-```python
-select('.fn:exported')                  # query: DuckDB selector
-    .filter(fn: fn.coverage() < 0.5)   # query: join with blq data
-    .addParam('timeout: int = 30')      # mutate: renderer + splice
-    .black()                            # delegate: external formatter
-    .test()                             # delegate: blq sandbox
-    .save('feat: add timeout param')    # delegate: jetsam
+```javascript
+select('.fn:exported')                  // query: DuckDB selector
+    .filter(fn => fn.coverage() < 0.5) // query: join with blq data
+    .addParam('timeout: int = 30')      // mutate: renderer + splice
+    .black()                            // delegate: external formatter
+    .test()                             // delegate: blq sandbox
+    .save('feat: add timeout param')    // delegate: jetsam
 ```
 
 The user doesn't care which layer handles each link. The chain works.
@@ -274,9 +346,7 @@ Interactive session
 
 The developer's exploration became everyone's tool. The exploration cost was human time. The reuse cost is zero.
 
-That's the architecture the [Rigged suite](https://github.com/teague) has been building toward. [sitting_duck](https://github.com/teague/sitting-duck) parses. [fledgling](https://github.com/teague/source-sextant) understands. [blq](https://github.com/teague/lq) tests. [duck_tails](https://github.com/teague/duck-tails) remembers. [kibitzer](https://github.com/teague/kibitzer) coaches. [agent-riggs](https://github.com/teague/agent-riggs) learns. [lackpy](https://github.com/teague/lackpy) generates. pluckit composes.
-
-Each tool provides one dimension. pluckit is the surface where they all meet.
+That's the architecture the [suite](../index) has been building toward. Each tool provides one dimension. pluckit is the surface where they all meet. See the [full catalog](../index) for what each tool does and how they connect.
 
 ---
 
