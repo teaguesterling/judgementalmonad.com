@@ -22,30 +22,30 @@ You understand code in: pipelines, feature slices, call graphs, data flows, modu
 
 What if you could assemble a view of exactly the code you need, regardless of where it lives?
 
-```python
-# The request pipeline, in execution order
+```javascript
+// The request pipeline, in execution order
 select('.fn#handle_request').call_chain()
 ```
 
 That returns four functions from four files, ordered by execution flow. Not file order. Not alphabetical. The order data actually moves through them. Display them together. Read them together. Edit them together.
 
-```python
-# Everything that touches the database
-source('src/**/*.py') \
-    .find('.call[name*="query"], .call[name*="execute"], .call[name*="fetch"]') \
-    .parent('.fn') \
+```javascript
+// Everything that touches the database
+source('src/**/*.py')
+    .find('.call[name*="query"], .call[name*="execute"], .call[name*="fetch"]')
+    .parent('.fn')
     .unique()
 ```
 
 Every function that makes a database call, across the entire codebase. Not grep — structural. This finds `self.db.query(...)` and `cursor.execute(...)` and `session.fetch_one(...)` but not `# TODO: add query caching` in a comment.
 
-```python
-# The authentication feature, traced from entry points
+```javascript
+// The authentication feature, traced from entry points
 auth_roots = select('.fn#login, .fn#logout, .fn#refresh_token')
 auth_roots.reachable()
-# → every function reachable from these three entry points
-# → the "auth feature" as a subgraph of the codebase
-# → 23 functions across 8 files, none of which are named "auth" except the roots
+// → every function reachable from these three entry points
+// → the "auth feature" as a subgraph of the codebase
+// → 23 functions across 8 files, none of which are named "auth" except the roots
 ```
 
 A **view** is a selection of code assembled by a query. It has no physical location. It's a projection of the codebase along whatever axis you care about right now.
@@ -56,7 +56,7 @@ A **view** is a selection of code assembled by a query. It has no physical locat
 
 Point at any block of code and make it independently runnable.
 
-```python
+```javascript
 loop = select('.fn#process_data .for:first')
 cell = loop.isolate()
 ```
@@ -68,65 +68,97 @@ What just happened? The scope resolution flags in sitting_duck's AST tables tell
 
 `isolate()` generates a wrapper: a function with `items`, `threshold`, and `classify` as parameters, the loop as the body, and `filtered` as the return value. The wrapper is a Jupyter-cell-shaped thing — runnable, testable, independently of the 200-line function it lives inside.
 
-```python
+```javascript
 cell.test({'items': [1, 2, 3], 'threshold': 0.7, 'classify': mock_classify})
-# → runs the loop in isolation
-# → returns: [{'score': 0.9}]
+// → runs the loop in isolation
+// → returns: [{'score': 0.9}]
 ```
 
 You didn't define the interface. You pointed at code and the tool figured it out from scope analysis. The variables the block reads from outside become parameters. The variables it writes become return values. The function calls it makes become injectable dependencies.
 
 This is the shift from "code runs as programs" to "code is a material you can grab pieces of and experiment with."
 
+### Bottom-up debugging with .containing().ancestor()
+
+Developers debug from errors, not from function signatures. You have error text. You need the function that contains it.
+
+```javascript
+// Start from what you know (the error text), navigate up to what you need (the function)
+source('src/auth/tokens.py')
+    .containing('token.decode()')
+    .ancestor('.fn')
+    .replaceWith('return token.decode()', `
+        if token is None:
+            raise ValueError("token cannot be None")
+        return token.decode()
+    `)
+```
+
+`.containing()` is grep inside a selection. `.ancestor()` navigates UP to the structural level where the operation makes sense. "I know the error text. I want to fix the function that contains it." That's `.containing(text).ancestor('.fn')`.
+
 ### isolate() for debugging
 
 You have a function that's 150 lines and failing on one branch. You don't need to run the whole function. You need to run lines 47-63 — the branch that handles expired tokens.
 
-```python
+```javascript
 branch = select('.fn#validate_token .if:has(.str="expired"):first')
 cell = branch.isolate()
 
-# What does this branch need?
+// What does this branch need?
 cell.interface()
-# → reads: token (str), config (dict), logger (Logger)
-# → writes: nothing (raises or returns)
-# → calls: parse_expiry(), config.get()
+// → reads: token (str), config (dict), logger (Logger)
+// → writes: nothing (raises or returns)
+// → calls: parse_expiry(), config.get()
 
-# Run it with the failing input
+// Run it with the failing input
 cell.test({'token': 'expired_abc123', 'config': prod_config, 'logger': mock_logger})
-# → TokenExpiredError: token expired 3 days ago
+// → TokenExpiredError: token expired 3 days ago
 
-# Run the old version with the same input
-branch.at('last_green_build').isolate() \
+// Run the old version with the same input
+branch.at('last_green_build').isolate()
     .test({'token': 'expired_abc123', 'config': prod_config, 'logger': mock_logger})
-# → None (the old version didn't raise on this input)
+// → None (the old version didn't raise on this input)
 
-# Structural diff between old and new
+// Structural diff between old and new
 branch.diff(branch.at('last_green_build'))
-# → added: comparison against config["grace_period_days"]
-# → the bug: grace period check was added but config doesn't have that key
+// → added: comparison against config["grace_period_days"]
+// → the bug: grace period check was added but config doesn't have that key
 ```
 
 Three operations. Found the bug. The old version didn't check grace period. The new version does, but the config doesn't define it. You didn't read the whole function. You didn't set up a test harness. You pointed at a branch and ran it.
+
+### isolate() from error events
+
+The error event from blq contains observed inputs from execution traces. You don't need to guess test data:
+
+```javascript
+error = blq.event('build:42:error_123')
+error.select().isolate()
+    .test(error.observed_inputs())
+    // → reproduces the error in isolation
+    // → the event told us what to test with — no setup needed
+```
+
+The event contains the inputs that caused the failure. `.isolate()` wraps the block. `.test()` with the observed inputs reproduces it. Three operations, no test harness setup.
 
 ### isolate() for learning
 
 You're new to the codebase. You're reading `process_data` and you don't understand what the inner loop does. You don't want to run the whole function — it takes real database connections and 30 seconds of setup.
 
-```python
+```javascript
 inner = select('.fn#process_data .for:first .for:first')
 cell = inner.isolate()
 
 cell.interface()
-# → reads: batch (list[dict]), transform (callable)
-# → writes: results (list)
+// → reads: batch (list[dict]), transform (callable)
+// → writes: results (list)
 
-# Experiment with small data
+// Experiment with small data
 cell.test({
     'batch': [{'name': 'a', 'value': 1}, {'name': 'b', 'value': 2}],
-    'transform': lambda x: {**x, 'value': x['value'] * 10}
+    'transform': x => ({...x, 'value': x['value'] * 10})
 })
-# → [{'name': 'a', 'value': 10}, {'name': 'b', 'value': 20}]
+// → [{'name': 'a', 'value': 10}, {'name': 'b', 'value': 20}]
 ```
 
 Now you understand what the loop does. You didn't need to understand the rest of the function. You didn't need a database. You isolated the piece you cared about and ran it.
@@ -141,55 +173,68 @@ Views get interesting when you assemble code from multiple locations and operate
 
 You're about to change `validate_token`. What's the blast radius?
 
-```python
+```javascript
 fn = select('.fn#validate_token')
 view = fn.impact()
-# → fn itself
-# → 12 direct callers (relationships)
-# → 3 indirect callers (callers of callers)
-# → 8 tests that cover fn (behavior)
-# → 2 tests that cover the callers but not fn directly
+// → fn itself
+// → 12 direct callers (relationships)
+// → 3 indirect callers (callers of callers)
+// → 8 tests that cover fn (behavior)
+// → 2 tests that cover the callers but not fn directly
 ```
 
 One query. The view contains everything that might break. You can filter it:
 
-```python
-# Just the parts with low test coverage
-view.filter(fn: fn.coverage() < 0.5)
-# → 4 callers with less than 50% branch coverage
-# → these are the ones that will bite you
+```javascript
+// Just the parts with low test coverage
+view.filter(fn => fn.coverage() < 0.5)
+// → 4 callers with less than 50% branch coverage
+// → these are the ones that will bite you
 
-# Just the parts that changed recently
-view.filter(fn: fn.history().last_week().count() > 0)
-# → 2 callers were modified this week
-# → these might already be unstable
+// Just the parts that changed recently
+view.filter(fn => fn.history().last_week().count() > 0)
+// → 2 callers were modified this week
+// → these might already be unstable
 ```
+
+### The error view
+
+A build failed. Show me everything related to the failures:
+
+```javascript
+blq.run('build:42')
+    .events({ status: 'error' })
+    .select()
+    .impact()
+```
+
+Each error event contains file, function, line, and error text — that's a compound selector waiting to be used. `.select()` auto-generates the selector from the event metadata. `.impact()` assembles each error location with its callers, its tests, and its recent changes. The full context for every failure, from one query.
 
 ### The comparison view
 
 Two functions that look similar. Show them side by side with their differences highlighted:
 
-```python
+```javascript
 select('.fn#validate_token, .fn#validate_session').compare()
-# → structural alignment: which parts are identical, which differ
-# → parameter diff: token takes a string, session takes a dict
-# → body diff: token checks expiry, session checks IP binding
-# → shared pattern: both call check_permissions() with the same logic
+// → structural alignment: which parts are identical, which differ
+// → parameter diff: token takes a string, session takes a dict
+// → body diff: token checks expiry, session checks IP binding
+// → shared pattern: both call check_permissions() with the same logic
 ```
 
 This is AST diff, not text diff. Renamed variables don't show as differences. Reformatted code doesn't show. Only semantic changes.
 
-```python
-# Find ALL functions similar to this one
+```javascript
+// Find ALL functions similar to this one
 select('.fn#validate_token').similar(0.7)
-# → validate_session (82% similar)
-# → validate_api_key (76%)
-# → validate_refresh_token (91%)
+// → validate_session (82% similar)
+// → validate_api_key (76%)
+// → validate_refresh_token (91%)
 
-# Compare all of them
+// Compare all of them
 select('.fn#validate_token').similar(0.7).compare()
-# → common pattern: parse credential → check expiry → check permissions → return
-# → variations: how the credential is parsed, what "expiry" means, extra checks
+// → common pattern: parse credential → check expiry → check permissions → return
+// → variations: how the credential is parsed, what "expiry" means, extra checks
 ```
 
 Four validation functions in three files. You've never seen them together before. Laid out side by side, the shared pattern is obvious. The refactoring is obvious too — extract the common skeleton, parameterize the variations.
@@ -198,22 +243,22 @@ Four validation functions in three files. You've never seen them together before
 
 "Everything related to authentication" isn't a file. It's a subgraph.
 
-```python
+```javascript
 auth = select('.fn#login, .fn#logout, .fn#refresh_token, .fn#validate_token')
 feature = auth.reachable(max_depth=3)
-# → 23 functions across 8 files
+// → 23 functions across 8 files
 
 feature.external_interface()
-# → 5 functions are called from OUTSIDE the feature subgraph
-# → these are the feature's API surface
+// → 5 functions are called from OUTSIDE the feature subgraph
+// → these are the feature's API surface
 
 feature.internal_coupling()
-# → 3 functions are called by EVERY other function in the feature
-# → these are the feature's core (probably the database layer)
+// → 3 functions are called by EVERY other function in the feature
+// → these are the feature's core (probably the database layer)
 
 feature.boundary()
-# → 7 functions call things OUTSIDE the feature subgraph
-# → these are the feature's dependencies (database, config, logging)
+// → 7 functions call things OUTSIDE the feature subgraph
+// → these are the feature's dependencies (database, config, logging)
 ```
 
 The "auth feature" isn't `src/auth/`. It's a graph query. Some of it is in `src/auth/`. Some is in `src/db/`. Some is in `src/middleware/`. Files didn't tell you the shape. The call graph did.
@@ -222,24 +267,24 @@ The "auth feature" isn't `src/auth/`. It's a graph query. Some of it is in `src/
 
 Watch a function evolve:
 
-```python
+```javascript
 select('.fn#validate_token').filmstrip()
-# → v1 (2024-03): 8 lines. Checks signature only.
-# → v2 (2024-06): 15 lines. Added expiry check.
-# → v3 (2024-09): 28 lines. Added permissions, IP binding.
-# → v4 (2025-01): 42 lines. Added rate limiting, audit logging.
-# → v5 (2025-08): 67 lines. Added grace period, token refresh.
+// → v1 (2024-03): 8 lines. Checks signature only.
+// → v2 (2024-06): 15 lines. Added expiry check.
+// → v3 (2024-09): 28 lines. Added permissions, IP binding.
+// → v4 (2025-01): 42 lines. Added rate limiting, audit logging.
+// → v5 (2025-08): 67 lines. Added grace period, token refresh.
 ```
 
 Five versions. The function grew from 8 lines to 67. Complexity went from 2 to 14. But the growth wasn't gradual — v3 to v4 was the big jump (permissions + audit logging added in one commit). That's where the code review should have suggested extraction.
 
-```python
-# Which version was most stable?
-select('.fn#validate_token').history() \
-    .map(v: {'sha': v.sha, 'failures_next_30d': v.failures().next(days=30).count()})
-# → v2 had zero failures for 90 days
-# → v4 had 12 failures in the first week
-# → the permissions change broke things
+```javascript
+// Which version was most stable?
+select('.fn#validate_token').history()
+    .map(v => {'sha': v.sha, 'failures_next_30d': v.failures().next(days=30).count()})
+// → v2 had zero failures for 90 days
+// → v4 had 12 failures in the first week
+// → the permissions change broke things
 ```
 
 ---
@@ -267,8 +312,8 @@ Here's the full stack in action. An agent — or a human — says:
 
 That's a [lackpy](../lackey/02-the-lackpy-gambit) intent. The micro-inferencer generates a pluckit program:
 
-```python
-# Generated by lackpy (Qwen 2.5 Coder 3B, Tier 2)
+```javascript
+// Generated by lackpy (Qwen 2.5 Coder 3B, Tier 2)
 fns = select('.fn[name^="validate_"]').similar(0.7)
 common = fns.common_pattern()
 extracted = common.extract('validate_credential')
@@ -296,13 +341,13 @@ There's a subtlety worth making explicit. That refactoring chain works — but i
 
 Chains can carry intent:
 
-```python
-select('.fn[name^="validate_"]') \
-    .similar(0.7) \
+```javascript
+select('.fn[name^="validate_"]')
+    .similar(0.7)
     .intent("Extract common validation pattern — "
-            "we're adding validate_mfa next week and want a consistent skeleton") \
-    .common_pattern() \
-    .extract('validate_credential') \
+            + "we're adding validate_mfa next week and want a consistent skeleton")
+    .common_pattern()
+    .extract('validate_credential')
     .save('refactor: extract common validation skeleton')
 ```
 
