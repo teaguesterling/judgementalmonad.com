@@ -14,6 +14,8 @@ That means this spec is simultaneously documentation and training data. By the t
 
 Read this as a reference if you want to understand pluckit. Read it as a type system if you want to generate valid chains.
 
+**Syntax note:** Examples use JS-style syntax. The pluckit chain parser accepts both JS and Python — the syntax is nearly identical (method chaining looks the same in both). JS is used here because it's cleaner on the page and aligns with the jQuery framing.
+
 ---
 
 ## Core types
@@ -129,6 +131,22 @@ The selector language is CSS over tree-sitter ASTs, implemented by sitting_duck.
 .fn:decorated(staticmethod) /* has @staticmethod */
 ```
 
+### Positional and textual pseudo-selectors
+
+```css
+:line(n)            /* nodes spanning line n */
+:lines(start, end)  /* nodes within line range */
+:contains("text")   /* nodes whose source text contains "text" */
+```
+
+These compose with structural selectors:
+
+```css
+.fn:line(47)                    /* the function at line 47 */
+.fn:contains("return None")    /* functions containing "return None" */
+.fn:line(47):contains("token") /* function at line 47 that mentions "token" */
+```
+
 ### Combinators
 
 ```css
@@ -227,6 +245,41 @@ Navigate to the next sibling.
 #### .prev(selector?) → Selection
 
 Navigate to the previous sibling.
+
+### Positional and textual filtering
+
+#### .containing(text) → Selection
+
+Filter to nodes whose source text contains the given string.
+
+```javascript
+select('.fn').containing('database')
+// → functions mentioning "database" in their source
+```
+
+#### .at_line(n) → Selection
+
+Filter to nodes that span a given line number.
+
+```javascript
+select('.fn').at_line(47)
+// → the function(s) at line 47
+```
+
+#### .at_lines(start, end) → Selection
+
+Filter to nodes within a line range.
+
+#### .ancestor(selector) → Selection
+
+Navigate UP from the current selection to the nearest ancestor matching the selector.
+
+```javascript
+source('src/auth/tokens.py')
+    .containing('token.decode()')
+    .ancestor('.fn')
+// → the function containing "token.decode()" — navigate from text to structure
+```
 
 ### Reading
 
@@ -355,6 +408,16 @@ Replace the selection's source text.
 
 ```python
 select('.fn#validate .ret:has(.none)').replaceWith('raise ValueError("invalid")')
+```
+
+### .replaceWith(old, new) → Selection
+
+Scoped find-and-replace within the selection. The selector provides scope, the string match provides targeting.
+
+```javascript
+select('.fn#validate_token')
+    .replaceWith('return None', 'raise ValueError("invalid")')
+// → replaces "return None" with the raise, but only inside validate_token
 ```
 
 ### .remove() → Selection
@@ -690,6 +753,40 @@ select('.fn:exported') \
 
 ---
 
+## blq integration
+
+Error events from blq contain file, function, line, and content — they're compound selectors waiting to be used.
+
+### blq.event(event_id) → EventSelection
+
+Select the code location of a specific error event.
+
+```javascript
+blq.event('build:42:error_123')
+    .select()
+    .replaceWith('return None', 'raise ValueError("invalid")')
+    .test('tests/test_auth.py')
+    .save('fix: validate_token raises')
+```
+
+### blq.run(run_id) → RunSelection
+
+Access all events from a build run.
+
+```javascript
+blq.run('build:42')
+    .events({ type: 'TypeError', pattern: 'expected str, got None' })
+    .select()
+    .ancestor('.fn')
+    .replaceWith('return None', 'raise TypeError("expected str")')
+    .test()
+    .save('fix: handle None returns causing TypeErrors')
+```
+
+A build run's error list becomes a batch of selectors.
+
+---
+
 ## View operations
 
 ### .impact() → View
@@ -779,7 +876,14 @@ Selection → .compare()                                   → terminal (Compare
 
 Selection → .intent(str)                                 → Selection (annotated)
 Selection → .preview() .explain() .dry_run()             → terminal (str/data)
+Selection → .containing() .at_line() .at_lines()           → Selection
+Selection → .ancestor(selector)                             → Selection
+Selection → .replaceWith(old, new)                          → Selection (mutated)
+
 Selection → .save(message?)                              → terminal (None)
+
+EventSelection → .select()                                  → Selection
+RunSelection   → .events(filter?)                           → EventSelection
 
 History   → .map(fn) .filter(fn)                         → History
 History   → .at(ref)                                     → Selection
