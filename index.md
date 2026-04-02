@@ -14,7 +14,7 @@ The name comes from *ma* (間), the Japanese concept that the space between thin
 
 ---
 
-## Two series, one framework
+## Three paths, one framework
 
 ### [The Ma of Multi-Agent Systems](blog/ma/index)
 
@@ -27,6 +27,10 @@ Supplementary essays develop the configuration ratchet, world decoupling, the fa
 *The practice.* Eleven posts for people who build with AI agents, data platforms, and organizations. Every failed tool call is data about where your configuration doesn't match the task. Capture those failures. Crystallize them into tools. The system gets more trustworthy with use — not because the model improved, but because the configuration layer accumulated evidence.
 
 Code ships in every post: DuckDB queries over conversation logs, a prototype mode controller, a complete structured tool, a segment builder, an access control layer, and a metrics dashboard.
+
+### [Tools](blog/tools/index)
+
+*The instruments.* The tools that crystallized from the theory and the practice. pluckit (jQuery for source code), the Lackey Papers (micro-inference and template promotion), and the full suite catalog — parsing, code intelligence, build capture, git workflow, observation, and the human-side tools that make it all work.
 
 ---
 
@@ -55,4 +59,6 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 blog/ma/index
 blog/fuel/index
+blog/tools/index
+blog/patterns/index
 ```
