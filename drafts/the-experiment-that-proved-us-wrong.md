@@ -131,31 +131,81 @@ Building a tool without teaching its strategy is half a ratchet turn. Over-teach
 
 The revised ratchet cycle: explore → capture → crystallize **tools AND strategy** → teach → exploit. Where "teach" means the minimum principle, not a manual.
 
-## The hierarchy
+## What happened when we changed the model
 
-The experiment measured three layers:
+Everything above uses Sonnet. We ran the same experiment on Haiku and Opus. The results inverted.
 
-1. **Model** — not varied (Sonnet throughout). The layer everyone benchmarks.
-2. **Tools** — six configurations (A through F). The layer the industry focuses on. Effect: -26% to +28%.
-3. **Strategy** — one sentence vs detailed vs none. The layer nobody measures. Effect: -18% to +56%.
+| Condition | Haiku | Sonnet | Opus |
+|---|---|---|---|
+| A (structured tools) | $0.69 | $1.32 | **$1.38** |
+| D (bash only) | **$0.54** | $1.03 | $1.66 |
+| E (file + bash) | $0.62 | $0.98 | $1.74 |
+| I (principle) | $0.66 | $1.08 | $1.76 |
 
-The cheapest layer to change (one sentence) had the widest range of effects. Getting strategy wrong (G: +56%) costs more than getting tools wrong (A: +28%). Getting strategy right (I: -18%) closes the gap that tools alone can't.
+**Haiku:** Bash wins decisively ($0.54 vs $0.69). The principle barely helps ($0.66 ≈ $0.69). Haiku needs the cognitive forcing function that bash provides — it can't plan effectively without it, and a six-token instruction doesn't give it enough structure.
+
+**Opus:** Structured tools win ($1.38 vs $1.66). **The principle hurts** ($1.76 — the most expensive Opus condition). Opus can already plan before acting. Telling it to do what it already does adds noise that disrupts its natural workflow.
+
+**Sonnet:** The middle. Bash and structured tools are close. The principle closes the gap. Strategy instructions have their largest effect here because Sonnet benefits from the nudge but isn't disrupted by it.
+
+The optimal tool set depends on the model:
+
+| Model | Best condition | Why |
+|---|---|---|
+| **Haiku** | D (bash) | Needs cognitive forcing; can't plan effectively from a principle alone |
+| **Sonnet** | K/N (simple/core tools) | Benefits from structure; principle closes the bash gap |
+| **Opus** | A (structured tools) | Already plans well; bash and extra instructions add overhead |
+
+This is the supermodularity result — but on an axis we didn't expect. It's not W × D (tools × strategy) that interact superlinearly. It's **d_total × tool configuration**. The model's inherent reasoning capacity (d_total — fixed in the weights) determines which tool configuration is optimal. There is no universally best tool set.
+
+## What happened when we changed the tools
+
+We also varied tool *granularity* — not just "file tools yes/no" but which specific tools matter. Five additional conditions:
+
+| Condition | What it has | Sonnet cost | Haiku cost |
+|---|---|---|---|
+| **K** (simple tools) | file_read, file_edit, file_search, file_glob + run_tests | **$0.97** | **$0.66** |
+| **N** (core + semantic) | file_read, file_edit, file_write + FindDefinitions + run_tests | **$0.91** | $0.80 |
+| **J** (batch tools) | file_read_batch, file_edit_batch + run_tests | $1.96 | $0.89 |
+| **L** (simple + semantic) | K tools + FindDefinitions | $1.97 | $0.73 |
+| **M** (everything) | All file tools + semantic + run_tests | $1.61 | $0.95 |
+
+Two findings:
+
+**Simple beats batch for Sonnet.** K ($0.97) uses individual file_read and file_edit — no batch tools. J ($1.96) uses file_read_batch and file_edit_batch — the tools we built to match bash's batching. The batch tools are **twice as expensive**. The agent spends tokens deliberating about how to batch instead of just making individual calls. The tool designed to reduce round-trips increased them.
+
+**Semantic tools help Sonnet, hurt Haiku.** N uses FindDefinitions (AST-based code navigation) instead of grep/glob for discovery. For Sonnet, this is the cheapest condition ($0.91) — the higher-abstraction tool compresses the search space. For Haiku ($0.80 vs K's $0.66), the semantic tools add overhead the model can't use effectively. The abstraction level needs to match the model's reasoning capacity.
+
+## The hierarchy — revised
+
+The experiment measured four layers, not three:
+
+1. **Model capability** (d_total) — determines which tool set is optimal. Haiku benefits from bash. Opus benefits from structure. Not varied intentionally but measured across three models.
+2. **Tool configuration** (W) — which tools are available. Effect: -26% to +50% depending on model.
+3. **Tool granularity** — which *specific* tools within a configuration. Simple individual tools (K) beat batch tools (J) by 2× for Sonnet. Core + semantic (N) is cheapest overall.
+4. **Strategy instruction** (d_reachable) — how to use the tools. Effect: -18% to +56% for Sonnet. Reverses for Opus.
+
+There is no universally best configuration. The optimal point depends on the model, the tools, and the strategy — and they interact.
 
 ## What this means for practice
 
-**Every CLAUDE.md file is a strategy artifact.** It's not documentation. It's not a nice-to-have. It's the intervention with the widest cost range. Every sentence that tells the agent *when* to act is potentially worth 18% savings. Every unnecessary sentence that tells it *how* is potentially worth -56%. Every blank line in your CLAUDE.md has a price. So does every unnecessary line.
+**Match tool abstraction to model capability.** Haiku works best with bash (low abstraction, cognitively forcing). Sonnet works best with simple structured tools or core + semantic tools (medium abstraction). Opus works best with full structured tools (high abstraction). Giving a model tools above its effective reasoning level adds overhead. Giving it tools below wastes its capacity.
 
-**The ratchet's observation phase should watch *how*, not just *what*.** We observed the agent running `grep -r` and built `file_search`. We should have observed the agent planning all fixes before executing any and built... one sentence in the prompt.
+**Simple tools beat complex tools.** K (individual file_read, file_edit) beat J (batch file_read_batch, file_edit_batch) by 2× for Sonnet. The batch tools we designed to be more efficient were less efficient because they required more deliberation per call. More capability per tool ≠ more efficiency per task.
 
-**Structured tools earn their keep through auditability, not efficiency.** On this task, structured tools cost more than bash. They earn that cost back through characterizability — every operation is typed, logged, and enumerable. The security properties are real. The efficiency gap is closed by the principle, not by the tools themselves.
+**Strategy instructions are model-dependent.** "Understand before editing" helps Sonnet, barely helps Haiku, and hurts Opus. The principle works when the model needs a nudge toward planning but isn't already doing it. Over-specification (G) hurts everything. Under-specification (no instruction) hurts Sonnet but not Opus.
 
-**Bash's advantage is a cognitive side effect you can replicate.** Bash forces program-writing, which forces planning. A principle instruction forces planning directly. You don't need the computation channel to get the planning behavior. You need the planning behavior to close the cost gap.
+**Every CLAUDE.md file is a strategy artifact.** It's not documentation. It's the intervention with the widest cost range. But the *right* CLAUDE.md depends on which model reads it. An instruction that saves 18% on Sonnet costs 27% more on Opus. The ratchet's observation phase must include which model is being used.
+
+**The ratchet's observation phase should watch *how*, not just *what*.** And it should watch *who* — the same observation produces different strategy artifacts for different models.
+
+**Structured tools earn their keep through auditability, not efficiency.** On this task, structured tools cost more than bash for Haiku and Sonnet. They cost less for Opus. They earn their cost back through characterizability in all cases — every operation is typed, logged, and enumerable. The security properties are model-independent even when the efficiency properties aren't.
 
 ---
 
-*This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. Task: fix 13 bugs in a 600-line Python codebase with 48 tests. All conditions achieved 100% pass rate — differences are in cost only.*
+*This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. Task: fix 13 bugs in a 600-line Python codebase with 48 tests. All conditions achieved pass rates sufficient for cost comparison — differences reported are in cost only.*
 
-*Sample sizes: A (n=22), D (n=13), E (n=13), F (n=13), I (n=26), G (n=5), H (n=5). Statistically significant: A > D (p < 0.05, d=0.80), G > A (p < 0.05, d=1.94), I < G (p < 0.05, d=2.65). Not significant: I vs D (p > 0.10, d=0.15 — the principle matches bash). Marginal: I vs A (p < 0.10, d=0.56).*
+*Sonnet sample sizes: A (n=22), D (n=13), E (n=13), F (n=13), I (n=26), G (n=5), H (n=5), J (n=10), K (n=5), L (n=5), M (n=5), N (n=5). Haiku and Opus: n=5-18 per condition. Statistically significant for Sonnet: A > D (p < 0.05, d=0.80), G > A (p < 0.05, d=1.94). Not significant: I vs D (p > 0.10, d=0.15). Cross-model comparisons are descriptive — the experiment was not designed or powered for model × condition interaction tests.*
 
 *The code, data, and analysis scripts are in the experiments/ directory of the project repository.*
 
