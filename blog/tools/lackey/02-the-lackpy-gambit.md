@@ -310,10 +310,10 @@ That prediction is structural, not empirical. We'll test it in [the next post](0
 
 ```{seealso}
 - [The Round-Trip Tax](01-the-round-trip-tax) — The cost problem this solves
-- [Write/Execute Separation](../../patterns/04-write-execute-separation) — The pattern at the structural level
+- [Experimental Foundations](../../patterns/01-experimental-foundations) — Write/execute separation and the experimental evidence
 - [The Specified Band](../../ma/08-the-specified-band) — Why decidability matters for composition
 - [The Configuration Ratchet](../../ma/the-configuration-ratchet) — The mechanism that makes this self-improving
-- [The Quartermaster](../../patterns/01-the-quartermaster) — Kit selection as model-aware tool dispatch
+- [Experimental Foundations](../../patterns/01-experimental-foundations) — Kit selection and model-aware tool dispatch
 ```
 
 ## References
