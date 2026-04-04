@@ -938,11 +938,11 @@ The generation process:
 
 The synthetic pairs don't need to execute. They need to be *well-typed* — valid according to the composition rules. The validator can check this from the spec alone.
 
-This is the training data for [lackpy's fine-tuning loop](../lackey/03-the-tool-that-teaches-itself-to-disappear). The 1.5B model learns to generate pluckit chains from intent, trained on thousands of synthetic examples generated from this page. By the time pluckit ships, the model already knows the API.
+This is the training data for [lackpy's fine-tuning loop](../lackey/03-the-tool-that-teaches-itself-to-disappear). The 3B model learns to generate pluckit chains from intent, trained on thousands of synthetic examples generated from this page. By the time pluckit ships, the model already knows the API.
 
 ---
 
-*Next: training the model — how to go from this spec to a fine-tuned 1.5B that generates pluckit chains.*
+*Next: training the model — how to go from this spec to a fine-tuned 3B that generates pluckit chains.*
 
 ```{seealso}
 - [Code as a Queryable Material](01-code-as-queryable-material) — The vision

@@ -10,7 +10,7 @@ There are two learning cycles running simultaneously. They operate at different 
 
 **The macro ratchet** is the outer agent — Opus or Sonnet, working across sessions, learning which tools to use, which strategies work, which patterns recur. Its cycle time is minutes to hours. Its cost is dollars. Its observations come from tool call traces, test results, and conversation history. Agent Riggs sits across sessions, ingesting data from kibitzer, blq, jetsam, and fledgling into a DuckDB store, surfacing ratchet candidates when patterns stabilize. This is the ratchet the rest of the series has been about.
 
-**The micro ratchet** is lackpy's inference pipeline — the 1.5B model generating programs, the validator accepting or rejecting them, the executor tracing their behavior. Its cycle time is seconds. Its cost is zero (local inference) or fractions of a cent (API fallback). Its observations come from (intent, program, success) triples that accumulate with every `delegate` call.
+**The micro ratchet** is lackpy's inference pipeline — the 3B model generating programs, the validator accepting or rejecting them, the executor tracing their behavior. Its cycle time is seconds. Its cost is zero (local inference) or fractions of a cent (API fallback). Its observations come from (intent, program, success) triples that accumulate with every `delegate` call.
 
 The macro ratchet discovers that `find_callers` followed by `read` on each result is a useful workflow. It calls `delegate("find callers of validate_token and show the source")` three times in a session. Each time, the micro ratchet generates a program, executes it, and records the trace.
 
@@ -109,11 +109,11 @@ Templates are the fast path. But there's a slower, deeper path available to team
 
 Every successful trace is a training example: (prompt, program) pair where the prompt is the system prompt + intent and the program is the validated, successfully-executed output. These pairs accumulate in the trace log. They are, by construction, examples of correct lackpy programs — programs that passed validation and produced useful results.
 
-Fine-tune the 1.5B model on your own composition patterns. The model learns *your* tools, *your* naming conventions, *your* common workflows. The base model writes generic cells. The fine-tuned model writes cells that look like they came from your team.
+Fine-tune the 3B model on your own composition patterns. The model learns *your* tools, *your* naming conventions, *your* common workflows. The base model writes generic cells. The fine-tuned model writes cells that look like they came from your team.
 
 This is the ratchet eating its own tail. The system produces training data as a byproduct of normal operation. The training data improves the model. The improved model produces better programs. The better programs produce better training data.
 
-The fine-tuning loop is optional. Most teams won't need it — templates handle the common patterns, and the base 1.5B model handles the rest well enough. But for teams with high volume and diverse tools, fine-tuning closes the gap between "generic code model" and "your team's composition patterns." And the training data is free — it's already being generated.
+The fine-tuning loop is optional. Most teams won't need it — templates handle the common patterns, and the base 3B model handles the rest well enough. But for teams with high volume and diverse tools, fine-tuning closes the gap between "generic code model" and "your team's composition patterns." And the training data is free — it's already being generated.
 
 ---
 
@@ -141,7 +141,7 @@ The Ma framework was developed to understand multi-agent systems at production s
 
 But the framework doesn't say anything about scale. The star topology is substrate-independent. The grade lattice is substrate-independent. The ratchet is substrate-independent. If the architecture applies to any actor, it applies at any *scale* of actor.
 
-Lackpy is the test of that claim. The 1.5B micro-inferencer is the smallest actor we've applied the framework to. It has zero world coupling. Its decision surface is bounded by an AST whitelist. Its trust gap is tiny. Its ratchet cycle is seconds.
+Lackpy is the test of that claim. The 3B micro-inferencer is the smallest actor we've applied the framework to. It has zero world coupling. Its decision surface is bounded by an AST whitelist. Its trust gap is tiny. Its ratchet cycle is seconds.
 
 And the framework's predictions hold:
 - **Lower Ma → faster ratchet.** The micro-agent crystallizes patterns in hours, not weeks.
@@ -155,7 +155,7 @@ The most interesting predictions aren't about frontier models on clusters. They'
 *This concludes The Lackey Papers. The tools are open source — [lackpy](https://github.com/teague/lackpy), [agent-riggs](https://github.com/teague/agent-riggs), [kibitzer](https://github.com/teague/kibitzer), [fledgling](https://github.com/teague/source-sextant), [blq](https://github.com/teague/lq), [jetsam](https://github.com/teague/jetsam). The framework is in [The Ma of Multi-Agent Systems](../../ma/00-intro).*
 
 ```{seealso}
-- [The Lackpy Gambit](02-the-lackpy-gambit) — The language design and the 1.5B model twist
+- [The Lackpy Gambit](02-the-lackpy-gambit) — The language design and the small-model twist
 - [The Configuration Ratchet](../../ma/the-configuration-ratchet) — The ratchet mechanism in full
 - [Experimental Foundations](../../patterns/01-experimental-foundations) — Model-aware dispatch and experimental data
 - [Ratchet Metrics](../../fuel/10-ratchet-metrics) — Measuring the turn

@@ -36,7 +36,7 @@ The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is i
 
 ### Generation
 
-- **[lackpy](https://github.com/teague/lackpy)** — Micro-inferencer that translates natural language intent into pluckit chains. Qwen 2.5 Coder 1.5B, local, $0.
+- **[lackpy](https://github.com/teague/lackpy)** — Micro-inferencer that translates natural language intent into pluckit chains. Qwen 2.5 Coder 3B, local, $0.
 
 ### Observation & learning
 

@@ -121,7 +121,7 @@ The ratchet turns on error patterns, not individual errors.
 ```
 First occurrence:
     Error event → human/agent writes pluckit chain → fix → trace stored
-    Cost: human time + chain generation (lackpy, 1.5B, $0)
+    Cost: human time + chain generation (lackpy, 3B, $0)
 
 Second occurrence (same pattern):
     Error event → Riggs matches fingerprint → serves chain from Tier 0

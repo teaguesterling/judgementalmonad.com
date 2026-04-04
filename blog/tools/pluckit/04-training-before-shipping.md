@@ -92,7 +92,7 @@ def generate_intent(chain_shape, params):
 
 This produces mechanical but accurate intents. Good for volume. Lacks natural variation.
 
-**Approach B: Model-paraphrased (Haiku or 1.5B)**
+**Approach B: Model-paraphrased (Haiku or 3B)**
 
 Take the template-generated intent and ask a small model to paraphrase it:
 
@@ -116,7 +116,7 @@ Chain: select('.fn').filter(fn: fn.callers().count() == 0).filter(fn: fn.history
 Intent: "find functions that nobody calls anymore but were used within the last year"
 ```
 
-This is a summarization task. A 1.5B model can do this — the chain is short, the semantics are readable from the API names. Haiku does it better. Either is cheap.
+This is a summarization task. A 3B model can do this — the chain is short, the semantics are readable from the API names. Haiku does it better. Either is cheap.
 
 ### Stage 3: Validation and filtering
 
@@ -231,7 +231,7 @@ This is the training data that enables the error-fixes-itself ratchet:
 ```
 Error event (blq/duck_hunt)
     → compound selector (auto from event metadata)
-    → pluckit chain (lackpy, 1.5B, local, $0)
+    → pluckit chain (lackpy, 3B, local, $0)
     → execution (select → replace → test → save)
     → trace (event_id + chain + diff + test_result)
     → Riggs fingerprint (error pattern → fix pattern)
