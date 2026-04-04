@@ -12,4 +12,5 @@ A sub-series of [Ratchet Fuel](../../fuel/index) on treating source code as some
 03-the-api
 04-training-before-shipping
 05-the-error-that-fixes-itself
+06-css-selectors-for-code
 ```
