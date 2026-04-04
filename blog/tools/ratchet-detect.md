@@ -11,9 +11,9 @@
 - **Repeated bash patterns** — commands the agent runs frequently with high success rates. Each one is a computation channel call that a structured tool could handle. These are your ratchet candidates.
 - **Computation channel fraction** — what percentage of your tool calls go through Bash vs structured tools. The ratchet should push this toward structured tools over time.
 - **Tool adoption gaps** — where structured tools exist in your environment but the agent still uses Bash for equivalent operations.
-- **Failure stream composition** — permission denials, not-found errors, push rejections, timeouts. Each category maps to a specific configuration fix ([Post 1](01-fuel.md) has the full taxonomy).
+- **Failure stream composition** — permission denials, not-found errors, push rejections, timeouts. Each category maps to a specific configuration fix ([Post 1](../fuel/01-fuel) has the full taxonomy).
 
-The tool implements the discovery phase described in [The Two-Stage Turn](02-the-two-stage-turn.md): observe what the agent actually does, identify the patterns worth promoting, then crystallize them into structured tools.
+The tool implements the discovery phase described in [The Two-Stage Turn](../fuel/02-the-two-stage-turn): observe what the agent actually does, identify the patterns worth promoting, then crystallize them into structured tools.
 
 ---
 
