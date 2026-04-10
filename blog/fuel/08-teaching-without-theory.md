@@ -184,6 +184,8 @@ The ratchet pushes knowledge *down* this hierarchy. A principle in the CLAUDE.md
 
 More documentation is more context consumed — for LLMs, that's tokens spent on instructions instead of work. For humans, that's startup time before they're productive. The goal isn't comprehensive documentation. The goal is the minimum documentation at each level that makes the next level unnecessary for most users.
 
+This is especially sharp for examples. Few-shot prompts have a threshold past which more examples make the model *worse* — the patterns compete for attention and the model over-attends to whichever happens to be nearest the output position. [The Worst Model Became the Best](../tools/lackey/03-the-worst-model-became-the-best) documents an extreme case: a 3B model that went from 2/8 correct to 7/8 correct on a DSL task by reducing the example count from 20 to 6 *retrieved* examples. Same weights. Same queries. Only the prompt changed. The effect is strongest at the small-model tier, but the principle applies everywhere — an example bank you retrieve from is better than an example dump you stuff into context. This is part of what a CLAUDE.md file should *not* do: don't list every pattern the agent might need. List the ones that recur, let the failure stream surface the missing ones, and let the retrieval happen (manually or automatically) at request time.
+
 The documentation that remains at the top — the reference layer, the "why" documents — is valuable precisely because it's rarely needed. It serves the person who's already deep enough to have a specific question that the constraints and tool names don't answer.
 
 ---

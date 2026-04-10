@@ -302,11 +302,11 @@ And the **ratchet turns faster**. A smaller trust gap means less need for observ
 
 The framework predicts this: lower Ma systems ratchet faster than higher Ma systems. The micro-agent's ratchet cycle is measured in requests, not sessions. The templates accumulate in hours, not weeks. The tool teaches itself to need less model with every successful call.
 
-That prediction is structural, not empirical. We'll test it in [the next post](03-the-tool-that-teaches-itself-to-disappear).
+That prediction is structural, not empirical. But before the ratchet can run, the 3B model has to actually produce valid programs reliably — and for a while, it didn't. [The next post](03-the-worst-model-became-the-best) is the story of why the gambit almost failed at 3B, and the mechanism that unblocked it.
 
 ---
 
-*Next: [The Tool That Teaches Itself to Disappear](03-the-tool-that-teaches-itself-to-disappear) — The ratchet applied to lackpy itself.*
+*Next: [The Worst Model Became the Best](03-the-worst-model-became-the-best) — The 3B model couldn't generate valid selectors. Then we changed which examples it saw, and it outperformed the 7B.*
 
 ```{seealso}
 - [The Round-Trip Tax](01-the-round-trip-tax) — The cost problem this solves

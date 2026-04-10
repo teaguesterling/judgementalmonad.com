@@ -9,5 +9,6 @@ A sub-series of [Ratchet Fuel](../../fuel/index) exploring tool-call composition
 
 01-the-round-trip-tax
 02-the-lackpy-gambit
-03-the-tool-that-teaches-itself-to-disappear
+03-the-worst-model-became-the-best
+04-the-tool-that-teaches-itself-to-disappear
 ```
