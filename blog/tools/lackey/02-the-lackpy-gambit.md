@@ -302,11 +302,11 @@ And the **ratchet turns faster**. A smaller trust gap means less need for observ
 
 The framework predicts this: lower Ma systems ratchet faster than higher Ma systems. The micro-agent's ratchet cycle is measured in requests, not sessions. The templates accumulate in hours, not weeks. The tool teaches itself to need less model with every successful call.
 
-That prediction is structural, not empirical. But before the ratchet can run, the 3B model has to actually produce valid programs reliably — and for a while, it didn't. [The next post](03-the-worst-model-became-the-best) is the story of why the gambit almost failed at 3B, and the mechanism that unblocked it.
+That prediction is structural, not empirical. But before the ratchet can run — and before the 3B model can reliably produce valid programs at all — we need to name the move that makes this whole approach work. The specialization we want isn't in the model. It's in the language the model is asked to produce. [The next post](03-the-specialization-lives-in-the-language) makes that claim explicit and argues that dialect design is the move that makes small-model inference viable in the first place.
 
 ---
 
-*Next: [The Worst Model Became the Best](03-the-worst-model-became-the-best) — The 3B model couldn't generate valid selectors. Then we changed which examples it saw, and it outperformed the 7B.*
+*Next: [The Specialization Lives in the Language](03-the-specialization-lives-in-the-language) — Fine-tuning specializes the model. Dialect design specializes the target. At 3B scale, the second is what makes the first unnecessary.*
 
 ```{seealso}
 - [The Round-Trip Tax](01-the-round-trip-tax) — The cost problem this solves

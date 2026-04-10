@@ -156,7 +156,7 @@ The most interesting predictions aren't about frontier models on clusters. They'
 
 ```{seealso}
 - [The Lackpy Gambit](02-the-lackpy-gambit) — The language design and the small-model twist
-- [The Worst Model Became the Best](03-the-worst-model-became-the-best) — Why the 3B model was unreliable until we fixed example curation; the prerequisite for the ratchet described here
+- [The Worst Model Became the Best](04-the-worst-model-became-the-best) — Why the 3B model was unreliable until we fixed example curation; the prerequisite for the ratchet described here
 - [The Configuration Ratchet](../../ma/the-configuration-ratchet) — The ratchet mechanism in full
 - [Experimental Foundations](../../patterns/01-experimental-foundations) — Model-aware dispatch and experimental data
 - [Ratchet Metrics](../../fuel/10-ratchet-metrics) — Measuring the turn

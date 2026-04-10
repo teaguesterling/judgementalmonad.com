@@ -6,9 +6,9 @@
 
 ## The setup that wasn't working
 
-[Post 2](02-the-lackpy-gambit) tells a tidy story. Take a restricted DSL. Give it to a 3B local model. The model generates valid lackpy programs, the validator checks them, the executor runs them. The round-trip tax disappears because composition happens inside one tool call. Ma at micro scale.
+[Post 2](02-the-lackpy-gambit) tells a tidy story. Take a restricted DSL. Give it to a 3B local model. The model generates valid lackpy programs, the validator checks them, the executor runs them. The round-trip tax disappears because composition happens inside one tool call. Ma at micro scale. [Post 3](03-the-specialization-lives-in-the-language) names the underlying move: the specialization lives in the language, not the model. The dialect is designed to borrow pre-trained familiarity from adjacent domains (CSS selectors, Jupyter cells) so that the 3B model can recognize the grammar rather than learn it under pressure.
 
-The tidy version left out a week of frustration.
+That's the argument. The tidy version left out a week of frustration where the argument kept failing in practice.
 
 When we first wired up Qwen 2.5 Coder 3B to generate `ast_select` calls — the [pluckit](../pluckit/index) CSS-style selector DSL for querying code — it didn't work. The model produced syntactically valid Python that parsed fine, but the *selectors* were wrong. It would drop `:not(...)` predicates. It would omit `:has(...)` children. It would confuse `.class` (type) with `#name` (identifier). A selector that should have been `.class .func#__init__:not(:has(.call#super))` came out as `.class .func#__init__`.
 
@@ -171,7 +171,7 @@ Once retrieval works, a deployment pattern becomes cheap: **try the small model 
 
 If you validate the small model's output against your DSL grammar — for ast_select, parse the selector and check it against the grammar — you can catch the 12% failure rate. Fall back to the 7B only when the 3B's output fails validation. Average latency stays near the small model's; correctness stays near the large model's.
 
-This is the [dispatch hierarchy from post 4](04-the-tool-that-teaches-itself-to-disappear) applied to model selection instead of template selection. The lowest tier runs first. The higher tier runs only on failure. The ratchet promotes successful patterns downward — and in this case, promotes entire model sizes downward. Over time, templates crystallize out of the successful small-model outputs, and even the 3B stops being needed for those patterns. The system eats its own tail.
+This is the [dispatch hierarchy from post 4](05-the-tool-that-teaches-itself-to-disappear) applied to model selection instead of template selection. The lowest tier runs first. The higher tier runs only on failure. The ratchet promotes successful patterns downward — and in this case, promotes entire model sizes downward. Over time, templates crystallize out of the successful small-model outputs, and even the 3B stops being needed for those patterns. The system eats its own tail.
 
 The 7B exists for the long-tail novel queries. The 3B + retrieval handles the bulk of requests. Templates handle the repeat requests. The model is a vestigial organ — but the retrieval that made the 3B viable is the reason templates ever accumulated enough successful outputs to crystallize in the first place. Without retrieval, the 3B generates too much bad output to produce useful training data, and the ratchet stalls.
 
@@ -199,17 +199,18 @@ Example curation is Harness work. The Harness isn't just deciding which tools to
 
 The lackpy gambit from [post 2](02-the-lackpy-gambit) depended on the 3B model being able to generate valid programs. For a week, it couldn't. We nearly escalated to 7B as the default and wrote off laptop-scale deployment as "nice in theory."
 
-Retrieval saved the gambit. The 3B is now the primary inference tier. The 7B is a fallback for cases retrieval can't resolve. Templates are the next tier down, promoting successful patterns out of the inference loop entirely. The [disappearing tool architecture in post 4](04-the-tool-that-teaches-itself-to-disappear) is viable because retrieval made the bottom tier work.
+Retrieval saved the gambit. The 3B is now the primary inference tier. The 7B is a fallback for cases retrieval can't resolve. Templates are the next tier down, promoting successful patterns out of the inference loop entirely. The [disappearing tool architecture in post 4](05-the-tool-that-teaches-itself-to-disappear) is viable because retrieval made the bottom tier work.
 
 The framework claim was "Ma applies at micro scale." The test case was lackpy. The test case almost failed because we didn't yet understand that example curation is part of the Harness's job. Now we do, and the test case holds.
 
 ---
 
-*Next: [The Tool That Teaches Itself to Disappear](04-the-tool-that-teaches-itself-to-disappear) — What happens once retrieval makes the 3B reliable: templates crystallize, the ratchet turns, and the model becomes vestigial.*
+*Next: [The Tool That Teaches Itself to Disappear](05-the-tool-that-teaches-itself-to-disappear) — What happens once retrieval makes the 3B reliable: templates crystallize, the ratchet turns, and the model becomes vestigial.*
 
 ```{seealso}
 - [The Lackpy Gambit](02-the-lackpy-gambit) — The small-model architecture this unblocks
-- [The Tool That Teaches Itself to Disappear](04-the-tool-that-teaches-itself-to-disappear) — What happens once retrieval makes the 3B reliable: templates crystallize and the model becomes vestigial
+- [The Specialization Lives in the Language](03-the-specialization-lives-in-the-language) — The design claim this post demonstrates empirically: dialect design borrows familiarity, retrieval cues it
+- [The Tool That Teaches Itself to Disappear](05-the-tool-that-teaches-itself-to-disappear) — What happens once retrieval makes the 3B reliable: templates crystallize and the model becomes vestigial
 - [CSS Selectors for Code](../pluckit/06-css-selectors-for-code) — The ast_select DSL this retrieval work made viable
 - [Conversations Are Folds](../../ma/06-conversations-are-folds) — d_reachable as a function of context content, not just length
 - [Experimental Foundations](../../patterns/01-experimental-foundations) — Strategy instructions as d_reachable constraints for frontier models; the model-dependent findings

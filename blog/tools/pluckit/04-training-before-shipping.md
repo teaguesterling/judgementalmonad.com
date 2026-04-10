@@ -184,7 +184,7 @@ What it does NOT need to learn: Python syntax (already knows it), what ASTs are 
 
 ## From synthetic to real
 
-The synthetic dataset bootstraps the model. But the real training data comes from usage — the same fine-tuning loop described in [The Tool That Teaches Itself to Disappear](../lackey/04-the-tool-that-teaches-itself-to-disappear).
+The synthetic dataset bootstraps the model. But the real training data comes from usage — the same fine-tuning loop described in [The Tool That Teaches Itself to Disappear](../lackey/05-the-tool-that-teaches-itself-to-disappear).
 
 Once pluckit ships:
 
@@ -273,6 +273,6 @@ And it all starts with the spec.
 ```{seealso}
 - [The pluckit API](03-the-api) — The spec this pipeline trains on
 - [The Lackpy Gambit](../lackey/02-the-lackpy-gambit) — The micro-inferencer architecture
-- [The Tool That Teaches Itself to Disappear](../lackey/04-the-tool-that-teaches-itself-to-disappear) — Template crystallization from traces
+- [The Tool That Teaches Itself to Disappear](../lackey/05-the-tool-that-teaches-itself-to-disappear) — Template crystallization from traces
 - [The Configuration Ratchet](../../ma/the-configuration-ratchet) — The theoretical mechanism
 ```

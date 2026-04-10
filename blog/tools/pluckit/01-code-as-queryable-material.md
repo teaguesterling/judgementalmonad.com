@@ -357,5 +357,5 @@ That's the architecture the [suite](../index) has been building toward. Each too
 - [Closing the Channel](../../fuel/05-closing-the-channel) — Where structured tools come from
 - [The Round-Trip Tax](../lackey/01-the-round-trip-tax) — Why composition matters
 - [The Lackpy Gambit](../lackey/02-the-lackpy-gambit) — The micro-inferencer that generates pluckit chains
-- [The Tool That Teaches Itself to Disappear](../lackey/04-the-tool-that-teaches-itself-to-disappear) — Template crystallization from traces
+- [The Tool That Teaches Itself to Disappear](../lackey/05-the-tool-that-teaches-itself-to-disappear) — Template crystallization from traces
 ```

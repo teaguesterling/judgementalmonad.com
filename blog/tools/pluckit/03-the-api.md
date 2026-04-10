@@ -10,7 +10,7 @@ This is an API specification for a tool that's being built. Normally you ship th
 
 A well-defined API spec — with type signatures, composition rules, and examples — is also a grammar for generating valid programs. If you know the types, you know what can chain after what. If you know the selectors, you know the vocabulary. If you know the operations, you can enumerate the space of valid chains.
 
-That means this spec is simultaneously documentation and training data. By the time pluckit ships, we'll have a fine-tuned model that already knows how to compose its operations — trained on synthetic (intent, chain) pairs generated from this page. The [ratchet starts turning before the tool exists](../lackey/04-the-tool-that-teaches-itself-to-disappear).
+That means this spec is simultaneously documentation and training data. By the time pluckit ships, we'll have a fine-tuned model that already knows how to compose its operations — trained on synthetic (intent, chain) pairs generated from this page. The [ratchet starts turning before the tool exists](../lackey/05-the-tool-that-teaches-itself-to-disappear).
 
 Read this as a reference if you want to understand pluckit. Read it as a type system if you want to generate valid chains.
 
@@ -938,7 +938,7 @@ The generation process:
 
 The synthetic pairs don't need to execute. They need to be *well-typed* — valid according to the composition rules. The validator can check this from the spec alone.
 
-This is the training data for [lackpy's fine-tuning loop](../lackey/04-the-tool-that-teaches-itself-to-disappear). The 3B model learns to generate pluckit chains from intent, trained on thousands of synthetic examples generated from this page. By the time pluckit ships, the model already knows the API.
+This is the training data for [lackpy's fine-tuning loop](../lackey/05-the-tool-that-teaches-itself-to-disappear). The 3B model learns to generate pluckit chains from intent, trained on thousands of synthetic examples generated from this page. By the time pluckit ships, the model already knows the API.
 
 ---
 
@@ -948,5 +948,5 @@ This is the training data for [lackpy's fine-tuning loop](../lackey/04-the-tool-
 - [Code as a Queryable Material](01-code-as-queryable-material) — The vision
 - [The File Is a Lie](02-the-file-is-a-lie) — Views, isolate, and assembled code
 - [The Lackpy Gambit](../lackey/02-the-lackpy-gambit) — The restricted language these chains run inside
-- [The Tool That Teaches Itself to Disappear](../lackey/04-the-tool-that-teaches-itself-to-disappear) — Template promotion from traces
+- [The Tool That Teaches Itself to Disappear](../lackey/05-the-tool-that-teaches-itself-to-disappear) — Template promotion from traces
 ```

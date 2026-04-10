@@ -169,5 +169,5 @@ That's the ratchet. It only turns one direction.
 - [Code as a Queryable Material](01-code-as-queryable-material) — The vision for pluckit
 - [The pluckit API](03-the-api) — blq integration and compound selectors
 - [Training Before Shipping](04-training-before-shipping) — Error fingerprint training data
-- [The Tool That Teaches Itself to Disappear](../lackey/04-the-tool-that-teaches-itself-to-disappear) — Template promotion from traces
+- [The Tool That Teaches Itself to Disappear](../lackey/05-the-tool-that-teaches-itself-to-disappear) — Template promotion from traces
 ```
