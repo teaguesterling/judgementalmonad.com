@@ -61,4 +61,5 @@ blog/ma/index
 blog/fuel/index
 blog/tools/index
 blog/patterns/index
+drafts/index
 ```

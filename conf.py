@@ -19,7 +19,26 @@ source_suffix = {
 }
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", ".git", ".venv", "README.md", "drafts", "experiments", "docs"]
+exclude_patterns = [
+    "_build",
+    ".git",
+    ".venv",
+    "README.md",
+    "experiments",
+    "docs",
+    # Raw scaffolding inside drafts/ that isn't ready to surface even as grab bag
+    "drafts/blog-draft-1",
+    "drafts/experiment-designs.md",
+    "drafts/experiment-setup.md",
+    "drafts/experiment-statistics.md",
+    "drafts/fuel-experiment-integration-prompt.md",
+    "drafts/kibitzer-implementor-prompt.md",
+    "drafts/toolcraft-extension-prompt.md",
+    "drafts/ratchet-fuel-outline.md",
+    "drafts/seed-coordination-is-not-control.md",
+    "drafts/landing-page-original.md",
+    "drafts/note-for-agents.md",
+]
 
 # -- Furo theme ---------------------------------------------------------------
 
