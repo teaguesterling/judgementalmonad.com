@@ -62,8 +62,11 @@ The corrected phase order:
 
 For the umwelt-side story of *why* the missing layer looks the way it does, see:
 - [`~/Projects/umwelt/docs/vision/policy-layer.md`](https://github.com/teaguesterling/umwelt) — the Ma-grounded framing (umwelt is Layer 3 of the three-layer regulation strategy from Ma post 8)
+- [`~/Projects/umwelt/docs/vision/notes/selector-semantics.md`](https://github.com/teaguesterling/umwelt) — design decisions and open questions about the selector surface syntax captured after the first round of vision docs. Currently pending integration into `view-format.md` and `entity-model.md` — the blog drafts reflect the decisions ahead of the vision docs.
 - [`drafts/umwelt-the-layer-we-found.md`](../../../drafts/umwelt-the-layer-we-found) — the narrative companion to the vision docs, capturing the nine architectural decisions that shaped the package
 - [`drafts/the-sandbox-tower.md`](../../../drafts/the-sandbox-tower) — the theoretical frame, updated after the vision docs were written
+
+**Note on selector surface syntax**: the blog drafts and the `notes/selector-semantics.md` handoff doc now describe a selector grammar without taxon prefixes (bare entity names like `file[path="..."]` rather than `world file[path="..."]`) and with cross-taxon compound selectors carrying context-qualifier semantics (`tool[name="Bash"] file[path="..."] { editable: false; }` meaning "when Bash is the acting tool, these files are not editable"). The `view-format.md` and `entity-model.md` vision docs in umwelt still reflect the earlier state with taxon prefixes; the handoff note captures the decision trail for the next revision.
 
 ---
 

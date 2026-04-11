@@ -142,6 +142,8 @@ This is why the ratchet works at the small-model tier: not because small models 
 
 At frontier scale, dialect design is an optimization. At 3B scale, it's the thing that makes the whole approach viable.
 
+The argument generalizes beyond query languages. It applies anywhere you need an LLM to produce a specified-band artifact reliably: any structured tool call, any configuration format, any policy specification. The move is always the same — pick a surface syntax the model has deep pre-trained familiarity with, design the dialect inside that surface, let the validator do the work the fine-tune would have done. The work-in-progress [umwelt project](../../../drafts/umwelt-the-layer-we-found) applies the same move to *sandbox specification*: a CSS-shaped policy language that compiles to every enforcement mechanism in the stack. Same argument, new target. Worth following as it develops.
+
 ---
 
 *Next: [The Worst Model Became the Best](04-the-worst-model-became-the-best) — The empirical demonstration: dialect design plus retrieval inverted the model ranking. The 3B-coder that couldn't produce valid selectors became the best 3B model in our lineup once we shaped the prompt to surface the right patterns.*

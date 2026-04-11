@@ -1,5 +1,9 @@
 # Views Are Sandboxes
 
+> **⚠️ Historical draft.** This is the raw thinking piece that led to [The Sandbox Tower](the-sandbox-tower) and the [umwelt project](umwelt-the-layer-we-found). It's preserved for provenance — to show how the ideas started before they were worked out — but it describes a much earlier version of the design that has evolved substantially since. The "family of tools waiting to be named" mentioned below is now named and scoped: umwelt is the package, views are the artifacts, the sandbox tower is the theoretical frame, and Layer 3 of the three-layer regulation strategy is the architectural slot. For the current framing, start with [the sandbox tower post](the-sandbox-tower) or [the umwelt post](umwelt-the-layer-we-found).
+
+---
+
 *Note to the blog writer: this is a raw thinking piece from an in-conversation design session. The connection I want explored is the one between the "view" idea sketched below and the nsjail-python project — both are, I think, the same pattern at different altitudes. There's a family of tools here waiting to be named. Feel free to reshape the framing entirely; what matters is that the connection gets examined.*
 
 ---

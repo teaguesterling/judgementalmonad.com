@@ -195,19 +195,19 @@ The sandbox vocabulary ships as a first-party consumer (`umwelt.sandbox`) in the
 Entity-selector form (canonical):
 
 ```
-world file[path^="src/auth/"]       { editable: true; }
-world file                           { editable: false; }
+file[path^="src/auth/"]       { editable: true; }
+file                           { editable: false; }
 
-capability tool[name="Read"]         { allow: true; }
-capability tool[name="Edit"]         { allow: true; }
-capability tool[name="Bash"]         { allow: false; }
-capability tool                      { max-level: 2; }
+tool[name="Read"]              { allow: true; }
+tool[name="Edit"]              { allow: true; }
+tool[name="Bash"]              { allow: false; }
+tool                           { max-level: 2; }
 
-world network                        { deny: "*"; }
-world resource[kind="memory"]        { limit: 512MB; }
-world resource[kind="wall-time"]     { limit: 60s; }
+network                        { deny: "*"; }
+resource[kind="memory"]        { limit: 512MB; }
+resource[kind="wall-time"]     { limit: 60s; }
 
-state hook[event="after-change"] {
+hook[event="after-change"] {
   run: "pytest tests/test_auth.py";
   run: "ruff check src/auth.py";
 }
@@ -235,7 +235,27 @@ At-rule sugar form (equivalent):
 
 Both specify the same policy — auth editable, everything else read-only, Read and Edit allowed, Bash denied, capped at computation level 2, no network, 512MB memory, 60s wall-time, tests and lint must pass after any change. Authors pick whichever form is clearer for the task. The at-rule form is shorter for sandbox-specific views; the entity-selector form generalizes to any registered taxon and is what the ratchet utility emits when proposing revisions from observation data. The parser canonicalizes both to the same AST internally.
 
-The other examples in this post use at-rule sugar for brevity and because it's what pre-dates the refactor, but the entity-selector form is the thing you'll see in the vision docs and in any ratchet-proposed view. If you read the umwelt vision docs and see `world file[path^="src/"]` where the blog post says `@source("src/")`, that's why.
+**Entity names are bare, not taxon-prefixed.** Earlier iterations of the vision docs used `world file[path^="src/"]` with the taxon name as a prefix. That was overly explicit — it exposed the plugin system at the view-authoring layer for a disambiguation that matters in ~0% of views, and it broke the "borrow CSS exactly" dialect-design move by introducing a non-CSS namespace convention. Bare entity names are cleaner. The registry tags each match with its owning taxon at parse time, so cascade scoping and property validation still work. When a real collision occurs between taxa, that's a registration-time error, not a grammar problem.
+
+**Cross-taxon compound selectors have context-qualifier semantics.** The descendant combinator between entities from different taxa means "in the context of the left entity, the right entity is the target." This is a small but real divergence from CSS's strict DOM-descendant combinator — but it's the minimum deviation needed to express actor-conditioned policies in a single rule:
+
+```
+tool[name="Bash"] file[path="src/auth/"] { editable: false; }
+```
+
+reads as "when the acting tool is Bash, files in `src/auth/` are not editable." The cascade treats this as a `file` rule with extra specificity contributed by the `tool` qualifier, so it refines (rather than replaces) the baseline `file[path="src/auth/"] { editable: true; }` rule. For non-Bash invocations, the baseline applies; for Bash, the qualified rule wins on specificity.
+
+Cross-taxon compound selectors also compose with within-taxon structural descent. The three-level form
+
+```
+tool[name="Bash"] file[path="src/auth/"] .fn#protected { editable: false; }
+```
+
+means "when Bash acts on files in `src/auth/`, the `protected` function inside those files is not editable." The first combinator is cross-taxon context qualification; the second is within-taxon structural descent via the `file → node` parent-child relationship (where `.fn` is the class selector for a semantic-type class on the `node` entity).
+
+Cascade is **per target taxon**, not per rule — a rule's target is the rightmost entity, and it competes against other rules targeting the same entity type in the same taxon. Specificity accumulates rightward across all selectors in the rule. More-qualified rules override less-qualified ones when their context applies.
+
+The other examples in this post use at-rule sugar for brevity and because it's what pre-dates the refactor, but the entity-selector form is the thing you'll see in the vision docs and in any ratchet-proposed view. If you read the umwelt vision docs and see `file[path^="src/"]` where the blog post says `@source("src/")`, that's why.
 
 This is the decision that makes the "common language" claim operational rather than metaphorical. Every component in a specified-band Harness can register its own taxon and participate in the regulatory loop — not by extending umwelt, but by plugging into its extension surface. A blq integration registers `blq/` entities for command registries. An access-control consumer registers `identity/` and `resource/` entities. A rate-limiter registers `quota/` entities. Each gets the parser, cascade, validator, CLI, and ratchet utility for free, because the core is shared and vocabulary-agnostic.
 

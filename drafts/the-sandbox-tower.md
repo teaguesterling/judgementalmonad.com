@@ -137,7 +137,27 @@ With the tower, delegation is contractual. The big model writes a spec:
 }
 ```
 
-This example uses the sandbox consumer's at-rule sugar (`@source`, `@after-change`). The canonical entity-selector form is shorter on the page for complex views and generalizes to any registered taxon: `world file[path^="src/"] node[kind="function"][name="authenticate"] { show: body; editable: true; }` is the same rule as the nested selector above. Both parse to the same AST. See [Umwelt: The Layer We Found](umwelt-the-layer-we-found) for the full framing and the vision docs in `~/Projects/umwelt/docs/vision/` for the grammar reference.
+This example uses the sandbox consumer's at-rule sugar (`@source`, `@after-change`). The canonical entity-selector form is cleaner for complex views and generalizes to any registered taxon:
+
+```
+file[path^="src/auth/"] .fn#authenticate { editable: true; show: body; }
+file[path^="src/auth/"] .fn#check_admin_role { editable: true; show: body; }
+file[path^="src/"] .class#User { editable: false; show: outline; }
+file[path^="tests/"] .fn[name^="test_auth"] { editable: false; show: body; }
+
+hook[event="after-change"] {
+  run: "pytest tests/test_auth.py";
+  run: "ruff check src/auth.py";
+}
+```
+
+Entity names are bare — no taxon prefix. Cross-taxon compound selectors with context-qualifier semantics let you express actor-conditioned policies in a single rule:
+
+```
+tool[name="Bash"] file[path="src/auth/"] { editable: false; }
+```
+
+"When the acting tool is Bash, files in `src/auth/` are not editable." The first combinator crosses taxa (tool context → file target); the second would descend structurally (file → node) via the plugin's parent-child relationship. See [Umwelt: The Layer We Found](umwelt-the-layer-we-found) for the full framing and the vision docs in `~/Projects/umwelt/docs/vision/` for the grammar reference.
 
 That's a view file — self-contained because the `@source` blocks name their own file sets. The delegate executor needs nothing else to turn this into a workspace. Written by the big model (often built up programmatically from pluckit exploration rather than hand-authored), rendered by the Harness into:
 
