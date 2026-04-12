@@ -417,6 +417,14 @@ This process works for any frequently-successful bash pattern. The steps are alw
 
 The verification is specified: count `grep -r` bash calls before and after deployment, count `codebase_search` tool calls after. The bash pattern frequency should drop. The structured tool calls should appear in its place. SQL over structured logs — no judgment in the measurement loop. You can see whether the ratchet turned by reading a query result.
 
+### What about the patterns that are too complex for a single tool?
+
+Not every bash pattern maps to a single structured replacement. Sometimes the agent writes a 50-line Python script that reads, transforms, and writes — a *program*, not an operation. Promoting that to `file_edit_batch` loses the expressiveness. Leaving it as bash keeps the grade at level 4.
+
+[lackpy](https://github.com/teaguesterling/lackpy) takes a third path: let the agent write a program, but restrict the language. The agent expresses "read this file, apply these fixes, write it back" as restricted Python — validated against an AST whitelist that prevents imports, exec, and IO outside the provided tools. The result is graded: a program that uses only kit-provided tools scores at level 1-2, not level 4. The channel narrows without closing entirely. The agent keeps its natural program-writing expression; the grammar ensures the program can only do what the tools allow.
+
+This is the level 3 that the [computation channel taxonomy](../ma/07-computation-channels.md) identifies as the gap: more expressive than structured queries, less than Turing-complete execution, and decidable — the Harness can characterize what the program might do before running it.
+
 ---
 
 ## What to promote next

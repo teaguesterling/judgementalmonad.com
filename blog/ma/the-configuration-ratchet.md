@@ -257,6 +257,8 @@ The individual instances are well known. Runbooks, cached configurations, API pa
 
 **A design principle.** When building any system that involves trained judgment, ask: can the judgment's *conclusions* be cached as specified artifacts? If yes, design the loop. Inference at the frontier, lookup at the center.
 
+**A policy language.** The ratchet's output needs a place to live. [umwelt](https://github.com/teaguesterling/umwelt) provides one: CSS-shaped policy views where tool declarations, access rules, and lifecycle hooks coexist in the same grammar. A promoted bash pattern becomes a tool declaration in a kit `.umw` file. A strategy instruction becomes a lifecycle hook. Both products of the ratchet — tools and strategy — expressed in the same cascade, enforced by the same compiler chain, auditable in the same policy browser. The ratchet turns; the view tightens.
+
 **A connection to Ashby.** Variety destruction as a learning process. The regulator doesn't need to get smarter. The system needs to get more specified.
 
 **A direction for safety.** The hardest version of the alignment question is: how do you ensure an opaque system behaves well? *Ma* reduction offers a partial answer: convert the opaque behaviors into specified artifacts, incrementally, using the system's own outputs as evidence. You don't need to solve alignment in general. You need to solve it at the frontier and cache the solutions. The specified base grows. The opaque frontier shrinks. The system becomes more trustworthy with use — legibly, auditably, without modifying a single weight.

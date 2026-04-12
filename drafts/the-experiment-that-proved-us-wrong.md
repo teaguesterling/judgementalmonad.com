@@ -201,6 +201,89 @@ There is no universally best configuration. The optimal point depends on the mod
 
 **Structured tools earn their keep through auditability, not efficiency.** On this task, structured tools cost more than bash for Haiku and Sonnet. They cost less for Opus. They earn their cost back through characterizability in all cases — every operation is typed, logged, and enumerable. The security properties are model-independent even when the efficiency properties aren't.
 
+## Where this leads
+
+The experiment tested handcrafted tool configurations with handcrafted strategy instructions. Two projects point toward automating what we did by hand.
+
+### Policy as code: umwelt
+
+Our experiment conditions were Python flags in a server configuration. Each condition was a different tool set, enforced by `server.disable(tags=...)`. Changing a condition meant editing code.
+
+[umwelt](https://github.com/teaguesterling/umwelt) expresses tool configurations as CSS-shaped policy views:
+
+```css
+@layer base {
+  tool { allow: false; }
+  network { deny: "*"; }
+}
+
+@layer task {
+  tool[name="file_read"]  { allow: true; }
+  tool[name="file_edit"]  { allow: true; }
+  tool[name="run_tests"]  { allow: true; }
+  tool[name="Bash"]       { allow: false !locked; }
+}
+```
+
+That's our Condition A — as a view file. The `!locked` declaration means no later rule can open bash. The cascade resolves conflicts using CSS specificity. The compiler translates the view into enforcement: nsjail textproto, bwrap flags, or MCP server configuration.
+
+The connection to the ratchet: umwelt kits are view fragments. A promoted bash pattern becomes a tool declaration in a kit `.umw` file. The ratchet's output IS the policy language:
+
+```css
+/* The ratchet produced this: */
+tool[name="codebase_search"] {
+    backend: mcp; server: "fledgling";
+    max-level: 1;
+}
+```
+
+And lifecycle hooks are the strategy product expressed as policy:
+
+```css
+@after-change { run: "pytest tests/ --tb=short"; }
+```
+
+That's `try_and_check` — the strategy combinator we discussed — as a one-line CSS rule. Both products of the ratchet (tool + strategy) in the same grammar, subject to the same cascade, enforced by the same compiler.
+
+### Restricted execution: lackpy
+
+Our experiment found that bash wins on cost because agents think in programs. Structured tools force atomic operations. The gap was cognitive, not computational.
+
+[lackpy](https://github.com/teaguesterling/lackpy) takes a different approach: let the agent write programs, but restrict the language. A natural language intent becomes a restricted Python program validated against an AST whitelist before execution:
+
+```
+Intent: "find all python files and count them"
+Generated: files = find_files('**/*.py')
+           count = len(files)
+           print(f'Found {count} Python files.')
+Grade: (w: 1, d: 1)
+```
+
+The program uses only kit-provided tools (`find_files`) and allowed builtins (`len`, `print`). No `import`, no `exec`, no `open` — the grammar prevents it. The result is graded: world coupling 1 (reads filesystem through a tool), decision surface 1 (simple composition). That's level 1, not level 4 — even though the agent expressed its intent as a program.
+
+This is the level 3 tool the experiment identified as the missing piece. The computation channel taxonomy jumps from structured queries (level 1-2) to Turing-complete execution (level 4). lackpy fills the gap: expressive enough for batch operations (what bash is good at), restricted enough for the Harness to characterize (what structured tools are good at).
+
+The kibitzer integration closes the ratchet loop: failures are classified into 7 modes, each mapping to a prompt intervention. The next generation gets hints based on past failures. That's explore → capture → crystallize → teach running automatically.
+
+The ecosystem converges:
+
+```
+umwelt        (policy: what's allowed, at what level)
+  → compiles to nsjail/bwrap (OS enforcement)
+  → compiles to MCP manifest (tool availability)
+  → compiles to lackpy namespace (grammar restriction)
+
+squackit      (tools: code intelligence via MCP)
+  → declared as a kit in umwelt
+  → tools have declared computation levels
+
+lackpy        (execution: restricted programs)
+  → backend for umwelt tool declarations
+  → grammar IS the computation channel boundary
+```
+
+The experiment measured the cost of different positions on the grade lattice. These tools let you *configure* the position — express it as policy, enforce it as sandbox, and automate the ratchet that moves it.
+
 ---
 
 *This post describes experiments conducted during the development of The Ma of Multi-Agent Systems, March 2026. Task: fix 13 bugs in a 600-line Python codebase with 48 tests. All conditions achieved pass rates sufficient for cost comparison — differences reported are in cost only.*
