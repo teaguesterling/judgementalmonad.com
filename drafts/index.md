@@ -21,6 +21,7 @@ Documents about what we're building next or how the pieces fit together.
 - [The Integration Layer Plan](integration-layer-plan) — How jetsam, blq, fledgling, pluckit, lackpy, kibitzer, and agent-riggs should connect into a coherent system. Maps the current agent architecture onto Beer's VSM, identifies three gaps (distributed System 3, scattered audit data, absent health monitoring), and sketches a five-phase implementation path around a shared DuckDB substrate.
 - [The Sandbox Tower](the-sandbox-tower) — nsjail, lackpy, views, and retrieval are all the same pattern at different enforcement altitudes: declarative grade specifications rendered into whichever mechanism can check them. Once you stack them, delegation stops being nerve-wracking and starts being contractual.
 - [Umwelt: The Layer We Found](umwelt-the-layer-we-found) — The companion to the sandbox tower post, capturing nine architectural decisions made while designing the umwelt package: text-emitting compilers, the compiler taxonomy (local vs remote, sync vs async), views supersede modes, git history as a view corpus, views unify the ratchet's two products, port-ready decomposition, a vocabulary-agnostic core with Ma-grounded taxa, comparison-semantics properties, and the ratchet as a first-class utility. Frames umwelt as Layer 3 of the three-layer regulation strategy the OS existence proof demonstrates.
+- [An LLM Is a Subject of Your Policy](an-llm-is-a-subject-of-your-policy) — Positions umwelt in the Datalog-for-policy lineage (OPA, Cedar, Oso, Polar). Names the four subjects every agent operation already has (principal, intelligence, operation, use) and why the VSM schema is what falls out when you try to express all four in one rule. The agent-as-subject reframe as the premise; CSS syntax, `use[of=...]`, specified ILP, and proof-tree audit as the consequences.
 - [Views Are Sandboxes (raw thinking)](views-are-sandboxes) — The in-conversation thinking piece that the sandbox tower writeup grew out of. Rougher, but contains the seven open questions and the original framing.
 - [Toolcraft Coordinator Design](toolcraft-coordinator-design) — Earlier design sketch for the integration layer between Fledgling, blq, and jetsam.
 
@@ -55,6 +56,7 @@ Proposed amendments to the main framework that haven't been integrated yet.
 integration-layer-plan
 the-sandbox-tower
 umwelt-the-layer-we-found
+an-llm-is-a-subject-of-your-policy
 views-are-sandboxes
 the-experiment-that-proved-us-wrong
 retrieval-beats-stuffing

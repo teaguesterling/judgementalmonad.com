@@ -112,6 +112,8 @@ The abstract specification is the same: *what is this actor's grade?* The enforc
 
 If it's right, then designing a sandbox tool is a very particular kind of work: you pick the threats you care about, identify which altitude can actually catch them, and then write the same declarative vocabulary in a form that altitude's enforcement mechanism can check. The vocabulary is the same across the tower. Only the compiler changes.
 
+There's a sharper way to say this once you name the logic-programming lineage: each compiler is asking a different *query* of the same spec. nsjail asks for all `mount` facts; bwrap asks for the same set in a different encoding; lackpy-namespace asks for the set of allowed tools; a future audit compiler asks for the proof tree that justifies a specific decision. One Datalog program, many queries. That framing — view-as-Datalog, compiler-as-query — is developed fully in [Umwelt: The Layer We Found](umwelt-the-layer-we-found) and [An LLM Is a Subject of Your Policy](an-llm-is-a-subject-of-your-policy); for the tower, the relevant observation is that the "one vocabulary, many compilers" property isn't a rhetorical claim. It's what logic programming has done for forty years.
+
 ## Why this matters: delegation becomes contractual
 
 The immediate reason any of this matters: delegation.
@@ -252,6 +254,7 @@ This belongs in the same conceptual neighborhood as:
 - [Retrieval Beats Stuffing](retrieval-beats-stuffing) — the attention-altitude sandbox in disguise.
 - [The Integration Layer Plan](integration-layer-plan) — the system the view layer would get built into, if it turns out to be load-bearing for delegation.
 - [CSS Selectors for Code](../blog/sitting-duck-css-selectors) — the query language the view layer extends.
+- [An LLM Is a Subject of Your Policy](an-llm-is-a-subject-of-your-policy) — the positioning companion. Situates the view-as-sandbox argument in the Datalog-for-policy lineage (OPA, Cedar, Oso) and names the LLM-as-one-subject-among-several reframe that the tower implicitly requires.
 
 The writeup is a draft because the pattern is real but the tool stack isn't built yet. The sandbox tower is a theory we'd want to operate before we publish, because every layer in it has edge cases we haven't probed. Promote this to a main-series post only after the delegation use case runs end-to-end on a real codebase — not before.
 

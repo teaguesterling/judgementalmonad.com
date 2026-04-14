@@ -341,6 +341,25 @@ The sandbox tower post described the ratchet as the feedback mechanism that clos
 
 ---
 
+## What kind of language is this?
+
+One thing the nine decisions above don't name directly: the formal shape of what we built. Worth pinning down, because it situates umwelt in a forty-year tradition that the rest of the design quietly inherits from.
+
+**A umwelt view is a Datalog program with CSS-shaped concrete syntax, a Viable-System-Model-partitioned predicate schema, and defeasible cascade semantics.**
+
+Each piece of that sentence has a literature behind it:
+
+- **Datalog** is the logic-programming formalism that every production authorization language of the last twenty years has converged on — OPA/Rego (CNCF graduated), Amazon Cedar (formally verified), Oso/Polar, Zanzibar-family (SpiceDB, Permify). Restricted Prolog: no recursion (yet), guaranteed termination, PTIME evaluation. Every umwelt selector is a conjunction of predicate applications; every declaration block is a rule head; the descendant combinator is the logical `∧`. `use[of="file#..."]` is unification via the `of` relation.
+- **CSS-shaped concrete syntax** is the UX bet. Prior policy languages invented custom DSLs (Rego, Cedar, Polar, XACML). Users had to learn a new grammar on day one. umwelt bets that CSS is already a cognitive primitive for the agent-adjacent audience — see [The Specialization Lives in the Language](../blog/tools/lackey/03-the-specialization-lives-in-the-language) for the dialect-design argument.
+- **VSM-partitioned schema** is the novel move. Stafford Beer's five systems (S1 operations, S2 coordination, S3 control, S3\* audit, S4 intelligence, S5 identity) plus environment (S0) give seven predicate domains. Agent authorization needs all seven. Human/service authorization (Cedar's principal/action/resource) only needs three. The specific inversion — regulator dominates regulated, S3↔S4 — is the architectural move that makes bounded delegation coherent.
+- **Defeasible cascade semantics** matches Defeasible Logic Programming (García & Simari, 2004). Multiple rules can derive contradictory facts; a meta-rule picks the winner by specificity. CSS's cascade is exactly this pattern, minus the formalization.
+
+The companion post [An LLM Is a Subject of Your Policy](an-llm-is-a-subject-of-your-policy) develops the lineage argument in full: where we sit relative to OPA, Cedar, and Oso, what's genuinely novel, and why having an LLM as one of the subjects (not the only one) forces the schema expansion. `docs/vision/notes/logic-semantics.md` in the umwelt repo is the reference note — §7 is the citation pool.
+
+The practical consequence of naming the logic-programming lineage: **compilers become queries.** nsjail asks for all mount facts; bwrap asks for the same facts in a different encoding; kibitzer-hooks asks for writable-path facts per mode; a future audit compiler asks for the proof tree of a specific decision. Same program, different queries. Once umwelt matures, the compiler protocol can collapse into one primitive: `query: ResolvedView × Goal → FactSet`. That's the long-term leverage the v0.5 VSM restructure sets up.
+
+---
+
 ## What this resolves in the sandbox tower's Unresolved section
 
 The sandbox tower post left seven questions unresolved. After writing the umwelt vision docs and the subsequent implementation exploration that produced the vocabulary-agnostic-core / comparison-semantics-properties / ratchet-as-first-class-utility decisions, several are now answered at the architectural level. Empirical confirmation still waits on code.
@@ -395,6 +414,7 @@ This blog post is the narrative companion to those specs. Any reader who wants t
 - **[The Two Products of the Ratchet](the-two-products)** — the framing this post partially retires. Tools and strategy are still real, but views unify them into one artifact per crystallization.
 - **[The Sandbox Tower](the-sandbox-tower)** — the theory this post builds on. Read that first for the altitude framing and the delegation-becomes-contractual argument.
 - **[The Integration Layer Plan](integration-layer-plan)** — the implementation plan this post reshapes. The plan's "unified context" substrate is now concretely umwelt + the view bank, and the phased build-out references umwelt specs instead of hypothetical in-lackpy modules.
+- **[An LLM Is a Subject of Your Policy](an-llm-is-a-subject-of-your-policy)** — the positioning companion. Situates umwelt in the Datalog-for-policy lineage (OPA, Cedar, Oso), names what's genuinely novel, and makes the agent-as-subject-alongside-others reframe explicit.
 
 ---
 
