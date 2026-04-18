@@ -358,6 +358,8 @@ The companion post [An LLM Is a Subject of Your Policy](an-llm-is-a-subject-of-y
 
 The practical consequence of naming the logic-programming lineage: **compilers become queries.** nsjail asks for all mount facts; bwrap asks for the same facts in a different encoding; kibitzer-hooks asks for writable-path facts per mode; a future audit compiler asks for the proof tree of a specific decision. Same program, different queries. Once umwelt matures, the compiler protocol can collapse into one primitive: `query: ResolvedView × Goal → FactSet`. That's the long-term leverage the v0.5 VSM restructure sets up.
 
+**Update (post-v0.5):** This is no longer theoretical. [ducklog](https://github.com/teague/ducklog) compiles umwelt views to queryable DuckDB databases — policy is materialized as tables, world state is live views over glob/JSON/TOML, resolution is derived, and each consumer (nsjail, bwrap, kibitzer, lackpy) reads its configuration from a compiler-specific SQL view. The view-stack architecture — materialized policy → live provider views → cascade candidates → resolved properties → compiler projections — emerged from a "should we try DuckDB?" question and had a working compiler within hours. The convergence with the existing ecosystem (blq, sitting_duck, agent-riggs all speak DuckDB) wasn't planned; it's what happens when the substrate choice is right. The [Rosetta Stone](https://github.com/teague/ducklog/blob/main/docs/rosetta-stone.md) doc shows seven worked examples translating between CSS, SQL, and Datalog — "compilers become queries" went from thesis to implementation.
+
 ---
 
 ## What this resolves in the sandbox tower's Unresolved section

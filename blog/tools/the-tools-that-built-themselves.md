@@ -22,7 +22,7 @@ The tools cluster around three motivations. Not "what they do" — why they exis
 
 Some patterns just work better when Claude has structured access instead of guessing.
 
-**fledgling** started because Claude was grepping for function definitions and missing half of them. Cross-file resolution, call graph traversal, structural similarity — these are things a code intelligence server does well and an LLM does inconsistently. The tool doesn't replace Claude's understanding; it gives Claude reliable facts to reason about.
+**fledgling** started because Claude was grepping for function definitions and missing half of them. Cross-file resolution, call graph traversal, structural similarity — these are things a code intelligence server does well and an LLM does inconsistently. The tool doesn't replace Claude's understanding; it gives Claude reliable facts to reason about. fledgling eventually grew a pluckit integration, smart defaults, session caching, and compound workflows — enough that it warranted its own identity as **squackit** (Semi-QUalified Agent Companion Kit), an MCP server AND CLI sharing the same codebase. The same tool serves both humans (`squackit tool find_names "**/*.py" ".class"`) and agents (`squackit mcp serve`). That duality — one tool for both sides of the seam — wasn't planned. It fell out of the ratchet.
 
 **kibitzer** watches Claude's tool calls and suggests structured alternatives when it sees patterns that have better options. "You've searched for this function three times — try `find_callers` instead." It's not enforcement, it's coaching. The observations feed back into strategy instructions and tool design.
 

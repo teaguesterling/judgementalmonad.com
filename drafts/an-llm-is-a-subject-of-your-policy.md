@@ -165,6 +165,8 @@ The blog has been building toward this for a while. The [specified band](../blog
 
 All of that has a unifying frame now. The frame is: your policy language has multiple subjects, the LLM is one of them, Beer's VSM names the rest, the syntax is CSS, and the logic underneath is Datalog.
 
+And the logic isn't just a claim anymore. [ducklog](https://github.com/teague/ducklog) compiles umwelt views to queryable DuckDB databases — policy as materialized tables, world state as live views, resolution as derived SQL. The [Rosetta Stone](https://github.com/teague/ducklog/blob/main/docs/rosetta-stone.md) shows the same seven policies in CSS, SQL, and Datalog side by side. "Views are Datalog" went from thesis to seven worked examples. Every consumer reads policy with plain SQL — no CSS knowledge required. The convergence with the existing DuckDB ecosystem (blq for build logs, sitting_duck for ASTs, agent-riggs for session traces) wasn't designed; it emerged from the substrate choice.
+
 Forty years of formalism. Thirty years of CSS. One new subject kind. Enough to build something that hasn't existed yet — a policy language whose first-class subject is an agent, and whose other subjects already have forty years of machinery behind them.
 
 ---

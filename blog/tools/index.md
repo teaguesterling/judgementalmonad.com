@@ -19,7 +19,8 @@ The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is i
 
 ### Code intelligence
 
-- **[fledgling](https://github.com/teague/source-sextant)** — Definitions, callers, cross-file resolution, structural similarity. MCP server over sitting_duck's SQL layer.
+- **[squackit](https://github.com/teague/squackit)** — Semi-QUalified Agent Companion Kit. MCP server AND CLI wrapping pluckit and fledgling with smart defaults, session caching, compound workflows, and token-aware output. The user-facing surface for code intelligence.
+- **[fledgling](https://github.com/teague/source-sextant)** — SQL macros over DuckDB for definitions, callers, cross-file resolution, structural similarity. The query layer underneath squackit.
 
 ### History
 
@@ -37,6 +38,10 @@ The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is i
 ### Generation
 
 - **[lackpy](https://github.com/teague/lackpy)** — Micro-inferencer that translates natural language intent into pluckit chains. Qwen 2.5 Coder 3B, local, $0.
+
+### Policy compilation
+
+- **[ducklog](https://github.com/teague/ducklog)** — Compiles umwelt `.umw` policy files to queryable DuckDB databases. Policy is materialized; world state is live views; resolution is derived. Every authorization decision becomes a SQL query. Consumers (kibitzer, nsjail, bwrap, lackpy) read policy with plain SQL — no CSS knowledge required.
 
 ### Observation & learning
 
