@@ -41,9 +41,9 @@ The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is i
 
 - **[lackpy](https://github.com/teague/lackpy)** — Micro-inferencer that translates natural language intent into pluckit chains. Qwen 2.5 Coder 3B, local, $0.
 
-### Policy compilation
+### Policy
 
-- **[ducklog](https://github.com/teague/ducklog)** — Compiles umwelt `.umw` policy files to queryable DuckDB databases. Policy is materialized; world state is live views; resolution is derived. Every authorization decision becomes a SQL query. Consumers (kibitzer, nsjail, bwrap, lackpy) read policy with plain SQL — no CSS knowledge required.
+- **[umwelt](https://github.com/teague/umwelt)** — CSS-syntax policy language with Datalog semantics over Beer's VSM. Built-in SQLite compiler turns views into queryable databases. Each tool defines its own world state via plugins and queries the resolved policy with plain SQL.
 
 ### Observation & learning
 
