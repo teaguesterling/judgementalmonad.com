@@ -10,7 +10,9 @@ The theory is in [The Ma of Multi-Agent Systems](../ma/index). The practice is i
 
 ---
 
-## The suite
+## The Retritis suite
+
+*Retritis* (n.): inflammation caused by repeated retries. A chronic condition of agent-assisted development. No known cure — only treatments, listed below.
 
 ### Parsing & querying
 

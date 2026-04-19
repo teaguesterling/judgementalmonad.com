@@ -242,7 +242,7 @@ The error fingerprint is the trigger. The pluckit chain is the response. The mod
 
 ---
 
-## What this means for the Rigged suite
+## What this means for the Retritis suite
 
 The fine-tuning pipeline connects every piece:
 

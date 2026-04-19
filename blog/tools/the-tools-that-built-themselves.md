@@ -48,7 +48,7 @@ Some tools exist because the underlying system is complex and I don't need to in
 
 **nsjail-python** wraps Google's nsjail sandboxing tool. nsjail has dozens of flags controlling namespaces, mounts, cgroups, and resource limits. I need sandboxing for blq's test execution. I don't need to become a Linux namespaces expert. The Python wrapper exposes the concepts (read-only filesystem, no network, process isolation) and handles the flags.
 
-**DuckDB extensions** across the suite make querying easier without memorizing SQL patterns. sitting_duck's `ast_select()` function, fledgling's `find_definitions()` macro, duck_tails' git history tables — each wraps a complex query pattern in a function call. The SQL is still there if you need it. Usually you don't.
+**DuckDB extensions** across the Retritis suite make querying easier without memorizing SQL patterns. sitting_duck's `ast_select()` function, fledgling's `find_definitions()` macro, duck_tails' git history tables — each wraps a complex query pattern in a function call. The SQL is still there if you need it. Usually you don't.
 
 ---
 

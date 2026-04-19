@@ -62,7 +62,7 @@ Template promotion has two paths:
 
 **Explicit creation.** The outer agent or the human calls `create(program, kit, name, pattern)` directly. "This program works. Save it." This is the fast path — one successful observation is enough when a human is in the loop.
 
-**Automatic promotion.** [Agent Riggs](https://github.com/teague/agent-riggs) — the cross-session auditor in the Rigged suite — identifies recurring patterns from its DuckDB store. Riggs ingests execution traces from lackpy alongside data from kibitzer, blq, jetsam, and fledgling. Its ratchet candidate identification uses SQL with configurable thresholds:
+**Automatic promotion.** [Agent Riggs](https://github.com/teague/agent-riggs) — the cross-session auditor in the [Retritis](../index) suite — identifies recurring patterns from its DuckDB store. Riggs ingests execution traces from lackpy alongside data from kibitzer, blq, jetsam, and fledgling. Its ratchet candidate identification uses SQL with configurable thresholds:
 
 ```sql
 SELECT

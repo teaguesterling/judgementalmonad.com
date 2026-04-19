@@ -324,7 +324,7 @@ select('.fn:exported')                  // query: DuckDB selector
 
 The user doesn't care which layer handles each link. The chain works.
 
-The language-specific renderer is the only part that needs per-language work, and it's small. The query layer, the selector engine, the splice mechanism, the delegation protocol, and the fluent API are all language-agnostic. A Python implementation and a TypeScript implementation would share the SQL and differ only in the fluent syntax and the renderers — which means pluckit can live in both ecosystems, integrated with Node.js tooling as naturally as with the Python Rigged suite.
+The language-specific renderer is the only part that needs per-language work, and it's small. The query layer, the selector engine, the splice mechanism, the delegation protocol, and the fluent API are all language-agnostic. A Python implementation and a TypeScript implementation would share the SQL and differ only in the fluent syntax and the renderers — which means pluckit can live in both ecosystems, integrated with Node.js tooling as naturally as with the Python [Retritis](../index) suite.
 
 ---
 

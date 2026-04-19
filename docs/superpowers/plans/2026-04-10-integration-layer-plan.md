@@ -1,6 +1,6 @@
 # Integration Layer Plan
 
-*Tying the Rigged suite together into a working system that maintains itself.*
+*Tying the Retritis suite together into a working system that maintains itself.*
 
 **Status**: Draft. 2026-04-10. **Reframed** after the umwelt vision docs crystallized the missing-layer concern into a concrete package with its own architecture — see the "Reframing: umwelt is the layer" section immediately after Intent.
 
@@ -8,7 +8,7 @@
 
 ## Intent
 
-The Rigged suite — jetsam, blq, fledgling, pluckit (in design), kibitzer, agent-riggs, lackpy — has accumulated as a set of individually-capable tools. Each one is written up in its own series, each one has its own documentation, each one does its own job well. What's missing is the layer that makes them work together without a human manually triggering each step.
+The Retritis suite — jetsam, blq, fledgling, pluckit (in design), kibitzer, agent-riggs, lackpy — has accumulated as a set of individually-capable tools. Each one is written up in its own series, each one has its own documentation, each one does its own job well. What's missing is the layer that makes them work together without a human manually triggering each step.
 
 This plan has two goals:
 
@@ -85,7 +85,7 @@ Beer's Viable System Model identifies five functions that any viable organizatio
 
 Current agent architectures have System 1, 2, 4, 5 but only a partial System 3. The Harness (Claude Code) implements System 2 — it routes messages, enforces permission gates, manages tool dispatch. The frontier model implements System 4 — it proposes actions, scans the environment, adapts to inputs. The human implements System 5 — they decide what the system is for and what trade-offs to make. System 3, the controller that watches the failure stream and intervenes when the trajectory goes wrong, is currently performed *manually by the human* or not at all.
 
-The Rigged suite is an attempt to fill System 3 and the audit sub-function 3*. Each tool serves a specific slot.
+The Retritis suite is an attempt to fill System 3 and the audit sub-function 3*. Each tool serves a specific slot.
 
 ### Tool-to-VSM mapping (current state)
 
