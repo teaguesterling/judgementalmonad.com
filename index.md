@@ -28,6 +28,10 @@ Supplementary essays develop the configuration ratchet, world decoupling, the fa
 
 Code ships in every post: DuckDB queries over conversation logs, a prototype mode controller, a complete structured tool, a segment builder, an access control layer, and a metrics dashboard.
 
+### [The Policy Layer](blog/policy/index)
+
+*The argument.* Eight posts developing agent security as a policy problem. The world file as capability grant. CSS as policy syntax — borrowed grammar, not invented DSL. The Datalog lineage underneath. Seven authorization axes derived from Beer's Viable System Model. Materialization, proof trees, and the ratchet as specified ILP. Every claim grounded in the forty-year authorization-logic tradition.
+
 ### [Tools](blog/tools/index)
 
 *The instruments.* The tools that crystallized from the theory and the practice. pluckit (jQuery for source code), the Lackey Papers (micro-inference and template promotion), and the full suite catalog — parsing, code intelligence, build capture, git workflow, observation, and the human-side tools that make it all work.
@@ -36,6 +40,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 ## Recent
 
+- **[The Policy Layer](blog/policy/index)** — Eight-post series arguing agent security is a policy problem. World files as capability grants, CSS as policy syntax, Datalog as formal grounding, seven VSM-derived authorization axes, and materialization as audit. The missing layer between the theory (Ma) and the tools (umwelt).
 - **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We built structured tools to replace bash. They cost 28% more (p < 0.05). Then six tokens of strategy instruction closed the gap entirely — matching bash's cost with full auditability and no computation channel. A detailed strategy prescription made things 56% worse (p < 0.05). The ratchet has two products: tools and strategy. Getting strategy wrong costs more than getting tools wrong.
 - **[Proposed Skills](blog/fuel/proposals/index)** — Four annotated skill proposals grounded in ratchet-detect data: [ratchet-review](blog/fuel/proposals/skill-ratchet-review), [git-workflow](blog/fuel/proposals/skill-git-workflow), [build-query](blog/fuel/proposals/skill-build-query), [codebase-explore](blog/fuel/proposals/skill-codebase-explore). Each closes a computation channel with a structured alternative.
 - **[ratchet-detect](blog/tools/ratchet-detect)** — CLI tool that analyzes your Claude Code conversation logs and finds your ratchet candidates. One command, thirty seconds, actionable report.
@@ -59,6 +64,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 blog/ma/index
 blog/fuel/index
+blog/policy/index
 blog/tools/index
 blog/patterns/index
 drafts/index
