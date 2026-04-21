@@ -174,6 +174,54 @@ The delegate's entire universe is the spec. It can't edit the wrong file because
 
 The big model's job shifts from *monitoring the delegate* to *writing the spec*. Writing a spec is cheap, declarative, auditable, and composable. Monitoring a delegate is expensive, imperative, and ad-hoc. The asymmetry is enormous.
 
+### The world file: completing the contract
+
+But there's a gap in the view-as-contract story. The view says what the delegate is *allowed* to do — which files are editable, which tools are permitted, what hooks must pass. It doesn't say what *exists*. Where did the files come from? Which tools are available in the first place? What mode is active? Who's the principal?
+
+The answer is a separate layer: the **world file**. A YAML file that declares the concrete environment the delegate operates inside — what entities exist, how they're discovered, what's projected from external sources, and what constraints are immutable:
+
+```yaml
+# delegate.world.yml — a container spec for an agent
+entities:
+  - type: tool
+    id: Read
+  - type: tool
+    id: Edit
+  - type: mode
+    id: implement
+    classes: [edit, test]
+
+discover:
+  - matcher: filesystem
+    root: "src/"
+    include: ["**/*.py"]
+
+fixed:
+  "tool#Bash":
+    available: false
+  "network":
+    deny: "*"
+
+principal: Teague
+inferencer: claude-sonnet-4-6
+```
+
+The world file is a **capability grant** in the formal sense. It defines what the delegate *holds* — not what it may do with what it holds (that's the view/policy), but what exists in its reality at all. The distinction between "doesn't exist" and "not allowed" is the container security model applied to agent delegation:
+
+- **World file (doesn't exist):** Bash is not in this world. No CSS rule can grant access to it. The tool is absent from the entity graph. Policy can't make it appear.
+- **View/policy (not allowed):** Bash exists but `tool#Bash { allow: false; }`. The tool is present; policy restricts it. A more specific rule could override the restriction.
+
+This maps directly to capability-based security. No capability, no permission possible. The world file is the unforgeable token the delegate holds. The view is the permission attached to the token. Cut either link and the action doesn't happen.
+
+Together, world + policy forms a complete delegation contract:
+
+```bash
+# The full contract: what exists × what's allowed
+umwelt compile --world delegate.world.yml --policy implement.umw -o delegate.db
+```
+
+The compiled database is the running container that enforcement tools query. The world file is the container spec; the view is the security policy; the database is the running instance. The analogy to Docker is not metaphorical — it's structurally precise. Base images are `include:` of shared world files. `COPY`/`ADD` are discovery recipes. Build args are future `vars:` blocks. `docker inspect` is `umwelt materialize`. The vocabulary transfers because the problem is the same: declaring an isolated environment with specific contents and constraints, in a composable way that separates environment definition from what runs inside.
+
 This is what the [ma framework](../blog/ma/00-intro) has been pointing at the whole time. Coordination is grade adjustment. Grade adjustment, at scale, works because the adjustment is written into structures the enforcement mechanism can check. We've been building the vocabulary — ma, the grade lattice, the specified band, the Harness as constructor — and the tower is what it looks like when you give that vocabulary four different compilers.
 
 ## The layer we found while trying to build this
@@ -231,7 +279,7 @@ The view-as-sandbox reading opens more questions than it answers. Some of the on
 
 1. **Is the generalization real or just a rhyme?** Do nsjail, lackpy, views, and retrieval actually share a structural pattern you could write down, or do they just *look* alike from a distance? If they share structure, the shared abstraction should have a crisp definition — something you could write a type signature for. *Partial answer in [Umwelt: The Layer We Found](umwelt-the-layer-we-found): the operational definition of "same structural pattern" is "one spec, multiple compilers producing different enforcement mechanisms." umwelt demonstrates this at the architecture level; the empirical confirmation requires the package to actually run end-to-end on a real task.*
 
-2. **What does the full tower look like from the inside?** If you stack all four layers, what does the composite sandbox look like from the delegate's perspective? Where are the seams? Which layer catches which failure class in practice, and how much overlap is there? There's a study here that's more empirical than theoretical. *The compiler taxonomy added a second axis (local vs remote, sync vs async) that reshapes the tower's picture — see [Umwelt: The Layer We Found](umwelt-the-layer-we-found). The empirical question remains open until the package runs.*
+2. **What does the full tower look like from the inside?** If you stack all four layers, what does the composite sandbox look like from the delegate's perspective? Where are the seams? Which layer catches which failure class in practice, and how much overlap is there? There's a study here that's more empirical than theoretical. *The compiler taxonomy added a second axis (local vs remote, sync vs async) that reshapes the tower's picture — see [Umwelt: The Layer We Found](umwelt-the-layer-we-found). The world state layer (`.world.yml` files) now provides the "inside view" concretely: a materialized world snapshot IS what the composite sandbox looks like from inside — every entity the delegate can see, with provenance tracking for which layer contributed it. The empirical question remains open until the package runs.*
 
 3. **What's the smallest useful view system?** The sketch above adds declarations for editability, tests, and hooks. How much of that is load-bearing for the sandbox claim, versus feature creep on the original rendering spec? The minimal version might be: `editable: bool` and nothing else. *Partially resolved: the v1 minimum is parser + AST + workspace builder + write-back + hook dispatcher + two compilers (nsjail and bwrap). Spec'd in `~/Projects/umwelt/docs/vision/package-design.md`.*
 

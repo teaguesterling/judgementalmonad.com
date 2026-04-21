@@ -79,7 +79,7 @@ The translation to policy is direct:
 
 ```css
 principal#Teague
-  mode.test
+  mode#test
   harness#claude-code
   inferencer#opus
   tool#Edit
@@ -107,7 +107,7 @@ file#/src/auth.py { language: python; }
 
 /* action axis — permissions via use */
 use[of="file#/src/auth.py"] { editable: false; }             /* default read-only */
-mode.implement use[of-like="file#/src/**/*.py"] { editable: true; }  /* mode-scoped */
+mode#implement use[of-like="file#/src/**/*.py"] { editable: true; }  /* mode-scoped */
 inferencer#opus tool#Edit use[of="file#/src/auth.py"]        /* specific triple */
   { editable: true; }
 ```
@@ -115,6 +115,61 @@ inferencer#opus tool#Edit use[of="file#/src/auth.py"]        /* specific triple 
 The file in the world axis just exists. Whether a delegate can edit it depends on which `use` they hold. Same file, different modes, different permissions. This matches OS reality — the process holds an fd, the permissions are on the fd, not the inode — except the OS version is a runtime concept, whereas in this syntax the capability is visible in the policy source.
 
 Audit becomes trivial. "The delegate edited auth.py because rule R₁ granted a `use` of it." Proof tree, from Datalog, directly. The Ma series' [specified band](../blog/ma/08-the-specified-band) requires that every decision be traceable to declared rules. Datalog gives you SLD resolution for free. Proof trees are not an add-on feature; they're the byproduct of evaluation.
+
+### The world file as capability prerequisite
+
+But where do the entities that `use[of=...]` references actually come from? The capability chain has a prerequisite the view can't satisfy alone: the entity has to *exist* before it can be used.
+
+This is the role of the **world file** — a YAML declaration of what concretely exists in a delegate's reality. The world file is the DOM to umwelt's CSS, the environment to its policy:
+
+```yaml
+# delegate.world.yml
+entities:
+  - type: tool
+    id: Edit
+  - type: mode
+    id: implement
+    classes: [edit, test]
+
+discover:
+  - matcher: filesystem
+    root: "src/"
+
+fixed:
+  "tool#Bash":
+    available: false
+  "network":
+    deny: "*"
+```
+
+The capability chain becomes:
+
+```
+world file → entity exists → use[of=entity] → policy resolves → permission
+```
+
+Cut the first link — the entity doesn't appear in the world file — and no CSS rule produces the permission. The world file is the unforgeable capability token that the delegate holds. `use[of=...]` is the projection of that token into the policy layer. Fixed constraints in the world file are hard boundaries that policy cannot override — they're physics, not rules.
+
+This maps each VSM axis to a concrete section of the world file:
+
+| VSM | Role | World file section |
+|---|---|---|
+| S0 | Environment | `discover:` — filesystem, git-tracked sources |
+| S1 | Operations | `entities:` with `type: tool` |
+| S2 | Coordination | implicit — the harness itself |
+| S3 | Control | `entities:` with `type: mode` |
+| S3* | Audit | *materialization* — the audit snapshot |
+| S4 | Intelligence | `inferencer:` declaration |
+| S5 | Identity | `principal:` declaration |
+
+The world file isn't just infrastructure. It's the **instantiation of the viable system** for a specific delegation. Each delegate gets its own VSM, specified declaratively, auditable via materialization. The materialized world — `umwelt materialize --world delegate.world.yml` — is the S3* artifact: a complete inventory of what the delegate could see, with provenance tracking for how each entity entered the world.
+
+Three layers, three formats, three rates of change:
+- **Vocabulary** (CSS at-rules in `.umw` files) — what *kinds* of things can exist. Changes rarely. Authored by tool developers.
+- **World state** (`.world.yml`) — what things *actually exist*. Changes per-delegation. Authored by operators.
+- **Policy** (CSS in `.umw` files) — what *rules apply* to existing things. Changes per-task. Authored by principals or the ratchet.
+
+The web platform got this separation right in 1996 (DTD + DOM + CSS). umwelt follows the same architecture for the same reason: each layer has a different author, a different change rate, and a different reason to exist. Mixing them produces the same pathology as inline styles in HTML — policy entangled with state, neither reusable independently.
 
 ---
 

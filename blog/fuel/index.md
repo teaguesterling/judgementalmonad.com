@@ -5,6 +5,7 @@
 Your system is failing right now. Those failures are the most valuable signal it produces. This series shows you how to capture them, analyze them, and crystallize them into infrastructure that makes the system cheaper, more predictable, and more trustworthy with every use.
 
 Want the theory? Start with [The Ma of Multi-Agent Systems](../ma/00-intro).
+Want the policy argument? See [The Policy Layer](../policy/index) — agent security as a policy problem.
 Want the tools? See [Tools](../tools/index) — the instruments that crystallized from this work.
 
 ```{toctree}

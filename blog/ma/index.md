@@ -33,6 +33,10 @@ case-studies
 reference-tables
 ```
 
+## In the Policy Layer Series
+
+The [Policy Layer](../policy/index) series develops the authorization argument: agent security as a policy problem, the world file as capability grant, CSS as policy syntax, and the Datalog lineage underneath. Where the Ma series asks "what should the regulatory architecture look like?", the Policy Layer series asks "what should the policy language look like, and why?"
+
 ## In the Ratchet Fuel Series
 
 The companion series [Ratchet Fuel](../fuel/index) develops the practitioner treatment of these concepts.
