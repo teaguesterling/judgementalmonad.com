@@ -40,6 +40,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 ## Recent
 
+- **[Your Agent Is a Different System Than You Think It Is](your-agent-is-a-different-system)** — Everything the Ma series says, for people who were going to ask an agent to summarize it anyway. Seven practical takeaways from thirty thousand words of lattice theory.
 - **[The Policy Layer](blog/policy/index)** — Eight-post series arguing agent security is a policy problem. World files as capability grants, CSS as policy syntax, Datalog as formal grounding, seven VSM-derived authorization axes, and materialization as audit. The missing layer between the theory (Ma) and the tools (umwelt).
 - **[The Experiment That Proved Us Wrong](drafts/the-experiment-that-proved-us-wrong)** — We built structured tools to replace bash. They cost 28% more (p < 0.05). Then six tokens of strategy instruction closed the gap entirely — matching bash's cost with full auditability and no computation channel. A detailed strategy prescription made things 56% worse (p < 0.05). The ratchet has two products: tools and strategy. Getting strategy wrong costs more than getting tools wrong.
 - **[Proposed Skills](blog/fuel/proposals/index)** — Four annotated skill proposals grounded in ratchet-detect data: [ratchet-review](blog/fuel/proposals/skill-ratchet-review), [git-workflow](blog/fuel/proposals/skill-git-workflow), [build-query](blog/fuel/proposals/skill-build-query), [codebase-explore](blog/fuel/proposals/skill-codebase-explore). Each closes a computation channel with a structured alternative.
@@ -52,7 +53,9 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 
 ## Start here
 
-**If you build things:** [The Ratchet Review](blog/fuel/00-ratchet-review) — seven rules and a series map. You'll know within two minutes whether this is useful.
+**If you build things with agents:** [Your Agent Is a Different System Than You Think It Is](your-agent-is-a-different-system) — the cheat sheet. Seven things the theory says that will change how you build, in the time it takes to drink a coffee.
+
+**If you build data platforms:** [The Ratchet Review](blog/fuel/00-ratchet-review) — seven rules and a series map. You'll know within two minutes whether this is useful.
 
 **If you want the theory:** [The Ma of Multi-Agent Systems](blog/ma/00-intro) — start at the beginning. Each post builds on the previous.
 
@@ -62,6 +65,7 @@ Code ships in every post: DuckDB queries over conversation logs, a prototype mod
 :hidden:
 :maxdepth: 2
 
+your-agent-is-a-different-system
 blog/ma/index
 blog/fuel/index
 blog/policy/index

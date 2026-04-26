@@ -104,37 +104,56 @@ Each is a `chi`-management operation at the communication boundary. The star top
 
 ---
 
-## Study 3: Structured build output as co-domain funnel
+## Study 3: Structured build tools as decision surface reduction
 
-**Setup.** An agentic Inferencer needs information about build failures. Two architectures:
+**Setup.** An agentic Inferencer needs to build code and diagnose failures. Two architectures:
 
 - **Architecture 1:** Agent has Bash, runs `make -j8 2>&1`, parses raw output.
-- **Architecture 2:** Agent uses [blq](https://github.com/teaguesterling/blq-cli) MCP tools (`errors`, `inspect`, `diff`) to query structured build events.
+- **Architecture 2:** Agent uses [blq](https://github.com/teaguesterling/blq-cli) MCP tools (`build`, `test`, `errors`, `inspect`, `diff`).
 
-**Architecture 1 analysis.** Raw Bash is computation channel level 4+ — the agent sends arbitrary text to a universal machine. The build output is unstructured: 500 lines of interleaved compiler messages, warnings, errors, progress indicators. The agent's world coupling includes the full cardinality of raw build output — every possible output the build system could produce. And parsing that output *requires* high `d` (the agent needs trained intelligence to extract errors from noise).
+**What blq is not.** blq is not technically "safer" in the computation channel sense. Underneath, `build` still invokes a universal machine — a compiler, a linker, arbitrary build scripts. The code the agent wrote *is* the specification that gets executed. If the agent has written malicious code, `build` will faithfully compile it. blq does not change the computation channel level of the underlying operation.
+
+**What blq actually does.** blq collapses the agent's *decision surface* around the build process. With Bash, the agent faces a combinatorial space of invocation choices:
+
+- `make` or `make -j4` or `make -j$(nproc)` or `cmake --build .`?
+- `2>&1` or `2>&1 | tee build.log` or redirect to file?
+- Parse with `grep error` or `awk` or read the whole thing?
+- Which environment variables? Which working directory?
+
+Each choice is a degree of freedom in `d`. The agent must decide *how* to build, not just *whether* to build. With blq, the decision surface collapses to `build` or `test` — opaque invocations where the mechanism is not the agent's concern.
 
 ```
-chi_bash = I(w_build_raw) . log P(d_parse + d_task)
+P(d_bash) >> P(d_blq)  -- not because the underlying computation changed,
+                        -- but because the agent's choice space shrank
 ```
 
-Both factors are large: `I(w_build_raw)` because raw output is high-cardinality, `P(d_parse + d_task)` because the agent must both parse and act.
+**The opacity is the point.** Because the agent cannot see or control *how* builds execute, the infrastructure is free to impose arbitrary constraints without the agent's knowledge or cooperation:
 
-**Architecture 2 analysis.** blq's MCP tools are computation channel levels 0-2 — structured queries, data channels, convergent dynamics. `errors()` returns a table: file, line, severity, message. The schema has bounded cardinality `K_blq`. Parsing is eliminated — the agent receives pre-structured events.
+- Run builds in Docker containers with no network access
+- Apply `ulimit` constraints on CPU, memory, file descriptors
+- Execute on remote build farms with audit logging
+- Sandbox with seccomp profiles, read-only filesystem mounts
+- Run tests in ephemeral environments that are destroyed after each invocation
+
+None of these require the agent to opt in, configure, or even be aware. The agent says `build`; what happens behind that interface is the infrastructure's decision, not the agent's. **blq removes the decisionality from the agent and places it in the infrastructure**, where it can be governed by policy rather than by prompt.
+
+**The formal content.** This is a reduction in `d`, not in computation channel level. The underlying build is still level 4. But the agent's *interface* to the build is level 0 — a fixed-vocabulary command with no parameters that matter. The chi reduction comes entirely from the decision surface axis:
 
 ```
-chi_blq = I(w_blq_structured) . log P(d_task)
+chi_bash = I(w_build_raw) . log P(d_invoke + d_parse + d_task)
+chi_blq  = I(w_blq_structured) . log P(d_task)
 ```
 
-Both factors are smaller: `I(w_blq_structured) << I(w_build_raw)` because the structured schema has far fewer distinguishable outputs than raw text, and `P(d_task) < P(d_parse + d_task)` because parsing is no longer the agent's job.
+The `d_invoke` term (choosing how to run the build) and `d_parse` term (extracting structure from raw output) both vanish. What remains is `d_task` — the agent's actual job of reasoning about build failures and fixing code.
 
 **Result.** blq reduces `chi` on *both axes simultaneously*:
 
 | | World coupling `I(w)` | Decision surface `P(d)` |
 |---|---|---|
-| Raw Bash | High (raw output cardinality) | High (parse + reason) |
+| Raw Bash | High (raw output cardinality) | High (invoke + parse + reason) |
 | blq tools | Low (structured schema) | Lower (reason only) |
 
-The reduction is superlinear by Prop. 4.7 — reducing both axes together saves more than the sum of reducing each independently.
+The reduction is superlinear by Prop. 4.7 — reducing both axes together saves more than the sum of reducing each independently. But the mechanism is worth being precise about: the world coupling reduction comes from structured output (co-domain funnel), while the decision surface reduction comes from *removing choices the agent doesn't need to make*.
 
 **The multi-agent case.** When Agent A runs a build and Agent B needs results:
 
@@ -143,14 +162,9 @@ The reduction is superlinear by Prop. 4.7 — reducing both axes together saves 
 
 blq is a Harness-mediation point for the build-system-to-agent communication channel. It interposes a co-domain funnel at the boundary, keeping `chi` composition additive where it would otherwise be multiplicative.
 
-**The computation channel angle.** blq also drops the computation channel level:
+**The governance angle.** The computation channel taxonomy (formal companion section 9) classifies by what the tool *can compute*. By that measure, blq's `build` is still level 4 — it executes arbitrary code. But the taxonomy alone misses something: *who decides what gets computed*. With Bash, the agent decides — it constructs the command, chooses the flags, controls the environment. With blq, the agent merely triggers; the infrastructure decides how. This is not a change in computation channel level but a change in *where the decision surface lives* — shifted from the agent (where it must be regulated by characterization) to the infrastructure (where it can be regulated by conventional engineering).
 
-| | Computation level | Dynamics |
-|---|---|---|
-| Raw Bash | Level 4+ (universal machine) | Self-amplifying |
-| blq tools | Level 0-2 (structured queries) | Convergent |
-
-This is the qualitative shift from the computation channel taxonomy (formal companion section 9): not a linear improvement but a change in the kind of system. The agent with Bash needs sandbox regulation to bound its trajectory. The agent with blq tools has convergent dynamics by construction.
+This distinction matters for system design: you don't need to trust the agent's judgment about build invocation if the agent has no judgment to exercise. The build process can be as dangerous as it needs to be, as long as the danger is managed by infrastructure that doesn't require characterization to govern.
 
 ---
 
@@ -162,7 +176,7 @@ The three studies form a progression:
 
 2. **Study 2** shows that inter-agent delegation creates emergent computation channels — two sub-Turing agents compose into a system with Turing-like capability at the delegation boundary. The growth rate shifts from linear to polynomial in total token budget. Co-domain funnels prevent this emergence by decoupling the agents' context windows.
 
-3. **Study 3** demonstrates the concrete pattern: a structured intermediary (blq) acts as a co-domain funnel that drops both axes of `chi` simultaneously, preserves linear growth, and prevents computation channel emergence.
+3. **Study 3** demonstrates the concrete pattern: a structured intermediary (blq) drops both axes of `chi` simultaneously — but through two distinct mechanisms. The *output* side is a co-domain funnel (structured build results replace raw text). The *input* side is a decision surface collapse (the agent triggers opaque operations instead of constructing commands). The computation channel level of the underlying build doesn't change — what changes is that the decision surface moves from the agent to the infrastructure, where it can be governed by engineering rather than characterization.
 
 The common thread: **characterization difficulty is the quantity that system architecture manages**. The context window bounds it. Delegation amplifies it (quadratically per agent added). Structured intermediaries restore linear growth. The Harness's job, at every scale, is `chi` management.
 

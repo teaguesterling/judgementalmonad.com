@@ -2,6 +2,8 @@
 
 *A design theory for the space between agents.*
 
+**New here?** [Your Agent Is a Different System Than You Think It Is](../../your-agent-is-a-different-system) distills this series into seven practical takeaways — no lattice theory required.
+
 ```{toctree}
 :maxdepth: 2
 :caption: The Series
