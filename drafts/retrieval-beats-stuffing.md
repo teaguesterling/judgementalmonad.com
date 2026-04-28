@@ -101,4 +101,4 @@ The lesson generalizes: when a small model is failing, ask whether the prompt ha
 
 ---
 
-*From [lackpy](https://github.com/teague/lackpy) experiments, April 2026.*
+*From [lackpy](https://github.com/teaguesterling/lackpy) experiments, April 2026.*
