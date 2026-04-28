@@ -268,7 +268,7 @@ Both are ratchets. Both only turn one way. The system gets better at generating 
 
 And it all starts with the spec.
 
-**Update:** This pipeline is now being built concretely. [squackit](https://github.com/teague/squackit) — the MCP server and CLI that wraps pluckit and fledgling — ships 93 curated examples across 45 tools, each tagged with semantic categories for retrieval-aware training. The training data pipeline design documents the path from curated examples → intent generation (larger model) → model attempts (target model) → mechanical validation → preference pairs for DPO fine-tuning. Target: 500-1,000 intents, 1,000-5,000 training pairs. The synthetic-from-spec approach described above is being complemented by curated-from-usage examples — both feeding the same fine-tuning loop.
+**Update:** This pipeline is now being built concretely. [squackit](https://github.com/teaguesterling/squackit) — the MCP server and CLI that wraps pluckit and fledgling — ships 93 curated examples across 45 tools, each tagged with semantic categories for retrieval-aware training. The training data pipeline design documents the path from curated examples → intent generation (larger model) → model attempts (target model) → mechanical validation → preference pairs for DPO fine-tuning. Target: 500-1,000 intents, 1,000-5,000 training pairs. The synthetic-from-spec approach described above is being complemented by curated-from-usage examples — both feeding the same fine-tuning loop.
 
 ---
 

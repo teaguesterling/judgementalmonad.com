@@ -28,7 +28,7 @@ A policy is a declarative, auditable, composable specification of what's allowed
 
 The agent community hasn't adopted this architecture. Not because it doesn't apply — it applies more urgently here, because one of the subjects is stochastic and the decisions are harder to audit. The gap exists because agent security grew up in a different tradition (ML safety, prompt engineering, guardrails) that treats the problem as: *detect and block bad outputs.* The authorization tradition treats the problem as: *declare what's allowed and make everything else impossible.* These are fundamentally different postures.
 
-This series argues for the second posture. It describes a specific policy language — [umwelt](https://github.com/teague/umwelt) — that instantiates it. But the argument is larger than the tool. The argument is that agent authorization needs a policy layer, that the layer has a specific shape (dictated by forty years of formal work), and that the novel constraints of the agent case (stochastic subjects, multi-altitude enforcement, environment-as-capability) produce specific design requirements that existing policy languages don't meet.
+This series argues for the second posture. It describes a specific policy language — [umwelt](https://github.com/teaguesterling/umwelt) — that instantiates it. But the argument is larger than the tool. The argument is that agent authorization needs a policy layer, that the layer has a specific shape (dictated by forty years of formal work), and that the novel constraints of the agent case (stochastic subjects, multi-altitude enforcement, environment-as-capability) produce specific design requirements that existing policy languages don't meet.
 
 ## What this series is not
 
@@ -36,7 +36,7 @@ This is not the Ma series. Ma describes the *theory* of multi-agent coordination
 
 This is not a tools series. The tools series describes individual instruments (pluckit, blq, jetsam). This series describes the *policy substrate* those tools consume — the shared vocabulary that lets them interoperate.
 
-This is not a Datalog tutorial. The formalism underneath is Datalog, but the surface syntax is CSS, and the series spends more time on *why CSS* and *why these axes* than on the logic programming. For the formal companion, see [Logic Semantics](https://github.com/teague/umwelt/blob/main/docs/vision/notes/logic-semantics.md) in the umwelt docs.
+This is not a Datalog tutorial. The formalism underneath is Datalog, but the surface syntax is CSS, and the series spends more time on *why CSS* and *why these axes* than on the logic programming. For the formal companion, see [Logic Semantics](https://github.com/teaguesterling/umwelt/blob/main/docs/vision/notes/logic-semantics.md) in the umwelt docs.
 
 ## The series at a glance
 

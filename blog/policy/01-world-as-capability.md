@@ -216,7 +216,7 @@ This is constructive security in practice. You don't say "the agent may not use 
 
 ## Connection to the spec
 
-The full technical design is in [`docs/vision/world-state.md`](https://github.com/teague/umwelt/blob/main/docs/vision/world-state.md) in the umwelt repo.
+The full technical design is in [`docs/vision/world-state.md`](https://github.com/teaguesterling/umwelt/blob/main/docs/vision/world-state.md) in the umwelt repo.
 
 ---
 

@@ -62,7 +62,7 @@ Template promotion has two paths:
 
 **Explicit creation.** The outer agent or the human calls `create(program, kit, name, pattern)` directly. "This program works. Save it." This is the fast path — one successful observation is enough when a human is in the loop.
 
-**Automatic promotion.** [Agent Riggs](https://github.com/teague/agent-riggs) — the cross-session auditor in the [Retritis](../index) suite — identifies recurring patterns from its DuckDB store. Riggs ingests execution traces from lackpy alongside data from kibitzer, blq, jetsam, and fledgling. Its ratchet candidate identification uses SQL with configurable thresholds:
+**Automatic promotion.** [Agent Riggs](https://github.com/teaguesterling/agent-riggs) — the cross-session auditor in the [Retritis](../index) suite — identifies recurring patterns from its DuckDB store. Riggs ingests execution traces from lackpy alongside data from kibitzer, blq, jetsam, and fledgling. Its ratchet candidate identification uses SQL with configurable thresholds:
 
 ```sql
 SELECT
@@ -152,7 +152,7 @@ The most interesting predictions aren't about frontier models on clusters. They'
 
 ---
 
-*This concludes The Lackey Papers. The tools are open source — [lackpy](https://github.com/teague/lackpy), [agent-riggs](https://github.com/teague/agent-riggs), [kibitzer](https://github.com/teague/kibitzer), [fledgling](https://github.com/teague/source-sextant), [blq](https://github.com/teague/lq), [jetsam](https://github.com/teague/jetsam). The framework is in [The Ma of Multi-Agent Systems](../../ma/00-intro).*
+*This concludes The Lackey Papers. The tools are open source — [lackpy](https://github.com/teaguesterling/lackpy), [agent-riggs](https://github.com/teaguesterling/agent-riggs), [kibitzer](https://github.com/teaguesterling/kibitzer), [fledgling](https://github.com/teaguesterling/fledgling), [blq](https://github.com/teaguesterling/blq-cli), [jetsam](https://github.com/teaguesterling/jetsam). The framework is in [The Ma of Multi-Agent Systems](../../ma/00-intro).*
 
 ```{seealso}
 - [The Lackpy Gambit](02-the-lackpy-gambit) — The language design and the small-model twist

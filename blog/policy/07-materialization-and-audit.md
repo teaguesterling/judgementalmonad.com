@@ -228,7 +228,7 @@ declare (world file + policy)
 
 Each iteration is concrete: YAML and CSS in, SQLite out, observations in, tighter YAML and CSS out. Each step is auditable: the world file is version-controlled, the materialization is diffable, the observations are structured, the ratchet proposals are reviewable diffs, the commits have authors. No step requires trust in a black box.
 
-The policy layer isn't a replacement for the tools — nsjail, bwrap, seccomp, Capsicum. It's the layer that *declares what those tools should enforce*, in a language that the governed subjects can read, the operators can author, the auditors can trace, and the ratchet can tighten. Forty years of formalism. Thirty years of CSS. One compilation pipeline. The code is at [umwelt](https://github.com/teague/umwelt).
+The policy layer isn't a replacement for the tools — nsjail, bwrap, seccomp, Capsicum. It's the layer that *declares what those tools should enforce*, in a language that the governed subjects can read, the operators can author, the auditors can trace, and the ratchet can tighten. Forty years of formalism. Thirty years of CSS. One compilation pipeline. The code is at [umwelt](https://github.com/teaguesterling/umwelt).
 
 ---
 
@@ -245,7 +245,7 @@ The policy layer isn't a replacement for the tools — nsjail, bwrap, seccomp, C
 
 ## Connection to the spec
 
-Technical design: [`docs/vision/world-state.md`](https://github.com/teague/umwelt/blob/main/docs/vision/world-state.md) and [`docs/superpowers/specs/2026-04-18-sql-compiler-design.md`](https://github.com/teague/umwelt/blob/main/docs/superpowers/specs/2026-04-18-sql-compiler-design.md) in the umwelt repo.
+Technical design: [`docs/vision/world-state.md`](https://github.com/teaguesterling/umwelt/blob/main/docs/vision/world-state.md) and [`docs/superpowers/specs/2026-04-18-sql-compiler-design.md`](https://github.com/teaguesterling/umwelt/blob/main/docs/superpowers/specs/2026-04-18-sql-compiler-design.md) in the umwelt repo.
 
 ---
 

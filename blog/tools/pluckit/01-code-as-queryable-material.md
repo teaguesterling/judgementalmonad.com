@@ -100,7 +100,7 @@ select('def:has(try:not(:has(finally)))')
 
 `def`, `try`, `finally` — the keywords resolve to the right AST node types per language. A full selector taxonomy covers all 27 supported languages.
 
-This isn't a metaphor. It's an implementation. [sitting_duck](https://github.com/teague/sitting-duck) already implements CSS selectors over tree-sitter ASTs, backed by DuckDB. The selector engine exists. The AST tables exist. The query performance is there — DFS ordering over node tables means containment queries are range scans, not tree walks.
+This isn't a metaphor. It's an implementation. [sitting_duck](https://github.com/teaguesterling/sitting_duck) already implements CSS selectors over tree-sitter ASTs, backed by DuckDB. The selector engine exists. The AST tables exist. The query performance is there — DFS ordering over node tables means containment queries are range scans, not tree walks.
 
 ---
 
@@ -334,7 +334,7 @@ There's a feedback loop here that connects to everything else.
 
 A developer figures out a refactoring by chaining pluckit operations interactively. They add `log_level` to 47 functions, propagate call sites, run tests, save. That interactive session is a trace — a sequence of operations that achieved a goal.
 
-[Agent Riggs](https://github.com/teague/agent-riggs) sees the trace. It identifies the pattern: "add optional parameter with call-site propagation." It crystallizes the pattern into a named refactoring. Next time, [lackpy](https://github.com/teague/lackpy) serves it from a template — the micro-inferencer translates "add dry_run parameter to all public functions" into a pluckit chain without touching a frontier model.
+[Agent Riggs](https://github.com/teaguesterling/agent-riggs) sees the trace. It identifies the pattern: "add optional parameter with call-site propagation." It crystallizes the pattern into a named refactoring. Next time, [lackpy](https://github.com/teaguesterling/lackpy) serves it from a template — the micro-inferencer translates "add dry_run parameter to all public functions" into a pluckit chain without touching a frontier model.
 
 ```
 Interactive session

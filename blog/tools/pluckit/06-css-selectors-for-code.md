@@ -306,5 +306,5 @@ The selector engine is the foundation. Everything else composes from here.
 ```{seealso}
 - [Code as Queryable Material](01-code-as-queryable-material) — The original CSS-for-code mapping and pluckit's design
 - [The pluckit API](03-the-api) — The operation layer built on top of selectors
-- [sitting_duck](https://github.com/teague/sitting-duck) — The AST extension that implements ast_select
+- [sitting_duck](https://github.com/teaguesterling/sitting_duck) — The AST extension that implements ast_select
 ```

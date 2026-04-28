@@ -133,7 +133,7 @@ This series describes the policy layer of a larger regulatory architecture:
 - **[The Ma of Multi-Agent Systems](../ma/00-intro)** develops the theory: the grade lattice, the specified band, the four actors, the three-layer regulation strategy that the OS existence proof demonstrates. The policy layer is Layer 3 of that strategy.
 - **[Ratchet Fuel](../fuel/index)** develops the practice: how friction becomes signal, how signal crystallizes into infrastructure, how the ratchet tightens over time. The policy ratchet is one application.
 - **[The Tools](../tools/index)** are the instruments: pluckit, blq, kibitzer, jetsam. Each consumes the policy layer through its own compiler — reading its slice of the policy with plain SQL.
-- **[umwelt](https://github.com/teague/umwelt)** is the implementation: the CSS-syntax policy language with Datalog semantics, a built-in SQLite compiler, and a plugin system for vocabulary registration.
+- **[umwelt](https://github.com/teaguesterling/umwelt)** is the implementation: the CSS-syntax policy language with Datalog semantics, a built-in SQLite compiler, and a plugin system for vocabulary registration.
 
 The theory asks *what should the regulatory architecture look like?* The practice asks *how do you bootstrap it from friction?* This series asks *what should the policy language look like, and why?* — with proper citations, honest lineage, and clear boundaries between what's novel and what's borrowed.
 
